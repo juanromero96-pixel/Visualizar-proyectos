@@ -49,6 +49,13 @@ export function crearTarjeta(proyecto, unidades) {
   const titulo = document.createElement('h3');
   titulo.className = 'tarjeta-proyecto__titulo';
   titulo.textContent = proyecto.titulo;
+  if (proyecto.demo) {
+    const insigniaDemo = document.createElement('span');
+    insigniaDemo.className = 'insignia-demo';
+    insigniaDemo.textContent = 'DEMO';
+    insigniaDemo.title = 'Dato de demostración, no es un proyecto real todavía cargado';
+    titulo.append(' ', insigniaDemo);
+  }
 
   const resumen = document.createElement('p');
   resumen.className = 'tarjeta-proyecto__resumen';
@@ -95,19 +102,52 @@ export async function renderizarGrillaProyectos(contenedor, proyectos, categoria
   animarEntradaTarjetas(grilla);
 }
 
-// ODS sugerido por unidad académica: una primera lectura derivada de
-// las etiquetas reales que ya tienen sus proyectos (ver Documento
-// Técnico y la conversación de diseño). Es una sugerencia editorial,
-// no una clasificación institucional aprobada — por eso se muestra
-// siempre como "(sugerido)", nunca como dato cerrado.
-const ODS_SUGERIDO_POR_UNIDAD = {
-  fhycs: 'ODS 4 · Educación',
-  fce: 'ODS 8 · Trabajo decente',
-  fceqyn: 'ODS 6 · Agua limpia',
-  fcf: 'ODS 15 · Ecosistemas terrestres',
-  fi: 'ODS 7 · Energía asequible',
-  fayd: 'ODS 11 · Comunidades sostenibles',
+// ---------- ODS simbólico ----------
+// Por qué un círculo con el número y no el ícono oficial de Naciones
+// Unidas: el pictograma oficial de cada ODS es una pieza gráfica con
+// identidad propia de la ONU: reproducirla tal cual no aporta más
+// sobriedad institucional y sí abre una duda de uso que no hace falta
+// abrir. Un círculo con el número, en la paleta institucional, cumple
+// "simbólico, no textual" sin tomar prestado ningún ícono ajeno.
+const ODS_NOMBRE = {
+  3: 'Salud y bienestar', 4: 'Educación de calidad', 6: 'Agua limpia y saneamiento',
+  7: 'Energía asequible', 8: 'Trabajo decente', 9: 'Industria e innovación',
+  11: 'Comunidades sostenibles', 15: 'Ecosistemas terrestres', 16: 'Instituciones sólidas',
 };
+const ODS_POR_ETIQUETA = {
+  audiovisual: 16, comunicacion: 16, 'produccion-audiovisual': 16,
+  agua: 6, ambiente: 15, 'salud-comunitaria': 3, 'economia-social': 8,
+  'desarrollo-territorial': 11, educacion: 4, reforestacion: 15,
+  energia: 7, tecnologia: 9, arte: 11, cultura: 11, comunidad: 11,
+};
+
+function odsSugeridoParaEtiquetas(etiquetas) {
+  for (const etiqueta of etiquetas || []) {
+    if (ODS_POR_ETIQUETA[etiqueta]) return ODS_POR_ETIQUETA[etiqueta];
+  }
+  return null;
+}
+
+function crearInsigniaOds(numeroOds, tamano = 'sm') {
+  const numero = ODS_NOMBRE[numeroOds] ? numeroOds : null;
+  const insignia = document.createElement('span');
+  insignia.className = `insignia-ods insignia-ods--${tamano}`;
+  insignia.textContent = numero || '–';
+  insignia.title = numero ? `ODS ${numero} · ${ODS_NOMBRE[numero]} (sugerido)` : 'Sin ODS sugerido';
+  const srOnly = document.createElement('span');
+  srOnly.className = 'sr-only';
+  srOnly.textContent = numero ? ` — ODS sugerido: ${numero}, ${ODS_NOMBRE[numero]}` : '';
+  insignia.append(srOnly);
+  return insignia;
+}
+
+function crearInsigniaDemo() {
+  const insignia = document.createElement('span');
+  insignia.className = 'insignia-demo';
+  insignia.textContent = 'DEMO';
+  insignia.title = 'Dato de demostración, no es un proyecto real todavía cargado';
+  return insignia;
+}
 
 function crearFichaLegajo(proyecto, unidad, codigoLegajo) {
   const enlace = document.createElement('a');
@@ -135,27 +175,24 @@ function crearFichaLegajo(proyecto, unidad, codigoLegajo) {
   const codigo = document.createElement('span');
   codigo.className = 'ficha-legajo__codigo';
   codigo.textContent = `Exp. interno ${codigoLegajo}`;
+  if (proyecto.demo) codigo.append(crearInsigniaDemo());
 
-  const titulo = document.createElement('span');
-  titulo.className = 'ficha-legajo__titulo';
-  titulo.textContent = proyecto.titulo;
+  const tituloFila = document.createElement('span');
+  tituloFila.className = 'ficha-legajo__titulo';
+  tituloFila.textContent = proyecto.titulo;
 
   const anio = document.createElement('span');
   anio.className = 'ficha-legajo__anio';
   anio.textContent = proyecto.anio || '';
 
-  cuerpo.append(codigo, titulo, anio);
+  cuerpo.append(codigo, tituloFila, anio);
 
-  const etiquetas = document.createElement('div');
-  etiquetas.className = 'ficha-legajo__etiquetas';
-  if (proyecto.etiquetas && proyecto.etiquetas.length) {
-    const chip = document.createElement('span');
-    chip.className = 'ficha-legajo__ods';
-    chip.textContent = `· ${proyecto.etiquetas[0]}`;
-    etiquetas.append(chip);
-  }
+  const odsFila = document.createElement('div');
+  odsFila.className = 'ficha-legajo__ods-fila';
+  const odsSugerido = odsSugeridoParaEtiquetas(proyecto.etiquetas);
+  if (odsSugerido) odsFila.append(crearInsigniaOds(odsSugerido));
 
-  enlace.append(miniatura, cuerpo, etiquetas);
+  enlace.append(miniatura, cuerpo, odsFila);
   return enlace;
 }
 
@@ -166,7 +203,7 @@ function crearFichaLegajo(proyecto, unidad, codigoLegajo) {
  * más (necesario para que esto no se rompa cuando haya 130+ proyectos
  * y no solo los 6 actuales).
  */
-export function crearCarpetaUnidad(unidad, proyectosDeUnidad, numeroDeOrden, limiteProyectos = 3) {
+export function crearCarpetaUnidad(unidad, proyectosDeUnidad, numeroDeOrden, limiteProyectos = 5) {
   const carpeta = document.createElement('div');
   carpeta.className = 'carpeta-unidad';
 
@@ -255,18 +292,28 @@ export function crearCarpetaUnidad(unidad, proyectosDeUnidad, numeroDeOrden, lim
 
   const pie = document.createElement('div');
   pie.className = 'carpeta-unidad__pie';
-  const chipEje = document.createElement('span');
-  chipEje.className = 'carpeta-unidad__chip-eje';
-  chipEje.textContent = ODS_SUGERIDO_POR_UNIDAD[unidad.id]
-    ? `· ${ODS_SUGERIDO_POR_UNIDAD[unidad.id]} (sugerido)`
-    : '· sin eje sugerido';
+
+  const odsDeLaUnidad = document.createElement('div');
+  odsDeLaUnidad.className = 'carpeta-unidad__ods';
+  const numerosOds = [...new Set(
+    proyectosDeUnidad.map((p) => odsSugeridoParaEtiquetas(p.etiquetas)).filter(Boolean)
+  )].slice(0, 4);
+  if (numerosOds.length) {
+    numerosOds.forEach((n) => odsDeLaUnidad.append(crearInsigniaOds(n)));
+  } else {
+    const sinOds = document.createElement('span');
+    sinOds.className = 'carpeta-unidad__chip-eje';
+    sinOds.textContent = 'Sin ODS sugerido todavía';
+    odsDeLaUnidad.append(sinOds);
+  }
+
   const periodo = document.createElement('span');
   periodo.className = 'carpeta-unidad__periodo';
   const anios = proyectosDeUnidad.map((p) => p.anio).filter(Boolean);
   periodo.textContent = anios.length
     ? `Período ${Math.min(...anios)}–${Math.max(...anios)}`
     : 'Período —';
-  pie.append(chipEje, periodo);
+  pie.append(odsDeLaUnidad, periodo);
   contenido.append(pie);
 
   cuerpo.append(lomo, contenido);

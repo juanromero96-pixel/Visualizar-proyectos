@@ -23,6 +23,7 @@
     { "id": "fcf", "nombre": "Facultad de Ciencias Forestales - UNaM" },
     { "id": "fi", "nombre": "Facultad de Ingeniería - UNaM" },
     { "id": "fayd", "nombre": "Facultad de Arte y Diseño - UNaM" },
+    { "id": "eae", "nombre": "Escuela Agrotécnica de Eldorado - UNaM" },
     { "id": "iaavim", "nombre": "Instituto de Artes Audiovisuales de Misiones (IAAVIM)" },
     { "id": "obera-en-cortos", "nombre": "Festival Oberá en Cortos" }
   ],

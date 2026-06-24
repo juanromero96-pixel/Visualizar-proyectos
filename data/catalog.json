@@ -93,5 +93,469 @@
     "destacado": false,
     "estado_revision": "publicado",
     "imagen_portada": null
+  },
+  {
+    "id": "demo-fhycs-talleres-de-alfabetizacion-mediatica",
+    "titulo": "[Demo] Talleres de alfabetización mediática",
+    "unidad_academica": "fhycs",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2025,
+    "etiquetas": [
+      "comunicacion",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fhycs-radio-comunitaria-universitaria",
+    "titulo": "[Demo] Radio comunitaria universitaria",
+    "unidad_academica": "fhycs",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2024,
+    "etiquetas": [
+      "comunicacion",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fhycs-archivo-oral-de-memoria-barrial",
+    "titulo": "[Demo] Archivo oral de memoria barrial",
+    "unidad_academica": "fhycs",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2023,
+    "etiquetas": [
+      "cultura",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fhycs-produccion-de-podcasts-educativos",
+    "titulo": "[Demo] Producción de podcasts educativos",
+    "unidad_academica": "fhycs",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2022,
+    "etiquetas": [
+      "comunicacion",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fce-asesoramiento-a-cooperativas-de-trabajo",
+    "titulo": "[Demo] Asesoramiento a cooperativas de trabajo",
+    "unidad_academica": "fce",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2025,
+    "etiquetas": [
+      "economia-social",
+      "desarrollo-territorial"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fce-educacion-financiera-comunitaria",
+    "titulo": "[Demo] Educación financiera comunitaria",
+    "unidad_academica": "fce",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2024,
+    "etiquetas": [
+      "economia-social",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fce-acompañamiento-a-ferias-de-economia-popu",
+    "titulo": "[Demo] Acompañamiento a ferias de economía popular",
+    "unidad_academica": "fce",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2023,
+    "etiquetas": [
+      "economia-social",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fce-diagnostico-de-emprendimientos-familiare",
+    "titulo": "[Demo] Diagnóstico de emprendimientos familiares",
+    "unidad_academica": "fce",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2022,
+    "etiquetas": [
+      "economia-social",
+      "desarrollo-territorial"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fceqyn-monitoreo-de-calidad-del-aire-urbano",
+    "titulo": "[Demo] Monitoreo de calidad del aire urbano",
+    "unidad_academica": "fceqyn",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2025,
+    "etiquetas": [
+      "ambiente",
+      "salud-comunitaria"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fceqyn-talleres-de-ciencia-comunitaria",
+    "titulo": "[Demo] Talleres de ciencia comunitaria",
+    "unidad_academica": "fceqyn",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2024,
+    "etiquetas": [
+      "educacion",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fceqyn-analisis-de-suelos-en-huertas-escolares",
+    "titulo": "[Demo] Análisis de suelos en huertas escolares",
+    "unidad_academica": "fceqyn",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2023,
+    "etiquetas": [
+      "ambiente",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fceqyn-educacion-en-gestion-de-residuos",
+    "titulo": "[Demo] Educación en gestión de residuos",
+    "unidad_academica": "fceqyn",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2022,
+    "etiquetas": [
+      "ambiente",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fcf-restauracion-de-bordes-de-cursos-de-agua",
+    "titulo": "[Demo] Restauración de bordes de cursos de agua",
+    "unidad_academica": "fcf",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2025,
+    "etiquetas": [
+      "ambiente",
+      "agua"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fcf-vivero-comunitario-segunda-etapa",
+    "titulo": "[Demo] Vivero comunitario, segunda etapa",
+    "unidad_academica": "fcf",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2024,
+    "etiquetas": [
+      "reforestacion",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fcf-capacitacion-en-manejo-forestal-sostenib",
+    "titulo": "[Demo] Capacitación en manejo forestal sostenible",
+    "unidad_academica": "fcf",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2023,
+    "etiquetas": [
+      "reforestacion",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fcf-relevamiento-de-arbolado-urbano",
+    "titulo": "[Demo] Relevamiento de arbolado urbano",
+    "unidad_academica": "fcf",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2022,
+    "etiquetas": [
+      "ambiente",
+      "reforestacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fi-mantenimiento-de-equipamiento-escolar-ru",
+    "titulo": "[Demo] Mantenimiento de equipamiento escolar rural",
+    "unidad_academica": "fi",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2025,
+    "etiquetas": [
+      "tecnologia",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fi-talleres-de-robotica-educativa",
+    "titulo": "[Demo] Talleres de robótica educativa",
+    "unidad_academica": "fi",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2024,
+    "etiquetas": [
+      "tecnologia",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fi-diagnostico-energetico-de-edificios-publ",
+    "titulo": "[Demo] Diagnóstico energético de edificios públicos",
+    "unidad_academica": "fi",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2023,
+    "etiquetas": [
+      "energia",
+      "desarrollo-territorial"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fi-acceso-a-internet-comunitario",
+    "titulo": "[Demo] Acceso a internet comunitario",
+    "unidad_academica": "fi",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2022,
+    "etiquetas": [
+      "tecnologia",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fayd-diseño-de-señaletica-comunitaria",
+    "titulo": "[Demo] Diseño de señalética comunitaria",
+    "unidad_academica": "fayd",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2025,
+    "etiquetas": [
+      "arte",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fayd-taller-de-serigrafia-popular",
+    "titulo": "[Demo] Taller de serigrafía popular",
+    "unidad_academica": "fayd",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2024,
+    "etiquetas": [
+      "arte",
+      "cultura"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fayd-identidad-visual-para-organizaciones-soc",
+    "titulo": "[Demo] Identidad visual para organizaciones sociales",
+    "unidad_academica": "fayd",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2023,
+    "etiquetas": [
+      "arte",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fayd-itinerancia-de-muestra-fotografica",
+    "titulo": "[Demo] Itinerancia de muestra fotográfica",
+    "unidad_academica": "fayd",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2022,
+    "etiquetas": [
+      "arte",
+      "cultura"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-eae-huerta-organica-escolar",
+    "titulo": "[Demo] Huerta orgánica escolar",
+    "unidad_academica": "eae",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2025,
+    "etiquetas": [
+      "ambiente",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-eae-capacitacion-en-injertos-frutales",
+    "titulo": "[Demo] Capacitación en injertos frutales",
+    "unidad_academica": "eae",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2024,
+    "etiquetas": [
+      "educacion",
+      "desarrollo-territorial"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-eae-feria-de-productos-agropecuarios-estudia",
+    "titulo": "[Demo] Feria de productos agropecuarios estudiantiles",
+    "unidad_academica": "eae",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2023,
+    "etiquetas": [
+      "economia-social",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-eae-manejo-sustentable-de-suelos-de-chacra",
+    "titulo": "[Demo] Manejo sustentable de suelos de chacra",
+    "unidad_academica": "eae",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2022,
+    "etiquetas": [
+      "ambiente",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-eae-produccion-de-plantines-forestales",
+    "titulo": "[Demo] Producción de plantines forestales",
+    "unidad_academica": "eae",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2021,
+    "etiquetas": [
+      "reforestacion",
+      "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
   }
 ]

@@ -1,0 +1,35 @@
+{
+  "id": "demo-fi-mantenimiento-de-equipamiento-escolar-ru",
+  "titulo": "[Demo] Mantenimiento de equipamiento escolar rural",
+  "resolucion": null,
+  "unidad_academica": "fi",
+  "programa_carrera_area": "Dato de demostración",
+  "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+  "problema": "Dato de demostración: pendiente de reemplazo por contenido real extraído de un póster.",
+  "objetivo_general": "Dato de demostración: pendiente de reemplazo por contenido real.",
+  "objetivos_especificos": [],
+  "acciones": [
+    "Dato de demostración — pendiente de carga real."
+  ],
+  "resultados_aportes": [
+    "Dato de demostración — pendiente de carga real."
+  ],
+  "responsables": [
+    "Equipo docente (dato de demostración)"
+  ],
+  "contacto": "demo@unam.edu.ar",
+  "instituciones_cooperantes": [
+    "fi"
+  ],
+  "cita_destacada": null,
+  "imagenes": [],
+  "videos": [],
+  "pdf_fuente": null,
+  "anio": 2025,
+  "etiquetas": [
+    "tecnologia",
+    "comunidad"
+  ],
+  "estado_revision": "publicado",
+  "demo": true
+}

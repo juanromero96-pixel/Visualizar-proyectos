@@ -19,8 +19,15 @@ import { animarTransicionVista } from './animaciones.js';
 import { animarPasarHoja } from './transicion-hoja.js';
 import { debounce } from './utils.js';
 
-async function manejarInicio(contenedor) {
-  contenedor.innerHTML = '<p class="estado-carga">Cargando…</p>';
+/**
+ * El catálogo ES la pantalla inicial: no hay una "portada" separada.
+ * Por eso esta misma función se registra para '/' y para '/catalogo'
+ * (ver el final del archivo) — los destacados (Swiper, ya construidos
+ * en un bloque anterior) se conservan como sección superior, no se
+ * descartan, solo dejan de ser una pantalla aparte.
+ */
+async function manejarCatalogo(contenedor) {
+  contenedor.innerHTML = '<p class="estado-carga">Cargando catálogo…</p>';
   const [catalogo, categorias] = await Promise.all([obtenerCatalogo(), obtenerCategorias()]);
   const destacados = catalogo.filter((proyecto) => proyecto.destacado);
 
@@ -28,40 +35,28 @@ async function manejarInicio(contenedor) {
 
   const hero = document.createElement('section');
   hero.className = 'portada-hero';
-  const h1 = document.createElement('h1');
-  h1.textContent = 'Proyectos de Extensión Universitaria';
+  const h1Hero = document.createElement('h1');
+  h1Hero.textContent = 'Biblioteca Digital de Proyectos de Extensión';
   const intro = document.createElement('p');
-  intro.textContent = 'Catálogo institucional de los proyectos de extensión de la Universidad Nacional de Misiones, organizados por unidad académica, programa y temática.';
-  const enlaceCatalogo = document.createElement('a');
-  enlaceCatalogo.className = 'boton boton--primario';
-  enlaceCatalogo.href = '#/catalogo';
-  enlaceCatalogo.textContent = 'Ver el catálogo completo';
-  hero.append(h1, intro, enlaceCatalogo);
+  intro.textContent = 'Catálogo institucional organizado por unidad académica. Cada unidad funciona como un expediente que contiene sus proyectos de extensión.';
+  hero.append(h1Hero, intro);
+  contenedor.append(hero);
 
-  const seccionDestacados = document.createElement('section');
-  seccionDestacados.className = 'portada-destacados';
-  const h2 = document.createElement('h2');
-  h2.textContent = 'Proyectos destacados';
-  const contenedorGrilla = document.createElement('div');
-  seccionDestacados.append(h2, contenedorGrilla);
-
-  contenedor.append(hero, seccionDestacados);
-
-  await renderizarCarruselDestacados(contenedorGrilla, destacados, categorias, {
-    mensajeVacio: 'Todavía no hay proyectos destacados configurados.',
-  });
-}
-
-async function manejarCatalogo(contenedor) {
-  contenedor.innerHTML = '<p class="estado-carga">Cargando catálogo…</p>';
-  const [catalogo, categorias] = await Promise.all([obtenerCatalogo(), obtenerCategorias()]);
-
-  contenedor.innerHTML = '';
+  if (destacados.length) {
+    const seccionDestacados = document.createElement('section');
+    seccionDestacados.className = 'portada-destacados';
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Proyectos destacados';
+    const contenedorGrilla = document.createElement('div');
+    seccionDestacados.append(h2, contenedorGrilla);
+    contenedor.append(seccionDestacados);
+    await renderizarCarruselDestacados(contenedorGrilla, destacados, categorias);
+  }
 
   const encabezado = document.createElement('div');
   encabezado.className = 'catalogo-encabezado';
-  const h1 = document.createElement('h1');
-  h1.textContent = 'Catálogo de proyectos de extensión';
+  const h1 = document.createElement('h2');
+  h1.textContent = 'Unidades académicas';
   const contador = document.createElement('p');
   contador.className = 'catalogo-encabezado__contador';
   contador.textContent = `${catalogo.length} proyecto${catalogo.length === 1 ? '' : 's'} publicados, en ${categorias.unidades_academicas.length} unidades académicas.`;
@@ -248,6 +243,31 @@ async function manejarBuscar(contenedor, { query }) {
   ejecutarBusqueda(input.value);
 }
 
+// URL real del panel administrativo (Flask). El sitio público es
+// estático (Vercel) y no puede ejecutar Flask, así que esta ruta no
+// "es" el panel: es una puerta de entrada que explica dónde está y
+// cómo llegar. Editar esta constante para que apunte a donde
+// efectivamente corra el panel (la máquina de la Secretaría, un
+// servidor interno, una VPN institucional, etc.) — es una sola línea.
+const URL_PANEL_ADMIN = 'http://localhost:5050/';
+
+function manejarAdmin(contenedor) {
+  contenedor.innerHTML = '';
+  const articulo = document.createElement('article');
+  articulo.className = 'pagina-institucional';
+  articulo.innerHTML = `
+    <h1>Acceso administrativo</h1>
+    <p>El panel de carga, extracción y publicación de proyectos es una herramienta interna
+    de la Secretaría de Extensión. No corre en este sitio público (que es estático): corre
+    en un servidor Python/Flask aparte, de uso exclusivo del equipo que gestiona la biblioteca.</p>
+    <p><a class="boton boton--primario" href="${URL_PANEL_ADMIN}" target="_blank" rel="noopener">Abrir panel administrativo →</a></p>
+    <p style="color:var(--color-grey);font-size:0.85rem;">Si el enlace no funciona, es porque el panel
+    no está corriendo en esta dirección en este momento, o no tenés acceso a la red donde corre.
+    Contactá al equipo técnico para confirmar la dirección vigente.</p>
+  `;
+  contenedor.append(articulo);
+}
+
 function manejarNoEncontrado(contenedor) {
   contenedor.innerHTML = '';
   const aviso = document.createElement('div');
@@ -315,12 +335,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initLayout();
   inicializarNavegacionDeHojas();
 
-  registrarRuta('/', manejarInicio);
+  registrarRuta('/', manejarCatalogo);
   registrarRuta('/catalogo', manejarCatalogo);
   registrarRuta('/unidad/:id', manejarUnidad);
   registrarRuta('/proyecto/:id', manejarFicha);
   registrarRuta('/extension', manejarExtension);
   registrarRuta('/buscar', manejarBuscar);
+  registrarRuta('/admin', manejarAdmin);
   registrarNoEncontrado(manejarNoEncontrado);
   alFinalizarRenderizado(alTerminarDeRenderizar);
 
