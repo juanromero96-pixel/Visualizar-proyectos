@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteca Digital de Extensión UNaM</title>
+  <meta name="description" content="Catálogo institucional de proyectos de extensión universitaria de la UNaM.">
+  <!-- Bootstrap grid: solo la grilla responsive (sin componentes visuales ni reset) -->
+  <link rel="stylesheet" href="assets/vendor/bootstrap-grid.min.css">
+  <!-- Swiper: estilos del carrusel -->
+  <link rel="stylesheet" href="assets/vendor/swiper-bundle.min.css">
+  <!-- Estilos institucionales propios (sobreescriben lo de vendor) -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/componentes.css">
+</head>
+<body>
+  <a class="skip-link" href="#app">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="site-header__brand" href="#/">
+        <span class="site-header__brand-mark">UNaM</span>
+        <span class="site-header__brand-name">Biblioteca Digital de Extensión</span>
+      </a>
+
+      <nav class="site-nav" aria-label="Navegación principal">
+        <button
+          type="button"
+          class="site-nav__toggle"
+          id="navToggle"
+          aria-expanded="false"
+          aria-controls="navMenu"
+        >
+          <span class="sr-only">Abrir menú de navegación</span>
+          <span class="site-nav__icon" aria-hidden="true"></span>
+        </button>
+
+        <ul class="site-nav__list" id="navMenu">
+          <li><a href="#/">Inicio</a></li>
+          <li><a href="#/catalogo">Catálogo de proyectos</a></li>
+          <li><a href="#/extension">¿Qué es la extensión?</a></li>
+          <li><a href="#/buscar">Buscar</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="main-content">
+    <p class="estado-carga">Cargando…</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__bloque">
+        <p class="site-footer__title">Universidad Nacional de Misiones</p>
+        <p>Secretaría de Extensión Universitaria</p>
+      </div>
+      <div class="site-footer__bloque">
+        <p><a href="#/extension">¿Qué es la extensión universitaria?</a></p>
+        <p><a href="#/catalogo">Catálogo de proyectos</a></p>
+      </div>
+      <div class="site-footer__bloque">
+        <p>Contacto: <a href="mailto:extension@unam.edu.ar">extension@unam.edu.ar</a></p>
+      </div>
+    </div>
+    <p class="site-footer__legal">Biblioteca Digital de Proyectos de Extensión — Universidad Nacional de Misiones</p>
+  </footer>
+
+  <!-- Vendor JS: se cargan como globales (UMD), antes del módulo principal -->
+  <script src="assets/vendor/gsap.min.js"></script>
+  <script src="assets/vendor/swiper-bundle.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

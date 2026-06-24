@@ -1,0 +1,244 @@
+/*
+  admin.css
+  Estética de herramienta administrativa universitaria: sobria,
+  funcional, basada en tabla y formulario. Deliberadamente NO usa
+  tarjetas con sombra, gradientes, iconografía decorativa ni la
+  paleta de color "viva" típica de un dashboard SaaS. Usa los mismos
+  tokens institucionales que el sitio público (variables.css) para que
+  se note que es la misma institución, no una herramienta de terceros.
+*/
+
+* , *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", system-ui, Arial, sans-serif;
+  color: var(--color-navy);
+  background: #F7F8F9;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Header ---------- */
+.admin-header {
+  background: var(--color-navy);
+  color: #fff;
+  padding: var(--space-sm) 0;
+  margin-bottom: var(--space-lg);
+}
+
+.admin-header__marca {
+  font-weight: 700;
+  margin-right: var(--space-md);
+}
+
+.admin-header__subtitulo {
+  color: #BEE7F0;
+  font-size: 0.9rem;
+}
+
+.admin-header__nav a {
+  color: #BEE7F0;
+  margin-left: var(--space-md);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding-bottom: 0.3em;
+}
+
+.admin-header__nav a:hover {
+  color: #fff;
+}
+
+.admin-header__nav a.activo {
+  color: #fff;
+  border-bottom: 2px solid var(--color-teal);
+  font-weight: 600;
+}
+
+/* ---------- Filtros y acciones por lote ---------- */
+.admin-filtros {
+  margin-bottom: var(--space-md);
+}
+
+.admin-acciones-lote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.admin-acciones-lote__botones {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.admin-resultado-lote ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.admin-resultado-lote .resultado-ok { color: #1F7A3D; }
+.admin-resultado-lote .resultado-error { color: #9C2A24; }
+
+/* ---------- Bloques ---------- */
+.admin-main {
+  max-width: 1100px;
+  padding-bottom: var(--space-xl);
+}
+
+.admin-bloque {
+  background: #fff;
+  border: 1px solid #E1E5E8;
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.admin-bloque h1 {
+  font-size: 1.25rem;
+  font-family: var(--font-display);
+  margin: 0 0 var(--space-md);
+}
+
+.admin-bloque__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.admin-bloque__cabecera h1 {
+  margin: 0;
+}
+
+/* ---------- Zona de carga ---------- */
+.zona-carga {
+  border: 2px dashed #B9C2C8;
+  border-radius: var(--radius-md);
+  padding: var(--space-xl) var(--space-md);
+  text-align: center;
+  background: #FAFBFC;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.zona-carga:hover,
+.zona-carga:focus-visible,
+.zona-carga.zona-carga--activa {
+  border-color: var(--color-teal);
+  background: var(--color-bg-card);
+}
+
+.zona-carga__texto {
+  margin: 0;
+  color: var(--color-grey);
+}
+
+.zona-carga__enlace {
+  color: var(--color-teal);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.admin-metadatos-carga {
+  margin-top: var(--space-md);
+}
+
+.admin-metadatos-carga__nota p {
+  color: var(--color-grey);
+  font-size: 0.85rem;
+  margin: 1.85rem 0 0;
+}
+
+/* ---------- Tabla de cola ---------- */
+.admin-tabla-cola th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-grey);
+  border-bottom-width: 1px;
+}
+
+.admin-tabla-cola td {
+  font-size: 0.92rem;
+}
+
+.admin-tabla-cola .documento-nombre {
+  font-weight: 600;
+  color: var(--color-navy);
+  display: block;
+}
+
+.admin-tabla-cola .documento-id {
+  color: var(--color-grey);
+  font-size: 0.78rem;
+}
+
+/* Insignias de estado: color por estado, siempre con texto (no solo color) */
+.insignia-estado {
+  display: inline-block;
+  padding: 0.25em 0.7em;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.insignia-estado--pendiente   { background: #F0F1F2; color: #50575C; border-color: #DADDE0; }
+.insignia-estado--procesando  { background: #FFF3D6; color: #8A6300; border-color: #F0DDA0; }
+.insignia-estado--extraido    { background: #E4F1F5; color: #146078; border-color: #BFE0E9; }
+.insignia-estado--en-revision { background: #EFE6FB; color: #5B3AA0; border-color: #D9C7F2; }
+.insignia-estado--aprobado    { background: #E1F2E6; color: #1F7A3D; border-color: #BEE3C8; }
+.insignia-estado--publicado   { background: var(--color-navy); color: #fff; }
+.insignia-estado--archivado   { background: #ECECEC; color: #6B6B6B; border-color: #DADADA; }
+.insignia-estado--error       { background: #FBE2E1; color: #9C2A24; border-color: #F2C2BF; }
+
+.admin-tabla-cola .advertencia-fila {
+  color: #8A6300;
+  font-size: 0.82rem;
+}
+
+.admin-tabla-cola .error-fila {
+  color: #9C2A24;
+  font-size: 0.82rem;
+}
+
+/* ---------- Errores ---------- */
+.admin-errores ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-errores li {
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid #EEE;
+  font-size: 0.88rem;
+}
+
+.admin-errores li:last-child {
+  border-bottom: none;
+}
+
+.admin-errores .error-tipo {
+  display: inline-block;
+  font-weight: 600;
+  color: #9C2A24;
+  margin-right: 0.5em;
+}

@@ -1,0 +1,170 @@
+/*
+  admin-editor.css
+  Estilos exclusivos de editor.html: no se cargan en admin.html ni en
+  revision.html, para no acumular reglas sin usar en cada página.
+*/
+
+.admin-editor__volver {
+  display: inline-block;
+  margin-bottom: var(--space-sm);
+}
+
+.admin-editor__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.admin-editor__titulo-estado {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.admin-editor__titulo-estado h1 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.admin-editor__guardado {
+  font-size: 0.8rem;
+  color: var(--color-grey);
+  min-width: 8em;
+}
+
+.admin-editor__guardado--ok {
+  color: #1F7A3D;
+}
+
+.admin-editor__acciones {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+/* ---------- Validación visual ---------- */
+.admin-validacion {
+  border-left: 4px solid #9C2A24;
+  background: #FBE2E1;
+}
+
+.admin-validacion.admin-validacion--solo-advertencias {
+  border-left-color: #8A6300;
+  background: #FFF3D6;
+}
+
+.admin-validacion ul {
+  margin: 0.4em 0 0;
+  padding-left: 1.2em;
+}
+
+/* ---------- PDF de referencia ---------- */
+.admin-pdf-referencia__visor {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+/* ---------- Formulario ---------- */
+.admin-ayuda-campo {
+  color: var(--color-grey);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.admin-fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.admin-fieldset legend {
+  font-size: 0.85rem;
+  color: var(--color-grey);
+  padding: 0 0.4em;
+}
+
+.admin-subtitulo {
+  font-size: 0.95rem;
+  font-family: var(--font-display);
+  margin: var(--space-sm) 0 var(--space-xs);
+}
+
+/* ---------- Editor visual de bloques (drag & drop nativo) ---------- */
+.lista-bloques {
+  list-style: none;
+  margin: 0 0 var(--space-md);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-height: 2.5rem;
+}
+
+.bloque-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.5em 0.7em;
+  border-bottom: 1px solid var(--color-border);
+  background: #fff;
+  cursor: grab;
+}
+
+.bloque-item:last-child {
+  border-bottom: none;
+}
+
+.bloque-item.arrastrando {
+  opacity: 0.4;
+}
+
+.bloque-item.objetivo-drop {
+  border-top: 2px solid var(--color-teal);
+}
+
+.bloque-item__manija {
+  color: var(--color-grey);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.bloque-item__nombre {
+  flex: 1;
+  font-size: 0.92rem;
+}
+
+.bloque-item--oculto .bloque-item__nombre {
+  color: var(--color-grey);
+  text-decoration: line-through;
+}
+
+.bloque-item--vacio {
+  opacity: 0.5;
+}
+
+.bloque-item__sin-contenido {
+  font-size: 0.75rem;
+  color: var(--color-grey);
+}
+
+/* ---------- Auditoría ---------- */
+.admin-auditoria table {
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+.admin-auditoria th {
+  text-align: left;
+  color: var(--color-grey);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.admin-auditoria td {
+  padding: 0.35em 0.6em 0.35em 0;
+  border-bottom: 1px solid #EEE;
+}

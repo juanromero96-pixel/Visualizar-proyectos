@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vista previa — Panel administrativo UNaM</title>
+  <!-- Mismas hojas de estilo que usa el sitio público real (servidas de
+       solo lectura por el panel, no copiadas): si la ficha pública
+       cambia de estilo, la vista previa lo refleja automáticamente. -->
+  <link rel="stylesheet" href="/admin/publico/assets/vendor/bootstrap-grid.min.css">
+  <link rel="stylesheet" href="/admin/publico/css/variables.css">
+  <link rel="stylesheet" href="/admin/publico/css/base.css">
+  <link rel="stylesheet" href="/admin/publico/css/layout.css">
+  <link rel="stylesheet" href="/admin/publico/css/componentes.css">
+  <style>
+    .banner-vista-previa {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #2B2400;
+      color: #FFE6A3;
+      text-align: center;
+      padding: 0.6em 1em;
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      font-size: 0.9rem;
+    }
+    .banner-vista-previa strong { color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="banner-vista-previa">
+    <strong>MODO VISTA PREVIA</strong> — esto no está publicado. Así se vería la ficha en la biblioteca pública.
+    <span id="estadoActualBanner"></span>
+  </div>
+
+  <main id="app" class="main-content"></main>
+
+  <script src="/static/vendor/gsap.min.js"></script>
+  <script type="module" src="/static/js/admin-preview.js"></script>
+</body>
+</html>

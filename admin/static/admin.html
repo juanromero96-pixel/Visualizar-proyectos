@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel administrativo — Biblioteca Digital de Extensión UNaM</title>
+  <link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/variables.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap">
+      <div>
+        <span class="admin-header__marca">UNaM · Panel administrativo</span>
+        <span class="admin-header__subtitulo">Biblioteca Digital de Proyectos de Extensión</span>
+      </div>
+      <nav class="admin-header__nav">
+        <a href="/admin/" class="activo">Carga y extracción</a>
+        <a href="/admin/revision">Revisión y publicación</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container-fluid admin-main">
+
+    <!-- MÓDULO 1: Carga de documentos -->
+    <section class="admin-bloque" aria-labelledby="tituloCarga">
+      <h1 id="tituloCarga">1. Carga de documentos</h1>
+
+      <div id="zonaCarga" class="zona-carga" tabindex="0" role="button"
+           aria-label="Arrastrar archivos PDF aquí, o presionar Enter para elegir desde la carpeta">
+        <p class="zona-carga__texto">
+          Arrastrá uno o varios PDF acá, o
+          <label for="inputArchivos" class="zona-carga__enlace">elegilos desde la carpeta</label>.
+        </p>
+        <input type="file" id="inputArchivos" accept="application/pdf" multiple class="visually-hidden">
+      </div>
+
+      <form id="formMetadatosCarga" class="row g-2 admin-metadatos-carga">
+        <div class="col-12 col-md-4">
+          <label for="selectUnidad" class="form-label">Unidad académica (opcional, se puede asignar después)</label>
+          <select id="selectUnidad" class="form-select">
+            <option value="">— Sin asignar —</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <label for="inputAnio" class="form-label">Año (opcional)</label>
+          <input type="number" id="inputAnio" class="form-control" placeholder="2026" min="1990" max="2100">
+        </div>
+        <div class="col-12 col-md-5 admin-metadatos-carga__nota">
+          <p>Se puede dejar sin completar y asignarlo durante la revisión: no es obligatorio para cargar.</p>
+        </div>
+      </form>
+    </section>
+
+    <!-- MÓDULO 2: Cola / scrapeo y extracción -->
+    <section class="admin-bloque" aria-labelledby="tituloCola">
+      <div class="admin-bloque__cabecera">
+        <h1 id="tituloCola">2. Cola de procesamiento</h1>
+        <button type="button" id="botonProcesarPendientes" class="btn btn-primary">
+          Procesar pendientes (modo rápido)
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle admin-tabla-cola">
+          <thead>
+            <tr>
+              <th scope="col">Documento</th>
+              <th scope="col">Tamaño</th>
+              <th scope="col">Cargado</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Notas</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoTablaCola">
+            <tr>
+              <td colspan="6" class="text-center text-muted">Sin documentos cargados todavía.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Sección de errores -->
+    <section class="admin-bloque" aria-labelledby="tituloErrores">
+      <h1 id="tituloErrores">Errores registrados</h1>
+      <div id="listaErrores" class="admin-errores">
+        <p class="text-muted">Sin errores registrados.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/static/vendor/gsap.min.js"></script>
+  <script type="module" src="/static/js/admin-main.js"></script>
+</body>
+</html>

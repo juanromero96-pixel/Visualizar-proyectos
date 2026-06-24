@@ -1,0 +1,39 @@
+{
+  "unidades_academicas": [
+    { "id": "fhycs", "sigla": "FHyCS", "nombre": "Facultad de Humanidades y Ciencias Sociales" },
+    { "id": "fce", "sigla": "FCE", "nombre": "Facultad de Ciencias Económicas" },
+    { "id": "fceqyn", "sigla": "FCEQyN", "nombre": "Facultad de Ciencias Exactas, Químicas y Naturales" },
+    { "id": "fcf", "sigla": "FCF", "nombre": "Facultad de Ciencias Forestales" },
+    { "id": "fi", "sigla": "FI", "nombre": "Facultad de Ingeniería" },
+    { "id": "fayd", "sigla": "FAyD", "nombre": "Facultad de Arte y Diseño" }
+  ],
+
+  "instituciones_cooperantes": [
+    { "id": "fhycs", "nombre": "Facultad de Humanidades y Ciencias Sociales - UNaM" },
+    { "id": "fce", "nombre": "Facultad de Ciencias Económicas - UNaM" },
+    { "id": "fceqyn", "nombre": "Facultad de Ciencias Exactas, Químicas y Naturales - UNaM" },
+    { "id": "fcf", "nombre": "Facultad de Ciencias Forestales - UNaM" },
+    { "id": "fi", "nombre": "Facultad de Ingeniería - UNaM" },
+    { "id": "fayd", "nombre": "Facultad de Arte y Diseño - UNaM" },
+    { "id": "iaavim", "nombre": "Instituto de Artes Audiovisuales de Misiones (IAAVIM)" },
+    { "id": "obera-en-cortos", "nombre": "Festival Oberá en Cortos" }
+  ],
+
+  "etiquetas_sugeridas": [
+    "audiovisual",
+    "comunicacion",
+    "produccion-audiovisual",
+    "agua",
+    "ambiente",
+    "salud-comunitaria",
+    "economia-social",
+    "desarrollo-territorial",
+    "educacion",
+    "reforestacion",
+    "energia",
+    "tecnologia",
+    "arte",
+    "cultura",
+    "comunidad"
+  ]
+}

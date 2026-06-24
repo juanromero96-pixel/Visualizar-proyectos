@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de proyecto — Panel administrativo UNaM</title>
+  <link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/variables.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+  <link rel="stylesheet" href="/static/css/admin-editor.css">
+</head>
+<body>
+  <header class="admin-header">
+    <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap">
+      <div>
+        <span class="admin-header__marca">UNaM · Panel administrativo</span>
+        <span class="admin-header__subtitulo">Biblioteca Digital de Proyectos de Extensión</span>
+      </div>
+      <nav class="admin-header__nav">
+        <a href="/admin/">Carga y extracción</a>
+        <a href="/admin/revision" class="activo">Revisión y publicación</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container-fluid admin-main">
+
+    <a href="/admin/revision" class="admin-editor__volver">← Volver al listado</a>
+
+    <section class="admin-bloque admin-editor__cabecera">
+      <div class="admin-editor__titulo-estado">
+        <h1 id="tituloProyecto">Cargando…</h1>
+        <span id="insigniaEstado" class="insignia-estado">—</span>
+      </div>
+      <div class="admin-editor__guardado" id="indicadorGuardado" aria-live="polite"></div>
+      <div class="admin-editor__acciones" id="botonesTransicion"></div>
+    </section>
+
+    <div id="bannerValidacion" class="admin-bloque admin-validacion d-none"></div>
+
+    <div class="row g-4">
+      <!-- Columna izquierda: PDF original -->
+      <div class="col-12 col-lg-5">
+        <section class="admin-bloque admin-pdf-referencia">
+          <h2>PDF original</h2>
+          <iframe id="visorPdf" class="admin-pdf-referencia__visor" title="PDF original del proyecto"></iframe>
+        </section>
+      </div>
+
+      <!-- Columna derecha: formulario de edición -->
+      <div class="col-12 col-lg-7">
+        <section class="admin-bloque">
+          <h2>Datos del proyecto</h2>
+          <form id="formEditor" class="admin-formulario" autocomplete="off">
+
+            <div class="mb-3">
+              <label for="campoTitulo" class="form-label">Título</label>
+              <input type="text" id="campoTitulo" data-campo="titulo" class="form-control">
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="campoUnidad" class="form-label">Unidad académica</label>
+                <select id="campoUnidad" data-campo="unidad_academica" class="form-select">
+                  <option value="">— Sin asignar —</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="campoAnio" class="form-label">Año / convocatoria</label>
+                <input type="number" id="campoAnio" data-campo="anio" data-tipo="numero" class="form-control" min="1990" max="2100">
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="campoPrograma" class="form-label">Carrera / programa / área</label>
+                <input type="text" id="campoPrograma" data-campo="programa_carrera_area" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="campoResolucion" class="form-label">Resolución</label>
+                <input type="text" id="campoResolucion" data-campo="resolucion" class="form-control" placeholder="Ej.: Res. HCD Nº 000/00">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="campoResumen" class="form-label">Resumen</label>
+              <textarea id="campoResumen" data-campo="resumen" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="campoProblema" class="form-label">Problema</label>
+              <textarea id="campoProblema" data-campo="problema" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="campoObjetivo" class="form-label">Objetivo general</label>
+              <textarea id="campoObjetivo" data-campo="objetivo_general" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="campoObjetivosEspecificos" class="form-label">Objetivos específicos <span class="admin-ayuda-campo">(uno por línea)</span></label>
+              <textarea id="campoObjetivosEspecificos" data-campo="objetivos_especificos" data-tipo="lista" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="campoAcciones" class="form-label">Acciones <span class="admin-ayuda-campo">(una por línea)</span></label>
+              <textarea id="campoAcciones" data-campo="acciones" data-tipo="lista" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="campoResultados" class="form-label">Resultados y aportes <span class="admin-ayuda-campo">(uno por línea)</span></label>
+              <textarea id="campoResultados" data-campo="resultados_aportes" data-tipo="lista" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="campoResponsables" class="form-label">Responsables <span class="admin-ayuda-campo">(uno por línea)</span></label>
+              <textarea id="campoResponsables" data-campo="responsables" data-tipo="lista" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="campoContacto" class="form-label">Contacto (email)</label>
+                <input type="email" id="campoContacto" data-campo="contacto" class="form-control">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="campoEtiquetas" class="form-label">Etiquetas <span class="admin-ayuda-campo">(separadas por coma)</span></label>
+                <input type="text" id="campoEtiquetas" data-campo="etiquetas" data-tipo="lista-coma" class="form-control">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="campoInstituciones" class="form-label">Instituciones cooperantes</label>
+              <select id="campoInstituciones" data-campo="instituciones_cooperantes" data-tipo="multi" class="form-select" multiple size="4"></select>
+            </div>
+
+            <fieldset class="admin-fieldset mb-3">
+              <legend>Cita destacada (opcional)</legend>
+              <div class="mb-2">
+                <label for="campoCitaTexto" class="form-label">Texto</label>
+                <textarea id="campoCitaTexto" data-campo="cita_destacada.texto" class="form-control" rows="2"></textarea>
+              </div>
+              <div>
+                <label for="campoCitaFuente" class="form-label">Fuente / autor</label>
+                <input type="text" id="campoCitaFuente" data-campo="cita_destacada.fuente" class="form-control">
+              </div>
+            </fieldset>
+
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <!-- Editor visual de bloques -->
+    <section class="admin-bloque">
+      <h2>Editor visual de bloques</h2>
+      <p class="admin-ayuda-campo">Decidí qué se muestra, en qué orden, y cuál bloque destacar. No modifica contenido, solo presentación. Arrastrá para reordenar.</p>
+
+      <div class="row">
+        <div class="col-12 col-md-7">
+          <h3 class="admin-subtitulo">Cuerpo del relato</h3>
+          <ul id="listaBloquesPrincipal" class="lista-bloques" data-columna="principal"></ul>
+
+          <h3 class="admin-subtitulo">Recursos</h3>
+          <ul id="listaBloquesSecundaria" class="lista-bloques" data-columna="secundaria"></ul>
+        </div>
+
+        <div class="col-12 col-md-5">
+          <div class="mb-3">
+            <label for="selectBloqueDestacado" class="form-label">Bloque destacado</label>
+            <select id="selectBloqueDestacado" class="form-select form-select-sm">
+              <option value="">— Ninguno —</option>
+            </select>
+          </div>
+          <div class="form-check mb-3">
+            <input type="checkbox" id="checkMostrarCita" class="form-check-input">
+            <label for="checkMostrarCita" class="form-check-label">Mostrar cita destacada (si el proyecto tiene una)</label>
+          </div>
+          <div class="mb-3">
+            <label for="selectImagenPrincipal" class="form-label">Imagen principal</label>
+            <select id="selectImagenPrincipal" class="form-select form-select-sm">
+              <option value="">— Sin imágenes cargadas —</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="selectImagenPortada" class="form-label">Imagen de portada (catálogo)</label>
+            <select id="selectImagenPortada" class="form-select form-select-sm">
+              <option value="">— Sin imágenes cargadas —</option>
+            </select>
+          </div>
+          <button type="button" id="botonGuardarBloques" class="btn btn-sm btn-outline-secondary">Guardar configuración de bloques</button>
+          <span id="indicadorGuardadoBloques" class="admin-editor__guardado" aria-live="polite"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vista previa -->
+    <section class="admin-bloque">
+      <h2>Vista previa</h2>
+      <p class="admin-ayuda-campo">Renderiza la ficha con los mismos estilos, componentes y bloques que verá el público, usando el contenido y la configuración guardados hasta el momento.</p>
+      <a id="enlaceVistaPrevia" href="#" target="_blank" class="btn btn-primary">Abrir vista previa</a>
+    </section>
+
+    <!-- Auditoría -->
+    <section class="admin-bloque">
+      <h2>Auditoría</h2>
+      <div id="listaAuditoria" class="admin-auditoria">
+        <p class="text-muted">Sin actividad registrada todavía.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/static/vendor/gsap.min.js"></script>
+  <script type="module" src="/static/js/admin-editor.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "id": "fi-ejemplo-energia-solar-2025",
+  "titulo": "Energía solar para instituciones comunitarias",
+  "resolucion": null,
+  "unidad_academica": "fi",
+  "programa_carrera_area": "Ingeniería Electromecánica",
+  "resumen": "Diseño e instalación de sistemas solares fotovoltaicos de baja escala en instituciones comunitarias sin acceso confiable a la red eléctrica.",
+  "problema": "Algunas instituciones comunitarias de zonas rurales tienen acceso intermitente o nulo al suministro eléctrico de red.",
+  "objetivo_general": "Mejorar el acceso a energía eléctrica de instituciones comunitarias mediante sistemas solares de baja escala.",
+  "objetivos_especificos": [
+    "Diagnosticar necesidades energéticas de las instituciones seleccionadas.",
+    "Diseñar e instalar sistemas solares fotovoltaicos.",
+    "Capacitar en el mantenimiento básico de los equipos instalados."
+  ],
+  "acciones": [
+    "Relevamiento energético en las instituciones comunitarias participantes.",
+    "Instalación de paneles solares y baterías de acumulación.",
+    "Capacitación al personal local en mantenimiento básico."
+  ],
+  "resultados_aportes": [
+    "Instituciones con sistema de energía solar instalado y en funcionamiento.",
+    "Personal local capacitado en mantenimiento básico de los equipos.",
+    "Reducción de la dependencia de generadores a combustible."
+  ],
+  "responsables": ["Equipo docente de la carrera de Ingeniería Electromecánica"],
+  "contacto": "extension.fi@unam.edu.ar",
+  "instituciones_cooperantes": ["fi"],
+  "cita_destacada": null,
+  "imagenes": [],
+  "videos": [],
+  "pdf_fuente": null,
+  "anio": 2025,
+  "etiquetas": ["energia", "tecnologia", "desarrollo-territorial"],
+  "estado_revision": "publicado"
+}

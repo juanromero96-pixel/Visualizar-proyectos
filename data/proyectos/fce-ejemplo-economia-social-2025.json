@@ -1,0 +1,35 @@
+{
+  "id": "fce-ejemplo-economia-social-2025",
+  "titulo": "Acompañamiento a emprendimientos de la economía social",
+  "resolucion": null,
+  "unidad_academica": "fce",
+  "programa_carrera_area": "Contador Público / Licenciatura en Administración",
+  "resumen": "Asesoramiento contable y de gestión a emprendimientos de la economía social y cooperativas de la región, orientado a fortalecer su sostenibilidad.",
+  "problema": "Muchos emprendimientos de la economía social no acceden a herramientas básicas de gestión contable y financiera, lo que dificulta su sostenibilidad en el tiempo.",
+  "objetivo_general": "Fortalecer la sostenibilidad de emprendimientos de la economía social mediante asesoramiento contable y de gestión.",
+  "objetivos_especificos": [
+    "Brindar asesoramiento contable básico a los emprendimientos participantes.",
+    "Acompañar procesos de formalización.",
+    "Capacitar en herramientas de gestión financiera y costeo."
+  ],
+  "acciones": [
+    "Consultorías contables periódicas con los emprendimientos participantes.",
+    "Talleres de formalización y costeo.",
+    "Seguimiento y acompañamiento continuo durante el proyecto."
+  ],
+  "resultados_aportes": [
+    "Emprendimientos asesorados en gestión contable y financiera.",
+    "Mayor formalización de los emprendimientos participantes.",
+    "Material de capacitación elaborado y entregado."
+  ],
+  "responsables": ["Equipo docente de la carrera de Contador Público"],
+  "contacto": "extension.fce@unam.edu.ar",
+  "instituciones_cooperantes": ["fce"],
+  "cita_destacada": null,
+  "imagenes": [],
+  "videos": [],
+  "pdf_fuente": null,
+  "anio": 2025,
+  "etiquetas": ["economia-social", "desarrollo-territorial"],
+  "estado_revision": "publicado"
+}

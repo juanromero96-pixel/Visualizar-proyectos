@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revisión y publicación — Panel administrativo UNaM</title>
+  <link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="/static/css/variables.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <div class="container-fluid d-flex align-items-center justify-content-between flex-wrap">
+      <div>
+        <span class="admin-header__marca">UNaM · Panel administrativo</span>
+        <span class="admin-header__subtitulo">Biblioteca Digital de Proyectos de Extensión</span>
+      </div>
+      <nav class="admin-header__nav">
+        <a href="/admin/">Carga y extracción</a>
+        <a href="/admin/revision" class="activo">Revisión y publicación</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container-fluid admin-main">
+
+    <section class="admin-bloque">
+      <h1>Gestión de proyectos</h1>
+
+      <form id="formFiltros" class="row g-2 admin-filtros">
+        <div class="col-6 col-md-3">
+          <label for="filtroEstado" class="form-label">Estado</label>
+          <select id="filtroEstado" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            <option value="pendiente">Borrador</option>
+            <option value="en_revision">En revisión</option>
+            <option value="validado">Aprobado</option>
+            <option value="publicado">Publicado</option>
+            <option value="archivado">Archivado</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label for="filtroUnidad" class="form-label">Unidad académica</label>
+          <select id="filtroUnidad" class="form-select form-select-sm">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label for="filtroAnio" class="form-label">Año</label>
+          <input type="number" id="filtroAnio" class="form-control form-control-sm" placeholder="Todos">
+        </div>
+        <div class="col-6 col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Filtrar</button>
+        </div>
+      </form>
+
+      <div id="barraAccionesLote" class="admin-acciones-lote d-none">
+        <span id="textoSeleccionados"></span>
+        <div class="admin-acciones-lote__botones">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-transicion="en_revision">Pasar a revisión</button>
+          <button type="button" class="btn btn-sm btn-outline-success" data-transicion="validado">Aprobar</button>
+          <button type="button" class="btn btn-sm btn-primary" data-transicion="publicado">Publicar</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-transicion="archivado">Archivar</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle admin-tabla-cola">
+          <thead>
+            <tr>
+              <th scope="col"><input type="checkbox" id="checkTodos" aria-label="Seleccionar todos"></th>
+              <th scope="col">Proyecto</th>
+              <th scope="col">Unidad</th>
+              <th scope="col">Año</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Actualizado</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoTablaProyectos">
+            <tr><td colspan="7" class="text-center text-muted">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="resultadoLote" class="admin-bloque admin-resultado-lote d-none"></div>
+
+  </main>
+
+  <script src="/static/vendor/gsap.min.js"></script>
+  <script type="module" src="/static/js/admin-revision.js"></script>
+</body>
+</html>

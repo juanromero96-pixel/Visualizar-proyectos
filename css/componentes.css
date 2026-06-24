@@ -1,0 +1,405 @@
+/*
+  componentes.css
+  Estilos de los componentes de contenido que monta el router: tarjetas
+  de catálogo, ficha de proyecto, portada, buscador y estados de carga
+  / vacío / error. El carrusel (carrusel.js) y el refinamiento fino de
+  filtros llegan en sus propios bloques, con sus propios estilos, sin
+  tocar este archivo.
+*/
+
+/* ---------- Estados genéricos ---------- */
+.estado-carga,
+.estado-vacio,
+.estado-error {
+  color: var(--color-grey);
+  padding: var(--space-md) 0;
+}
+
+.estado-vacio h1 {
+  margin-top: 0;
+}
+
+/* ---------- Botones ---------- */
+.boton {
+  display: inline-block;
+  padding: 0.6em 1.4em;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  margin-top: var(--space-sm);
+}
+
+.boton--primario {
+  background: var(--color-teal);
+  color: #fff;
+}
+
+.boton--primario:hover,
+.boton--primario:focus {
+  background: var(--color-navy);
+  text-decoration: none;
+}
+
+.boton--secundario {
+  border: 1px solid var(--color-teal);
+  color: var(--color-teal);
+}
+
+.boton--secundario:hover,
+.boton--secundario:focus {
+  background: var(--color-bg-card);
+  text-decoration: none;
+}
+
+/* ---------- Portada ---------- */
+.portada-hero {
+  max-width: 40rem;
+  margin-bottom: var(--space-xl);
+}
+
+.portada-hero p {
+  color: var(--color-grey);
+}
+
+.portada-destacados h2 {
+  margin-bottom: var(--space-md);
+}
+
+/* ---------- Carrusel de destacados (Swiper) ----------
+   Solo se sobreescriben color, tamaño y posición de los controles para
+   que se vean institucionales; el comportamiento (swipe, teclado,
+   paginación) lo resuelve la librería. */
+.carrusel-destacados {
+  padding-bottom: var(--space-lg);
+}
+
+.carrusel-destacados .swiper-slide {
+  height: auto;
+  display: flex;
+  align-items: stretch;
+}
+
+.carrusel-destacados .swiper-slide .tarjeta-proyecto {
+  width: 100%;
+}
+
+.carrusel-destacados .swiper-button-prev,
+.carrusel-destacados .swiper-button-next {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-navy);
+  top: 35%;
+}
+
+.carrusel-destacados .swiper-button-prev:hover,
+.carrusel-destacados .swiper-button-next:hover {
+  background: var(--color-bg-card);
+}
+
+.carrusel-destacados .swiper-button-prev::after,
+.carrusel-destacados .swiper-button-next::after {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.carrusel-destacados .swiper-pagination-bullet {
+  background: var(--color-border);
+  opacity: 1;
+  width: 8px;
+  height: 8px;
+}
+
+.carrusel-destacados .swiper-pagination-bullet-active {
+  background: var(--color-teal);
+}
+
+/* ---------- Encabezado de catálogo ---------- */
+.catalogo-encabezado {
+  margin-bottom: var(--space-lg);
+}
+
+.catalogo-encabezado h1 {
+  margin-bottom: var(--space-xs);
+}
+
+.catalogo-encabezado__contador {
+  color: var(--color-grey);
+  margin: 0;
+}
+
+/* ---------- Grilla de tarjetas ---------- */
+.grilla-proyectos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+
+@media (min-width: 640px) {
+  .grilla-proyectos { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .grilla-proyectos { grid-template-columns: repeat(3, 1fr); }
+}
+
+.tarjeta-proyecto {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.tarjeta-proyecto__enlace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--color-navy);
+}
+
+.tarjeta-proyecto__enlace:hover,
+.tarjeta-proyecto__enlace:focus {
+  text-decoration: none;
+}
+
+.tarjeta-proyecto__enlace:hover .tarjeta-proyecto__titulo,
+.tarjeta-proyecto__enlace:focus .tarjeta-proyecto__titulo {
+  color: var(--color-teal);
+}
+
+.tarjeta-proyecto__imagen {
+  aspect-ratio: 16 / 10;
+  background: var(--color-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tarjeta-proyecto__imagen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tarjeta-proyecto__imagen--vacia {
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
+}
+
+.tarjeta-proyecto__cuerpo {
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  flex: 1;
+}
+
+.tarjeta-proyecto__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-grey);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tarjeta-proyecto__titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  transition: color 0.15s ease;
+}
+
+.tarjeta-proyecto__resumen {
+  margin: 0;
+  color: var(--color-grey);
+  font-size: 0.95rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tarjeta-proyecto__etiquetas {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  margin: 0.3em 0 0;
+  padding: 0;
+}
+
+.tarjeta-proyecto__etiquetas li {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.15em 0.7em;
+  font-size: 0.75rem;
+  color: var(--color-navy);
+}
+
+/* ---------- Ficha de proyecto ---------- */
+.ficha-proyecto {
+  max-width: 64rem;
+}
+
+.ficha-proyecto__secundaria {
+  border-left: 0;
+}
+
+@media (min-width: 992px) {
+  .ficha-proyecto__secundaria {
+    border-left: 1px solid var(--color-border);
+    padding-left: var(--space-lg);
+  }
+}
+
+.ficha-proyecto__volver {
+  display: inline-block;
+  margin-bottom: var(--space-md);
+}
+
+.ficha-proyecto__meta {
+  color: var(--color-grey);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.3em;
+}
+
+.ficha-proyecto__cita {
+  border-left: 4px solid var(--color-teal);
+  margin: var(--space-lg) 0;
+  padding-left: var(--space-md);
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--color-navy);
+}
+
+.ficha-proyecto__cita p {
+  margin: 0;
+}
+
+.ficha-proyecto__cita cite {
+  display: block;
+  margin-top: 0.5em;
+  font-style: normal;
+  font-size: 0.85rem;
+  color: var(--color-grey);
+}
+
+.ficha-bloque {
+  margin: var(--space-lg) 0;
+}
+
+.ficha-bloque--destacado {
+  background: var(--color-bg-card);
+  border-left: 3px solid var(--color-teal);
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+}
+
+.ficha-lista {
+  padding-left: 1.25em;
+}
+
+.ficha-lista li {
+  margin-bottom: 0.4em;
+}
+
+.ficha-galeria__grilla {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+}
+
+@media (min-width: 640px) {
+  .ficha-galeria__grilla { grid-template-columns: repeat(3, 1fr); }
+}
+
+.ficha-galeria__grilla img {
+  border-radius: var(--radius-sm);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.ficha-galeria__grilla img.ficha-galeria__imagen-principal {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 10;
+}
+
+.ficha-galeria__vacia {
+  color: var(--color-grey);
+}
+
+.ficha-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.ficha-video iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.ficha-contacto dl {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.2em;
+  margin: 0;
+}
+
+.ficha-contacto dt {
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-top: 0.6em;
+}
+
+.ficha-contacto dd {
+  margin: 0 0 0.2em;
+  color: var(--color-grey);
+}
+
+/* ---------- Buscador ---------- */
+.buscador__formulario {
+  display: flex;
+  gap: var(--space-xs);
+  margin: var(--space-sm) 0 var(--space-lg);
+  max-width: 32rem;
+}
+
+.buscador__formulario input[type="search"] {
+  flex: 1;
+  padding: 0.6em 0.8em;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.buscador__formulario button {
+  padding: 0.6em 1.2em;
+  background: var(--color-teal);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+.buscador__formulario button:hover,
+.buscador__formulario button:focus {
+  background: var(--color-navy);
+}
+
+/* ---------- Página institucional fija ---------- */
+.pagina-institucional {
+  max-width: 42rem;
+}
+
+.pagina-institucional p {
+  color: var(--color-grey);
+}

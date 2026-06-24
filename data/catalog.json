@@ -1,0 +1,97 @@
+[
+  {
+    "id": "fhycs-comunicacion-audiovisual-2026",
+    "titulo": "Programa permanente de capacitación, investigación y producción audiovisual",
+    "unidad_academica": "fhycs",
+    "programa_carrera_area": "Comunicación Social",
+    "resumen": "El programa articula espacios entre la carrera de Comunicación Social, otras áreas disciplinares e instituciones del medio interesadas en la comunicación audiovisual, para fortalecer e incentivar la creación y el desarrollo de proyectos en el amplio escenario audiovisual de la provincia de Misiones.",
+    "anio": 2026,
+    "etiquetas": [
+      "audiovisual",
+      "comunicacion",
+      "produccion-audiovisual"
+    ],
+    "destacado": true,
+    "estado_revision": "publicado",
+    "imagen_portada": null
+  },
+  {
+    "id": "fceqyn-ejemplo-agua-rural-2025",
+    "titulo": "Acceso al agua segura en parajes rurales",
+    "unidad_academica": "fceqyn",
+    "programa_carrera_area": "Ingeniería Química / Tecnicatura en Gestión Ambiental",
+    "resumen": "Proyecto orientado a evaluar la calidad del agua de consumo en parajes rurales de Misiones y acompañar a las comunidades en soluciones de tratamiento accesibles.",
+    "anio": 2025,
+    "etiquetas": [
+      "agua",
+      "ambiente",
+      "salud-comunitaria"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null
+  },
+  {
+    "id": "fce-ejemplo-economia-social-2025",
+    "titulo": "Acompañamiento a emprendimientos de la economía social",
+    "unidad_academica": "fce",
+    "programa_carrera_area": "Contador Público / Licenciatura en Administración",
+    "resumen": "Asesoramiento contable y de gestión a emprendimientos de la economía social y cooperativas de la región, orientado a fortalecer su sostenibilidad.",
+    "anio": 2025,
+    "etiquetas": [
+      "economia-social",
+      "desarrollo-territorial"
+    ],
+    "destacado": true,
+    "estado_revision": "publicado",
+    "imagen_portada": null
+  },
+  {
+    "id": "fcf-ejemplo-vivero-comunitario-2024",
+    "titulo": "Vivero comunitario de especies nativas",
+    "unidad_academica": "fcf",
+    "programa_carrera_area": "Ingeniería Forestal",
+    "resumen": "Acompañamiento a escuelas rurales en la creación de viveros de especies nativas, como aporte a la educación ambiental y la reforestación local.",
+    "anio": 2024,
+    "etiquetas": [
+      "ambiente",
+      "educacion",
+      "reforestacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null
+  },
+  {
+    "id": "fi-ejemplo-energia-solar-2025",
+    "titulo": "Energía solar para instituciones comunitarias",
+    "unidad_academica": "fi",
+    "programa_carrera_area": "Ingeniería Electromecánica",
+    "resumen": "Diseño e instalación de sistemas solares fotovoltaicos de baja escala en instituciones comunitarias sin acceso confiable a la red eléctrica.",
+    "anio": 2025,
+    "etiquetas": [
+      "energia",
+      "tecnologia",
+      "desarrollo-territorial"
+    ],
+    "destacado": true,
+    "estado_revision": "publicado",
+    "imagen_portada": null
+  },
+  {
+    "id": "fayd-ejemplo-mural-comunitario-2026",
+    "titulo": "Mural comunitario y memoria barrial",
+    "unidad_academica": "fayd",
+    "programa_carrera_area": "Licenciatura en Artes Visuales",
+    "resumen": "Talleres de muralismo comunitario realizados junto a vecinas y vecinos de un barrio de Posadas, como forma de poner en valor la memoria barrial.",
+    "anio": 2026,
+    "etiquetas": [
+      "arte",
+      "cultura",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null
+  }
+]

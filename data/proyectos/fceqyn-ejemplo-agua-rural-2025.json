@@ -1,0 +1,35 @@
+{
+  "id": "fceqyn-ejemplo-agua-rural-2025",
+  "titulo": "Acceso al agua segura en parajes rurales",
+  "resolucion": null,
+  "unidad_academica": "fceqyn",
+  "programa_carrera_area": "Ingeniería Química / Tecnicatura en Gestión Ambiental",
+  "resumen": "Proyecto de extensión orientado a evaluar la calidad del agua de consumo en parajes rurales de Misiones y acompañar a las comunidades en soluciones de tratamiento accesibles.",
+  "problema": "Numerosas comunidades rurales de la provincia no cuentan con sistemas de potabilización del agua, lo que eleva el riesgo de enfermedades de transmisión hídrica.",
+  "objetivo_general": "Contribuir al acceso a agua segura en comunidades rurales mediante diagnóstico y acompañamiento técnico.",
+  "objetivos_especificos": [
+    "Relevar la calidad del agua de consumo en los parajes seleccionados.",
+    "Capacitar a referentes comunitarios en métodos de tratamiento accesibles.",
+    "Elaborar materiales de difusión sobre cuidado y tratamiento del agua."
+  ],
+  "acciones": [
+    "Toma de muestras y análisis fisicoquímico y microbiológico del agua.",
+    "Talleres comunitarios de capacitación en tratamiento básico del agua.",
+    "Elaboración de una cartilla de recomendaciones para las familias participantes."
+  ],
+  "resultados_aportes": [
+    "Diagnóstico de calidad de agua disponible en los parajes relevados.",
+    "Referentes comunitarios capacitados en tratamiento básico del agua.",
+    "Material de difusión entregado a las comunidades participantes."
+  ],
+  "responsables": ["Equipo docente de la carrera de Ingeniería Química"],
+  "contacto": "extension.fceqyn@unam.edu.ar",
+  "instituciones_cooperantes": ["fceqyn"],
+  "cita_destacada": null,
+  "imagenes": [],
+  "videos": [],
+  "pdf_fuente": null,
+  "anio": 2025,
+  "etiquetas": ["agua", "ambiente", "salud-comunitaria"],
+  "estado_revision": "publicado"
+}
