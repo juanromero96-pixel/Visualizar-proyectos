@@ -1,0 +1,15 @@
+# El sitio público (lo que Vercel debe servir) es: index.html, css/, js/,
+# data/, assets/, pdf-fuente/. Todo lo demás es uso interno y no debe
+# desplegarse a un host público:
+
+# Panel administrativo (Flask + Python): no es un sitio estático, no corre
+# en Vercel, y expondría código fuente legible si se desplegara igual.
+admin/
+
+# Pipeline de extracción, borradores sin revisar y validador interno: nunca
+# deben quedar accesibles públicamente (texto crudo de extracción, y en el
+# caso de admin/, nombres del personal que revisa, ver admin/almacen.py).
+herramientas-internas/
+
+# Documentación de desarrollo, no necesaria en el sitio desplegado.
+README.md

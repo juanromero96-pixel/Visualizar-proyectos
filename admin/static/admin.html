@@ -24,6 +24,24 @@
 
   <main class="container-fluid admin-main">
 
+    <!-- DASHBOARD: vista general del estado de la biblioteca -->
+    <section class="admin-bloque" aria-labelledby="tituloDashboard">
+      <h1 id="tituloDashboard">Panel general</h1>
+      <div id="dashboardResumen" class="admin-dashboard">
+        <p class="text-muted">Cargando resumen…</p>
+      </div>
+      <div class="admin-dashboard__modos">
+        <a href="#zonaCarga" class="admin-dashboard__modo admin-dashboard__modo--activo">
+          <strong>Carga rápida</strong>
+          <span>Extracción automática, sin intervención. Disponible más abajo.</span>
+        </a>
+        <span class="admin-dashboard__modo admin-dashboard__modo--pendiente" aria-disabled="true">
+          <strong>Carga personalizada</strong>
+          <span>Revisión asistida con el PDF y los campos lado a lado antes de extraer. No implementado todavía.</span>
+        </span>
+      </div>
+    </section>
+
     <!-- MÓDULO 1: Carga de documentos -->
     <section class="admin-bloque" aria-labelledby="tituloCarga">
       <h1 id="tituloCarga">1. Carga de documentos</h1>

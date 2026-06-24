@@ -12,10 +12,11 @@
 import { initLayout } from './layout.js';
 import { registrarRuta, registrarNoEncontrado, alFinalizarRenderizado, iniciarRouter } from './router.js';
 import { obtenerCatalogo, obtenerCategorias, obtenerProyecto } from './data.js';
-import { renderizarGrillaProyectos } from './render-catalogo.js';
+import { renderizarGrillaProyectos, renderizarIndiceUnidades, crearCarpetaUnidad } from './render-catalogo.js';
 import { renderizarFicha } from './render-ficha.js';
 import { renderizarCarruselDestacados } from './carrusel.js';
 import { animarTransicionVista } from './animaciones.js';
+import { animarPasarHoja } from './transicion-hoja.js';
 import { debounce } from './utils.js';
 
 async function manejarInicio(contenedor) {
@@ -55,10 +56,6 @@ async function manejarCatalogo(contenedor) {
   contenedor.innerHTML = '<p class="estado-carga">Cargando catálogo…</p>';
   const [catalogo, categorias] = await Promise.all([obtenerCatalogo(), obtenerCategorias()]);
 
-  const catalogoOrdenado = [...catalogo].sort(
-    (a, b) => b.anio - a.anio || a.titulo.localeCompare(b.titulo)
-  );
-
   contenedor.innerHTML = '';
 
   const encabezado = document.createElement('div');
@@ -67,23 +64,87 @@ async function manejarCatalogo(contenedor) {
   h1.textContent = 'Catálogo de proyectos de extensión';
   const contador = document.createElement('p');
   contador.className = 'catalogo-encabezado__contador';
-  contador.textContent = `${catalogoOrdenado.length} proyecto${catalogoOrdenado.length === 1 ? '' : 's'} publicados. Orden actual: año más reciente primero.`;
+  contador.textContent = `${catalogo.length} proyecto${catalogo.length === 1 ? '' : 's'} publicados, en ${categorias.unidades_academicas.length} unidades académicas.`;
   encabezado.append(h1, contador);
 
-  const contenedorGrilla = document.createElement('div');
-  contenedor.append(encabezado, contenedorGrilla);
+  const contenedorIndice = document.createElement('div');
+  contenedor.append(encabezado, contenedorIndice);
 
-  await renderizarGrillaProyectos(contenedorGrilla, catalogoOrdenado, categorias);
+  renderizarIndiceUnidades(contenedorIndice, catalogo, categorias);
 }
+
+async function manejarUnidad(contenedor, { params }) {
+  contenedor.innerHTML = '<p class="estado-carga">Abriendo carpeta…</p>';
+  const [catalogo, categorias] = await Promise.all([obtenerCatalogo(), obtenerCategorias()]);
+  const unidad = categorias.unidades_academicas.find((u) => u.id === params.id);
+
+  contenedor.innerHTML = '';
+
+  if (!unidad) {
+    const aviso = document.createElement('div');
+    aviso.className = 'estado-vacio';
+    aviso.innerHTML = '<h1>Unidad académica no encontrada</h1><p><a href="#/catalogo">Volver al catálogo</a></p>';
+    contenedor.append(aviso);
+    return;
+  }
+
+  const enlaceVolver = document.createElement('a');
+  enlaceVolver.className = 'ficha-proyecto__volver';
+  enlaceVolver.href = '#/catalogo';
+  enlaceVolver.textContent = '← Volver al catálogo';
+  contenedor.append(enlaceVolver);
+
+  const proyectosDeUnidad = catalogo
+    .filter((p) => p.unidad_academica === unidad.id)
+    .sort((a, b) => (b.anio || 0) - (a.anio || 0));
+  const posicion = categorias.unidades_academicas.findIndex((u) => u.id === unidad.id) + 1;
+
+  const contenedorCarpeta = document.createElement('div');
+  contenedorCarpeta.append(crearCarpetaUnidad(unidad, proyectosDeUnidad, posicion, proyectosDeUnidad.length));
+  contenedor.append(contenedorCarpeta);
+}
+
+// Recordamos la última unidad/posición mostrada para poder distinguir
+// "pasar a la hoja siguiente/anterior dentro de la misma carpeta" (con
+// barrido) de "llegar a una ficha desde otro lado" (sin barrido: no
+// tiene sentido animar una hoja como si viniera de un lugar que no
+// existe en esa carpeta). navegacionHojaActual es lo que consultan el
+// teclado y el gesto táctil para saber a dónde ir.
+let unidadYPosicionAnterior = null;
+let navegacionHojaActual = null;
 
 async function manejarFicha(contenedor, { params }) {
   contenedor.innerHTML = '<p class="estado-carga">Cargando proyecto…</p>';
   const categorias = await obtenerCategorias();
 
   try {
-    const proyecto = await obtenerProyecto(params.id);
-    renderizarFicha(contenedor, proyecto, categorias);
+    const [proyecto, catalogo] = await Promise.all([obtenerProyecto(params.id), obtenerCatalogo()]);
+
+    const proyectosDeUnidad = catalogo
+      .filter((p) => p.unidad_academica === proyecto.unidad_academica)
+      .sort((a, b) => (b.anio || 0) - (a.anio || 0));
+    const posicionActual = proyectosDeUnidad.findIndex((p) => p.id === proyecto.id) + 1;
+    const anterior = posicionActual > 1 ? proyectosDeUnidad[posicionActual - 2] : null;
+    const siguiente = posicionActual < proyectosDeUnidad.length ? proyectosDeUnidad[posicionActual] : null;
+    const navegacion = { anterior, siguiente, posicion: posicionActual, total: proyectosDeUnidad.length };
+
+    navegacionHojaActual = navegacion;
+
+    const esNavegacionSecuencialEnLaMismaCarpeta =
+      unidadYPosicionAnterior && unidadYPosicionAnterior.unidadId === proyecto.unidad_academica;
+    const direccion = esNavegacionSecuencialEnLaMismaCarpeta
+      ? (posicionActual > unidadYPosicionAnterior.posicion ? 'siguiente' : 'anterior')
+      : null;
+
+    unidadYPosicionAnterior = { unidadId: proyecto.unidad_academica, posicion: posicionActual };
+
+    if (direccion) {
+      await animarPasarHoja(direccion, () => renderizarFicha(contenedor, proyecto, categorias, navegacion));
+    } else {
+      renderizarFicha(contenedor, proyecto, categorias, navegacion);
+    }
   } catch (error) {
+    navegacionHojaActual = null;
     contenedor.innerHTML = '';
     const aviso = document.createElement('div');
     aviso.className = 'estado-vacio';
@@ -202,16 +263,66 @@ function manejarNoEncontrado(contenedor) {
   contenedor.append(aviso);
 }
 
+function alTerminarDeRenderizar(contenedor) {
+  // Los peek de hoja (.hoja-peek) se agregan a document.body, no a
+  // #app, porque son position:fixed — por eso no se borran solos al
+  // reemplazar el contenido de #app en cualquier otra ruta. Si la ruta
+  // recién renderizada no es una ficha, no tienen sentido ahí.
+  if (!contenedor.querySelector('.ficha-proyecto')) {
+    document.querySelectorAll('.hoja-peek').forEach((el) => el.remove());
+    navegacionHojaActual = null;
+    unidadYPosicionAnterior = null;
+  }
+  animarTransicionVista(contenedor);
+}
+
+function irAHojaVecina(direccion) {
+  if (!navegacionHojaActual) return;
+  const destino = direccion === 'siguiente' ? navegacionHojaActual.siguiente : navegacionHojaActual.anterior;
+  if (destino) window.location.hash = `#/proyecto/${destino.id}`;
+}
+
+function inicializarNavegacionDeHojas() {
+  document.addEventListener('keydown', (evento) => {
+    const enCampoDeTexto = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+    if (enCampoDeTexto || !navegacionHojaActual) return;
+    if (evento.key === 'ArrowRight') irAHojaVecina('siguiente');
+    if (evento.key === 'ArrowLeft') irAHojaVecina('anterior');
+  });
+
+  let inicioX = null;
+  let inicioY = null;
+  document.addEventListener('touchstart', (evento) => {
+    if (!navegacionHojaActual) return;
+    inicioX = evento.touches[0].clientX;
+    inicioY = evento.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (evento) => {
+    if (!navegacionHojaActual || inicioX === null) return;
+    const deltaX = evento.changedTouches[0].clientX - inicioX;
+    const deltaY = evento.changedTouches[0].clientY - inicioY;
+    inicioX = null;
+    // Gesto horizontal claro (no un scroll vertical) y de recorrido
+    // suficiente para no confundirlo con un toque casual.
+    if (Math.abs(deltaX) > 60 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      irAHojaVecina(deltaX < 0 ? 'siguiente' : 'anterior');
+    }
+  }, { passive: true });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initLayout();
+  inicializarNavegacionDeHojas();
 
   registrarRuta('/', manejarInicio);
   registrarRuta('/catalogo', manejarCatalogo);
+  registrarRuta('/unidad/:id', manejarUnidad);
   registrarRuta('/proyecto/:id', manejarFicha);
   registrarRuta('/extension', manejarExtension);
   registrarRuta('/buscar', manejarBuscar);
   registrarNoEncontrado(manejarNoEncontrado);
-  alFinalizarRenderizado(animarTransicionVista);
+  alFinalizarRenderizado(alTerminarDeRenderizar);
 
   iniciarRouter('app');
 });

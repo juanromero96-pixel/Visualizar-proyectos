@@ -14,8 +14,8 @@ escribir data/catalog.json y data/proyectos/{id}.json. Todo lo demás
 (la interfaz) es HTML/CSS/JS servido como estático desde admin/static/.
 
 Instalación:
-  pip install flask --break-system-packages
-  (además de los requisitos del pipeline: ver herramientas-internas/extraccion/README.md)
+  Ver admin/README.md (entorno virtual recomendado) o ../README.md
+  (resumen rápido de todo el proyecto).
 
 Uso:
   cd admin
@@ -30,7 +30,18 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-from flask import Flask, jsonify, request, send_from_directory
+try:
+    from flask import Flask, jsonify, request, send_from_directory
+except ImportError:
+    sys.exit(
+        'Falta instalar Flask (y el resto de las dependencias del panel).\n\n'
+        'Desde la raíz del proyecto:\n'
+        '  python3 -m venv venv\n'
+        '  source venv/bin/activate        (en Windows: venv\\Scripts\\activate)\n'
+        '  pip install -r admin/requirements.txt\n\n'
+        'Después volvé a correr: python3 admin/server.py\n'
+        'Detalle completo en admin/README.md.'
+    )
 
 RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ_PROYECTO / 'herramientas-internas' / 'extraccion'))

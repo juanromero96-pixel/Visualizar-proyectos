@@ -56,6 +56,12 @@ async function cargarUnidades() {
   });
 }
 
+function precargarFiltroDesdeURL() {
+  const parametros = new URLSearchParams(window.location.search);
+  const estado = parametros.get('estado');
+  if (estado) filtroEstado.value = estado;
+}
+
 function construirQuery() {
   const parametros = new URLSearchParams();
   if (filtroEstado.value) parametros.set('estado', filtroEstado.value);
@@ -197,5 +203,6 @@ function mostrarResultadoLote(resultados) {
   resultadoLote.append(lista);
 }
 
+precargarFiltroDesdeURL();
 cargarUnidades();
 cargarProyectos();

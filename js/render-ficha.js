@@ -162,14 +162,15 @@ const ORDEN_BLOQUES_DEFAULT = [...BLOQUES_COLUMNA_PRINCIPAL, ...BLOQUES_COLUMNA_
  * para traducir unidad_academica e instituciones_cooperantes a nombres
  * legibles.
  *
- * Si `proyecto.configuracion_presentacion` existe (la agrega el editor
- * visual de bloques del panel admin), se respeta para decidir qué
- * bloques mostrar, en qué orden y cuál destacar. Si no existe —caso de
- * cualquier ficha publicada antes de esta función existir—, se usa el
- * orden y la visibilidad de siempre: cero cambio de comportamiento.
+ * `navegacion` es opcional — { anterior, siguiente, posicion, total }
+ * con los proyectos vecinos dentro de la misma unidad académica. Si no
+ * se pasa (por ejemplo, desde la vista previa del panel admin), la
+ * ficha se ve exactamente igual que antes, sin migas ni peek: ningún
+ * llamador existente se rompe por este parámetro nuevo.
  */
-export function renderizarFicha(contenedor, proyecto, categorias) {
+export function renderizarFicha(contenedor, proyecto, categorias, navegacion = null) {
   contenedor.innerHTML = '';
+  document.querySelectorAll('.hoja-peek').forEach((el) => el.remove());
 
   const unidades = mapaUnidadesAcademicas(categorias);
   const instituciones = mapaInstitucionesCooperantes(categorias);
@@ -192,6 +193,19 @@ export function renderizarFicha(contenedor, proyecto, categorias) {
 
   const cabecera = document.createElement('header');
   cabecera.className = 'ficha-proyecto__cabecera';
+
+  if (navegacion && unidad) {
+    const migas = document.createElement('p');
+    migas.className = 'ficha-proyecto__migas';
+    migas.innerHTML = `Carpeta: <a href="#/unidad/${unidad.id}">${unidad.nombre}</a>`;
+    if (navegacion.posicion && navegacion.total) {
+      const folio = document.createElement('span');
+      folio.className = 'ficha-proyecto__folio';
+      folio.textContent = `Expediente ${navegacion.posicion} de ${navegacion.total}`;
+      migas.append(folio);
+    }
+    cabecera.append(migas);
+  }
 
   const meta = document.createElement('p');
   meta.className = 'ficha-proyecto__meta';
@@ -265,6 +279,48 @@ export function renderizarFicha(contenedor, proyecto, categorias) {
 
   fila.append(columnaPrincipal, columnaSecundaria);
   articulo.append(fila);
+
+  if (navegacion && (navegacion.anterior || navegacion.siguiente)) {
+    if (navegacion.anterior) {
+      const peekPrev = document.createElement('a');
+      peekPrev.className = 'hoja-peek hoja-peek--prev';
+      peekPrev.href = `#/proyecto/${navegacion.anterior.id}`;
+      peekPrev.innerHTML = '‹<span class="hoja-peek__titulo"></span>';
+      peekPrev.querySelector('.hoja-peek__titulo').textContent = navegacion.anterior.titulo;
+      peekPrev.setAttribute('aria-label', `Expediente anterior: ${navegacion.anterior.titulo}`);
+      document.body.append(peekPrev);
+    }
+    if (navegacion.siguiente) {
+      const peekNext = document.createElement('a');
+      peekNext.className = 'hoja-peek hoja-peek--next';
+      peekNext.href = `#/proyecto/${navegacion.siguiente.id}`;
+      peekNext.innerHTML = '<span class="hoja-peek__titulo"></span>›';
+      peekNext.querySelector('.hoja-peek__titulo').textContent = navegacion.siguiente.titulo;
+      peekNext.setAttribute('aria-label', `Expediente siguiente: ${navegacion.siguiente.titulo}`);
+      document.body.append(peekNext);
+    }
+
+    const navMovil = document.createElement('nav');
+    navMovil.className = 'hoja-nav-movil';
+    navMovil.setAttribute('aria-label', 'Navegación entre expedientes de la carpeta');
+
+    if (navegacion.anterior) {
+      const botonPrev = document.createElement('a');
+      botonPrev.className = 'hoja-nav-movil__boton';
+      botonPrev.href = `#/proyecto/${navegacion.anterior.id}`;
+      botonPrev.textContent = '← Expediente anterior';
+      navMovil.append(botonPrev);
+    }
+    if (navegacion.siguiente) {
+      const botonNext = document.createElement('a');
+      botonNext.className = 'hoja-nav-movil__boton';
+      botonNext.href = `#/proyecto/${navegacion.siguiente.id}`;
+      botonNext.textContent = 'Siguiente expediente →';
+      navMovil.append(botonNext);
+    }
+    articulo.append(navMovil);
+  }
+
   contenedor.append(articulo);
 
   animarEntradaFicha(contenedor);

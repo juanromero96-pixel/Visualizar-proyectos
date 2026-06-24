@@ -5,10 +5,40 @@ del sitio público y no debe exponerse a internet sin autenticación.
 
 ## Instalación (una sola vez)
 
+Requiere Python 3.9+ y, para la extracción, Tesseract OCR + Poppler instalados
+a nivel de sistema (una sola vez por máquina).
+
 ```bash
 sudo apt-get install tesseract-ocr tesseract-ocr-spa poppler-utils
+```
+
+**Entorno virtual (recomendado).** Desde la raíz del proyecto (la carpeta que
+contiene `admin/`, `data/`, `index.html`):
+
+```bash
+python3 -m venv venv
+source venv/bin/activate          # en Windows: venv\Scripts\activate
+pip install -r admin/requirements.txt
+```
+
+A partir de acá, cada vez que se vaya a usar el panel hay que activar el
+entorno (`source venv/bin/activate`) antes de correr `python3 admin/server.py`.
+
+**Alternativa sin entorno virtual** (Python del sistema en Debian/Ubuntu, que
+bloquea `pip install` directo por estar "externally managed"):
+
+```bash
 cd admin
 pip install -r requirements.txt --break-system-packages
+```
+
+Si después de instalar igual aparece `ModuleNotFoundError: No module named
+'flask'`, casi siempre es porque `python3 admin/server.py` se está corriendo
+con un Python distinto al que tiene el entorno activado (por ejemplo, dos
+instalaciones de Python en la misma máquina). Verificar con:
+
+```bash
+which python3 && python3 -m pip show flask
 ```
 
 ## Uso

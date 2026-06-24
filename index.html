@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+<!--
+  Este sitio usa módulos ES6 (import/export) y fetch() para leer los JSON
+  de /data. Ambos requieren servidor HTTP/HTTPS: NO funciona abriendo este
+  archivo directamente por file:// (el navegador bloquea ambas cosas por
+  seguridad). Ver README.md en la raíz del proyecto para cómo servirlo
+  localmente (un comando, sin instalar nada en la mayoría de los casos) o
+  cómo desplegarlo en Vercel.
+-->
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -14,6 +22,30 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/componentes.css">
+  <script>
+    // Script clásico (no type="module"): a diferencia de js/main.js, este
+    // SÍ se ejecuta aunque el navegador bloquee módulos ES6 por file://,
+    // que es exactamente el caso que necesita detectar.
+    if (window.location.protocol === 'file:') {
+      document.addEventListener('DOMContentLoaded', function () {
+        document.body.innerHTML =
+          '<main style="max-width:40rem;margin:4rem auto;padding:0 1.5rem;' +
+          'font-family:-apple-system,Segoe UI,system-ui,sans-serif;line-height:1.6;">' +
+          '<h1 style="color:#1B3A4B;">Este sitio no funciona abierto como archivo</h1>' +
+          '<p>Esta página usa módulos JavaScript y carga datos JSON, y los navegadores ' +
+          'bloquean ambas cosas cuando se abre un archivo directamente ' +
+          '(<code>file://...</code>) en lugar de servirlo por HTTP.</p>' +
+          '<p><strong>Solución rápida</strong> (con Python ya instalado), desde la carpeta ' +
+          'del proyecto:</p>' +
+          '<pre style="background:#F4F7F8;padding:1em;border-radius:4px;">' +
+          'python3 -m http.server 8000</pre>' +
+          '<p>y abrir <code>http://localhost:8000/</code> en el navegador. ' +
+          'Ver <code>README.md</code> en la raíz del proyecto para más alternativas ' +
+          '(Live Server, npx serve) y cómo desplegar en Vercel.</p>' +
+          '</main>';
+      });
+    }
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#app">Saltar al contenido principal</a>

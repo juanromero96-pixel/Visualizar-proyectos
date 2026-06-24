@@ -24,6 +24,36 @@ const inputAnio = document.getElementById('inputAnio');
 const cuerpoTablaCola = document.getElementById('cuerpoTablaCola');
 const botonProcesarPendientes = document.getElementById('botonProcesarPendientes');
 const listaErrores = document.getElementById('listaErrores');
+const dashboardResumen = document.getElementById('dashboardResumen');
+
+const ETIQUETA_ESTADO_DASHBOARD = [
+  ['pendiente', 'Borradores'],
+  ['en_revision', 'En revisión'],
+  ['validado', 'Aprobados'],
+  ['publicado', 'Publicados'],
+  ['archivado', 'Archivados'],
+];
+
+async function cargarDashboard() {
+  try {
+    const proyectos = await obtenerJSON('/admin/api/proyectos');
+    const conteos = Object.fromEntries(ETIQUETA_ESTADO_DASHBOARD.map(([estado]) => [estado, 0]));
+    proyectos.forEach((p) => {
+      if (p.estado_revision in conteos) conteos[p.estado_revision] += 1;
+    });
+
+    dashboardResumen.innerHTML = '';
+    ETIQUETA_ESTADO_DASHBOARD.forEach(([estado, etiqueta]) => {
+      const enlace = document.createElement('a');
+      enlace.className = 'admin-dashboard__item';
+      enlace.href = `/admin/revision?estado=${estado}`;
+      enlace.innerHTML = `<strong>${conteos[estado] || 0}</strong><span>${etiqueta}</span>`;
+      dashboardResumen.append(enlace);
+    });
+  } catch (error) {
+    dashboardResumen.innerHTML = `<p class="text-muted">No se pudo cargar el resumen: ${error.message}</p>`;
+  }
+}
 
 function formatearTamano(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -249,5 +279,6 @@ botonProcesarPendientes.addEventListener('click', procesarPendientes);
 // ---------- Inicialización ----------
 
 cargarCategorias();
+cargarDashboard();
 actualizarCola();
 actualizarErrores();

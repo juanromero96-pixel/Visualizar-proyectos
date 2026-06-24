@@ -1,11 +1,19 @@
 {
   "unidades_academicas": [
-    { "id": "fhycs", "sigla": "FHyCS", "nombre": "Facultad de Humanidades y Ciencias Sociales" },
-    { "id": "fce", "sigla": "FCE", "nombre": "Facultad de Ciencias Económicas" },
-    { "id": "fceqyn", "sigla": "FCEQyN", "nombre": "Facultad de Ciencias Exactas, Químicas y Naturales" },
-    { "id": "fcf", "sigla": "FCF", "nombre": "Facultad de Ciencias Forestales" },
-    { "id": "fi", "sigla": "FI", "nombre": "Facultad de Ingeniería" },
-    { "id": "fayd", "sigla": "FAyD", "nombre": "Facultad de Arte y Diseño" }
+    { "id": "fhycs", "sigla": "FHyCS", "nombre": "Facultad de Humanidades y Ciencias Sociales",
+      "descripcion_borrador": "Formación en comunicación, ciencias sociales y humanidades. Proyectos de extensión orientados a la articulación con instituciones culturales y educativas de la región." },
+    { "id": "fce", "sigla": "FCE", "nombre": "Facultad de Ciencias Económicas",
+      "descripcion_borrador": "Formación en administración, contabilidad y economía. Proyectos de extensión orientados a fortalecer emprendimientos y la economía social del territorio." },
+    { "id": "fceqyn", "sigla": "FCEQyN", "nombre": "Facultad de Ciencias Exactas, Químicas y Naturales",
+      "descripcion_borrador": "Formación en ciencias exactas y naturales. Proyectos de extensión orientados al acceso al agua segura y la salud comunitaria." },
+    { "id": "fcf", "sigla": "FCF", "nombre": "Facultad de Ciencias Forestales",
+      "descripcion_borrador": "Formación en ingeniería forestal. Proyectos de extensión de educación ambiental y reforestación junto a escuelas y comunidades rurales." },
+    { "id": "fi", "sigla": "FI", "nombre": "Facultad de Ingeniería",
+      "descripcion_borrador": "Formación en ingeniería. Proyectos de extensión orientados al acceso a energía y al desarrollo tecnológico territorial." },
+    { "id": "fayd", "sigla": "FAyD", "nombre": "Facultad de Arte y Diseño",
+      "descripcion_borrador": "Formación en artes visuales y diseño. Proyectos de extensión orientados a la producción cultural comunitaria." },
+    { "id": "eae", "sigla": "EAE", "nombre": "Escuela Agrotécnica de Eldorado",
+      "descripcion_borrador": "Escuela de nivel medio con orientación agropecuaria y forestal, incorporada a la UNaM como unidad académica desde 1974." }
   ],
 
   "instituciones_cooperantes": [

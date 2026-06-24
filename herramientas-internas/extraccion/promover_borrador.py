@@ -40,12 +40,15 @@ DIR_PROYECTOS = RAIZ.parent / 'data' / 'proyectos'
 RUTA_CATALOGO = RAIZ.parent / 'data' / 'catalog.json'
 RUTA_CATEGORIAS = RAIZ.parent / 'data' / 'categorias.json'
 
-CAMPOS_OBLIGATORIOS = [
-    'id', 'titulo', 'unidad_academica', 'programa_carrera_area',
-    'resumen', 'problema', 'objetivo_general', 'acciones',
-    'resultados_aportes', 'responsables', 'contacto', 'anio',
-    'etiquetas', 'estado_revision',
-]
+# Campos que BLOQUEAN la publicación. Coincide a propósito con
+# almacen.CAMPOS_BLOQUEANTES (admin/almacen.py): "No publicar si falta
+# título, unidad académica, año, PDF fuente". El resto de los campos
+# (problema, objetivo, resultados, contacto, etc.) generan advertencia
+# en el editor pero NO bloquean — "permitir publicar igualmente" fue
+# una regla explícita, no un descuido. Si se cambia esta lista, hay que
+# cambiar la misma lista en almacen.py o el banner del editor dejará de
+# predecir correctamente si la publicación va a aceptarse.
+CAMPOS_OBLIGATORIOS = ['id', 'titulo', 'unidad_academica', 'anio', 'pdf_fuente', 'estado_revision']
 CAMPOS_CATALOGO = [
     'id', 'titulo', 'unidad_academica', 'programa_carrera_area',
     'resumen', 'anio', 'etiquetas', 'destacado', 'estado_revision', 'imagen_portada',
