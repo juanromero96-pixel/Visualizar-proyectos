@@ -50,7 +50,10 @@ from pathlib import Path
 #   python3 admin\server.py
 # (con "set", no "setx": así toma efecto inmediato en esa terminal,
 # sin reiniciar nada ni depender de que Windows guarde la variable.)
+# Mismo mecanismo que RUTA_POPPLER, para tesseract.exe:
+#   set RUTA_TESSERACT=C:\Program Files\Tesseract-OCR\tesseract.exe
 RUTA_POPPLER = os.environ.get('RUTA_POPPLER') or None
+RUTA_TESSERACT = os.environ.get('RUTA_TESSERACT') or None
 
 try:
     import pdfplumber
@@ -174,6 +177,9 @@ def extraer_texto_ocr(ruta_pdf, cantidad_paginas):
     except ImportError:
         sys.exit('Falta pytesseract o pdf2image. Instalá con: '
                   'pip install pytesseract pdf2image --break-system-packages')
+
+    if RUTA_TESSERACT:
+        pytesseract.pytesseract.tesseract_cmd = RUTA_TESSERACT
 
     imagenes = convert_from_path(ruta_pdf, dpi=300, poppler_path=RUTA_POPPLER)
     texto_paginas = [pytesseract.image_to_string(img, lang='spa') for img in imagenes]

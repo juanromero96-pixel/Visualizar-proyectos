@@ -1,0 +1,32 @@
+# El .vercelignore ya existente evita que esto se DESPLIEGUE en
+# Vercel, pero no evita que git lo suba al repositorio — son dos
+# mecanismos distintos. Esto es para que git, directamente, nunca
+# llegue a versionar PDFs subidos ni estado interno del panel.
+
+# PDFs recién subidos al panel, antes de revisión (pueden tener
+# nombres de estudiantes/docentes reales).
+admin/_entrantes/*.pdf
+
+# Estado en vivo del panel (cola de carga, errores) — se regenera
+# solo, no hace falta versionarlo.
+admin/estado/cola.json
+admin/estado/historial-errores.json
+admin/estado/historial-correcciones.json
+
+# Auditoría interna por proyecto — incluye nombres de quien revisa.
+admin/estado/auditoria/*.json
+
+# Borradores sin revisar (texto crudo de extracción, puede tener
+# errores de OCR o datos sensibles antes de la revisión humana).
+herramientas-internas/_borradores/*.json
+herramientas-internas/_borradores/_publicados/*.json
+
+# Entorno virtual de Python — se recrea con `python3 -m venv venv` +
+# `pip install -r admin/requirements.txt`, nunca se versiona.
+venv/
+__pycache__/
+*.pyc
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db

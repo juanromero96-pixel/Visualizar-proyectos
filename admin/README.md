@@ -26,14 +26,20 @@ terminal donde se va a correr el servidor:
 
 ```cmd
 set RUTA_POPPLER=C:\poppler-26.02.0\Library\bin
+set RUTA_TESSERACT=C:\Program Files\Tesseract-OCR\tesseract.exe
 python3 admin\server.py
 ```
 
 (usar `set`, no `setx`: así toma efecto inmediato en esa terminal, sin
-depender de que Windows guarde la variable correctamente). Hay que volver a
-escribir ese `set` cada vez que se abre una terminal nueva — si se quiere
-que sea permanente, se puede agregar esa misma línea a un script `.bat` que
-arranque el servidor.
+depender de que Windows guarde la variable correctamente). `RUTA_TESSERACT`
+es la misma idea para Tesseract — si después de instalarlo aparece el error
+`tesseract is not installed or it's not in your PATH`, esta variable lo
+evita por completo: apunta directo al `tesseract.exe` que instaló el
+instalador (la ruta de arriba es la default del instalador de Tesseract en
+Windows; si se instaló en otro lado, hay que ajustar la ruta). Hay que
+volver a escribir esos `set` cada vez que se abre una terminal nueva — si se
+quiere que sea permanente, se puede agregar esas mismas líneas a un script
+`.bat` que arranque el servidor.
 
 **Entorno virtual (recomendado).** Desde la raíz del proyecto (la carpeta que
 contiene `admin/`, `data/`, `index.html`):

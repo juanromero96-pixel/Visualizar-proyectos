@@ -191,22 +191,6 @@
     "demo": true
   },
   {
-    "id": "demo-fce-acompañamiento-a-ferias-de-economia-popu",
-    "titulo": "[Demo] Acompañamiento a ferias de economía popular",
-    "unidad_academica": "fce",
-    "programa_carrera_area": "Dato de demostración",
-    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
-    "anio": 2023,
-    "etiquetas": [
-      "economia-social",
-      "comunidad"
-    ],
-    "destacado": false,
-    "estado_revision": "publicado",
-    "imagen_portada": null,
-    "demo": true
-  },
-  {
     "id": "demo-fce-diagnostico-de-emprendimientos-familiare",
     "titulo": "[Demo] Diagnóstico de emprendimientos familiares",
     "unidad_academica": "fce",
@@ -415,22 +399,6 @@
     "demo": true
   },
   {
-    "id": "demo-fayd-diseño-de-señaletica-comunitaria",
-    "titulo": "[Demo] Diseño de señalética comunitaria",
-    "unidad_academica": "fayd",
-    "programa_carrera_area": "Dato de demostración",
-    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
-    "anio": 2025,
-    "etiquetas": [
-      "arte",
-      "comunidad"
-    ],
-    "destacado": false,
-    "estado_revision": "publicado",
-    "imagen_portada": null,
-    "demo": true
-  },
-  {
     "id": "demo-fayd-taller-de-serigrafia-popular",
     "titulo": "[Demo] Taller de serigrafía popular",
     "unidad_academica": "fayd",
@@ -552,6 +520,38 @@
     "etiquetas": [
       "reforestacion",
       "educacion"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fce-acompanamiento-a-ferias-de-economia-popu",
+    "titulo": "[Demo] Acompañamiento a ferias de economía popular",
+    "unidad_academica": "fce",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2023,
+    "etiquetas": [
+      "economia-social",
+      "comunidad"
+    ],
+    "destacado": false,
+    "estado_revision": "publicado",
+    "imagen_portada": null,
+    "demo": true
+  },
+  {
+    "id": "demo-fayd-diseno-de-senaletica-comunitaria",
+    "titulo": "[Demo] Diseño de señalética comunitaria",
+    "unidad_academica": "fayd",
+    "programa_carrera_area": "Dato de demostración",
+    "resumen": "Proyecto de demostración para probar la visualización de varios expedientes por unidad académica. No representa un proyecto real de extensión todavía cargado.",
+    "anio": 2025,
+    "etiquetas": [
+      "arte",
+      "comunidad"
     ],
     "destacado": false,
     "estado_revision": "publicado",

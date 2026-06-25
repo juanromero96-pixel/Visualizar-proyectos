@@ -15,6 +15,8 @@ Es idempotente respecto al catálogo real: solo agrega entradas nuevas
 con id 'demo-...', nunca toca ni reemplaza las 6 fichas reales.
 """
 import json
+import re
+import unicodedata
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -70,7 +72,16 @@ TEMAS_DEMO = {
 
 
 def slug(texto):
-    return texto.lower().replace('ó', 'o').replace('í', 'i').replace('á', 'a').replace('é', 'e').replace('ú', 'u').replace(',', '').replace('  ', ' ').replace(' ', '-')
+    """
+    Antes esto reemplazaba tildes a mano una por una (á,é,í,ó,ú) y se
+    olvidó la ñ — terminó generando ids con "ñ" cruda, que en algunas
+    terminales/Git de Windows se mostraba mal codificada. Usar
+    unicodedata para sacar CUALQUIER acento de forma genérica evita que
+    vuelva a pasar con cualquier otro caracter que se nos escape.
+    """
+    sin_acentos = unicodedata.normalize('NFKD', texto.lower())
+    sin_acentos = ''.join(c for c in sin_acentos if not unicodedata.combining(c))
+    return re.sub(r'[^a-z0-9]+', '-', sin_acentos).strip('-')
 
 
 def construir_ficha(unidad_id, titulo, etiquetas, anio, indice):
