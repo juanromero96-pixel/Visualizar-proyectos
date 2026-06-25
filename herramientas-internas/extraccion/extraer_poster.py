@@ -36,6 +36,7 @@ import json
 import os
 import re
 import sys
+from glob import glob
 from pathlib import Path
 
 # Ruta a la carpeta bin/ de Poppler, SOLO si depender del PATH del
@@ -52,8 +53,40 @@ from pathlib import Path
 # sin reiniciar nada ni depender de que Windows guarde la variable.)
 # Mismo mecanismo que RUTA_POPPLER, para tesseract.exe:
 #   set RUTA_TESSERACT=C:\Program Files\Tesseract-OCR\tesseract.exe
-RUTA_POPPLER = os.environ.get('RUTA_POPPLER') or None
-RUTA_TESSERACT = os.environ.get('RUTA_TESSERACT') or None
+#
+# Si ninguna de las dos variables está seteada (por ejemplo, se abrió
+# una terminal nueva y no se escribió el "set" de nuevo), se prueban
+# algunas ubicaciones típicas de instalación en Windows antes de
+# rendirse y depender del PATH. Esto es solo una red de salvataje —
+# no reemplaza poner la variable, pero evita que el mismo error vuelva
+# a aparecer solo por haber abierto otra terminal.
+
+
+def _detectar_automaticamente(patrones):
+    for patron in patrones:
+        coincidencias = sorted(glob(patron))
+        if coincidencias:
+            return coincidencias[-1]  # la versión más alta, si hay varias
+    return None
+
+
+RUTA_POPPLER = (
+    os.environ.get('RUTA_POPPLER')
+    or _detectar_automaticamente([
+        r'C:\poppler-*\Library\bin',
+        r'C:\poppler\Library\bin',
+        r'C:\Program Files\poppler-*\Library\bin',
+    ])
+    or None
+)
+RUTA_TESSERACT = (
+    os.environ.get('RUTA_TESSERACT')
+    or _detectar_automaticamente([
+        r'C:\Program Files\Tesseract-OCR\tesseract.exe',
+        r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe',
+    ])
+    or None
+)
 
 try:
     import pdfplumber

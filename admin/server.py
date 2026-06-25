@@ -513,4 +513,6 @@ def servir_publico(ruta):
 if __name__ == '__main__':
     print('Panel administrativo BDE-UNaM — http://127.0.0.1:5050/')
     print('Este servidor es de uso interno. No exponer a internet sin autenticación.')
+    print(f'Poppler:   {extraer_poster.RUTA_POPPLER or "no configurado — se busca en el PATH del sistema"}')
+    print(f'Tesseract: {extraer_poster.RUTA_TESSERACT or "no configurado — se busca en el PATH del sistema"}')
     app.run(host='127.0.0.1', port=5050, debug=True)
