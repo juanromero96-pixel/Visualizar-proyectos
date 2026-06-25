@@ -168,7 +168,7 @@ const ORDEN_BLOQUES_DEFAULT = [...BLOQUES_COLUMNA_PRINCIPAL, ...BLOQUES_COLUMNA_
  * ficha se ve exactamente igual que antes, sin migas ni peek: ningún
  * llamador existente se rompe por este parámetro nuevo.
  */
-export function renderizarFicha(contenedor, proyecto, categorias, navegacion = null) {
+export function renderizarFicha(contenedor, proyecto, categorias, navegacion = null, opciones = {}) {
   contenedor.innerHTML = '';
   document.querySelectorAll('.hoja-peek').forEach((el) => el.remove());
 
@@ -323,5 +323,13 @@ export function renderizarFicha(contenedor, proyecto, categorias, navegacion = n
 
   contenedor.append(articulo);
 
-  animarEntradaFicha(contenedor);
+  // Si esta ficha ya está entrando como una hoja completa (el folio
+  // superpuesto de main.js), animar además cada bloque por separado
+  // hace que el texto "caiga" a su posición mientras la hoja todavía se
+  // está deslizando — dos animaciones compitiendo, se rompe la
+  // sensación de una sola pieza física moviéndose. Por eso se puede
+  // omitir explícitamente.
+  if (!opciones.saltarAnimacionEntrada) {
+    animarEntradaFicha(contenedor);
+  }
 }

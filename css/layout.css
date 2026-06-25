@@ -140,6 +140,19 @@
   text-decoration: none;
 }
 
+.site-nav__login {
+  border: 1px solid var(--color-teal) !important;
+  color: var(--color-teal) !important;
+  border-radius: var(--radius-sm);
+  padding: 0.3em 0.9em !important;
+}
+
+.site-nav__login:hover,
+.site-nav__login:focus {
+  background: var(--color-teal);
+  color: #fff !important;
+}
+
 @media (min-width: 768px) {
   .site-nav__toggle {
     display: none;

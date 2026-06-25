@@ -119,7 +119,11 @@ let unidadYPosicionAnterior = null;
 let navegacionHojaActual = null;
 
 async function manejarFicha(contenedor, { params }) {
-  contenedor.innerHTML = '<p class="estado-carga">Cargando proyecto…</p>';
+  // No se borra el contenido acá todavía: si se hace, la transición de
+  // folio capturaría "Cargando proyecto…" como hoja saliente en vez de
+  // la ficha anterior real (ese era el fragmento de texto raro que se
+  // veía a mitad de la animación). El contenido viejo se queda visible
+  // hasta que los datos nuevos estén listos para reemplazarlo de una.
   const categorias = await obtenerCategorias();
 
   try {
@@ -144,7 +148,9 @@ async function manejarFicha(contenedor, { params }) {
     unidadYPosicionAnterior = { unidadId: proyecto.unidad_academica, posicion: posicionActual };
 
     if (direccion) {
-      await animarPasarHoja(contenedor, direccion, (destino) => renderizarFicha(destino, proyecto, categorias, navegacion));
+      await animarPasarHoja(contenedor, direccion, (destino) =>
+        renderizarFicha(destino, proyecto, categorias, navegacion, { saltarAnimacionEntrada: true })
+      );
     } else {
       renderizarFicha(contenedor, proyecto, categorias, navegacion);
     }
