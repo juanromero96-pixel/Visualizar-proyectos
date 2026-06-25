@@ -41,7 +41,8 @@
   "_advertencias": [
     "No se indica un año único de ejecución: la línea de trabajo declara \"UCT 2022 y 2023\" y es un observatorio de funcionamiento continuo, no un proyecto de un solo año. Se deja anio=None en vez de inventar uno solo; completar a mano según el criterio institucional para catalogar líneas de trabajo plurianuales.",
     "El póster tiene un identificador de red social (Instagram: @derechoaldeporteunam) que no tiene campo propio en el esquema actual del artículo. Quedó fuera de \"contacto\" e \"instituciones_cooperantes\" para no mezclarlo con datos de otro tipo; considerar agregar un campo de redes sociales si se va a usar en otros pósters.",
-    "titulo y programa fueron leídos directamente del PDF, no extraídos automáticamente."
+    "titulo y programa fueron leídos directamente del PDF, no extraídos automáticamente.",
+    "Ninguna institución cooperante de este póster tiene entrada en categorias.json todavía (['IPEC', 'Ministerio de Deportes (Misiones)', 'Subsecretaría de Educación (Misiones)']). instituciones_cooperantes queda vacío; agregar entradas al catálogo si se quiere normalizar, o publicar solo con el texto libre."
   ],
   "_fuente_extraccion": "texto_nativo",
   "_revisado_por": "Claude (Sonnet 4.6) — lectura directa del PDF fuente, verificada campo por campo",

@@ -1,7 +1,9 @@
 {
   "programa_carrera_area": "Formación extensionista y construcción de redes para la Educación Sexual Integral en escuelas secundarias de Misiones.",
   "objetivos_especificos": [],
-  "instituciones_cooperantes": [],
+  "instituciones_cooperantes": [
+    "fcf"
+  ],
   "videos": [],
   "etiquetas": [],
   "estado_revision": "pendiente",
@@ -58,7 +60,8 @@
   ],
   "pdf_fuente": "pdf-fuente/fcf-jovenes-promotores-de-la-esi-sofia-alderete.pdf",
   "_advertencias": [
-    "titulo, programa y año (2022, por la Convocatoria PROFAE 2022 mencionada en el resumen) fueron leídos directamente del PDF, no extraídos automáticamente."
+    "titulo, programa y año (2022, por la Convocatoria PROFAE 2022 mencionada en el resumen) fueron leídos directamente del PDF, no extraídos automáticamente.",
+    "instituciones_cooperantes normalizado contra categorias.json: ['fcf']. Sin match en el catálogo (quedan solo en el texto libre): ['Escuela Provincial de Educación Técnica N°15 – Puerto Piray', 'Instituto Nuestra Señora de los Milagros N°1028 – Puerto Piray', 'BOP N°53 – San Vicente', 'Escuela Normal Superior N°3 “José Manuel Estrada” – Puerto Rico', 'CEP N°16 – Eldorado']."
   ],
   "_fuente_extraccion": "texto_nativo",
   "_revisado_por": "Claude (Sonnet 4.6) — lectura directa del PDF fuente, verificada campo por campo",
