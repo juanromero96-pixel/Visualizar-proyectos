@@ -428,7 +428,7 @@
   padding: 0;
 }
 
-.pagina-institucional--panel {
+.pagina-institucional.pagina-institucional--panel {
   max-width: none;
 }
 

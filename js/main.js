@@ -368,6 +368,14 @@ function alTerminarDeRenderizar(contenedor) {
     navegacionHojaActual = null;
     unidadYPosicionAnterior = null;
   }
+
+  // El panel admin embebido necesita todo el ancho; cualquier otra
+  // ruta usa el ancho de lectura normal.
+  contenedor.classList.toggle(
+    'main-content--ancho-completo',
+    Boolean(contenedor.querySelector('.pagina-institucional--panel, .login-admin'))
+  );
+
   animarTransicionVista(contenedor);
 }
 

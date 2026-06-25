@@ -182,6 +182,13 @@
   min-height: 60vh;
 }
 
+/* El panel admin embebido (#/admin) necesita todo el ancho disponible,
+   a diferencia de cualquier otra ruta (catálogo, ficha, etc.), que sí
+   están pensadas para un ancho de lectura cómodo. */
+.main-content--ancho-completo {
+  max-width: none;
+}
+
 /* ---------- Footer institucional ---------- */
 .site-footer {
   margin-top: var(--space-xl);
