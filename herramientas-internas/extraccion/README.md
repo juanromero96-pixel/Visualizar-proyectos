@@ -25,10 +25,24 @@ Esto crea `herramientas-internas/_borradores/<id-del-proyecto>.json` con
 El extractor reconoce el formato real de los pósters (RESUMEN, PROBLEMA /
 OBJETIVO en dos columnas, ACCIONES / RESULTADOS-APORTES en dos columnas,
 DATOS | CONTACTO) y aplica OCR en español automáticamente si el PDF no tiene
-texto seleccionable. Aun así, **no es perfecto**: pósters con diseño distinto
-al esperado, columnas desalineadas, o calidad de escaneo baja van a producir
-campos vacíos, mezclados o con advertencias. Eso es esperado, no un bug a
-perseguir — es la razón por la que el paso 2 es obligatorio.
+texto seleccionable — lo cual, calibrando contra pósters reales, resultó ser
+el camino casi exclusivo para la familia de plantilla "Semana Regional de la
+Extensión": ver auditoría de calibración para el detalle. El OCR también
+reconstruye columnas (ya no usa `image_to_string` plano de página completa).
+También extrae `cita_destacada` (texto + fuente) y, cuando el póster trae un
+sub-listado de "Objetivos específicos" dentro de la caja de OBJETIVO,
+`objetivos_especificos`.
+
+Aun así, **no es perfecto**: pósters con diseño distinto al esperado,
+columnas desalineadas, nombres que envuelven en varias líneas, o calidad de
+OCR baja van a producir campos vacíos, mezclados o con advertencias. Eso es
+esperado, no un bug a perseguir — es la razón por la que el paso 2 es
+obligatorio. Dos campos que el extractor TODAVÍA no completa nunca, sin
+excepción, y que por eso quedan marcados en `_advertencias` en todos los
+casos: `titulo` (no hay heurística de tamaño de fuente/encabezado implementada
+todavía) e `imagenes` (no se extraen fotos automáticamente: ver propuesta de
+extracción de imágenes en la auditoría de calibración para el camino dual
+necesario — XObjects nativos vs. recorte de región sobre página rasterizada).
 
 ## 2. Revisión humana (siempre, sin excepción)
 
