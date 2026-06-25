@@ -47,9 +47,9 @@ export function animarPasarHoja(contenedor, direccion, renderizarEnDestino) {
   renderizarEnDestino(capaEntrante);
 
   const entraDesde = direccion === 'siguiente' ? 100 : -100;
-  const saleHacia = direccion === 'siguiente' ? -16 : 16;
+  const saleHacia = direccion === 'siguiente' ? -10 : 10;
 
-  window.gsap.set(capaEntrante, { xPercent: entraDesde });
+  window.gsap.set(capaEntrante, { xPercent: entraDesde, opacity: 0.85 });
 
   return new Promise((resolve) => {
     window.gsap.timeline({
@@ -63,7 +63,7 @@ export function animarPasarHoja(contenedor, direccion, renderizarEnDestino) {
         resolve();
       },
     })
-      .to(capaSaliente, { xPercent: saleHacia, opacity: 0.3, scale: 0.97, duration: 0.4, ease: 'power2.inOut' }, 0)
-      .to(capaEntrante, { xPercent: 0, duration: 0.4, ease: 'power2.inOut' }, 0.06);
+      .to(capaSaliente, { xPercent: saleHacia, opacity: 0.4, scale: 0.985, duration: 0.52, ease: 'power3.out' }, 0)
+      .to(capaEntrante, { xPercent: 0, opacity: 1, duration: 0.56, ease: 'power3.out' }, 0.1);
   });
 }

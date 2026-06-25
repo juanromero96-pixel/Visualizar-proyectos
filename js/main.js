@@ -261,7 +261,58 @@ async function manejarBuscar(contenedor, { query }) {
 // servidor interno, una VPN institucional, etc.) — es una sola línea.
 const URL_PANEL_ADMIN = 'http://localhost:5050/';
 
+// Login SUPERFICIAL, a pedido explícito: usuario/contraseña fijos,
+// verificados en el navegador. Esto NO es seguridad real — cualquiera
+// puede leer estas líneas desde "Ver código fuente" o las herramientas
+// de desarrollador, y nada impide pegar la URL del panel directo. Sirve
+// solo para que esta página no quede "abierta al primero que pasa", no
+// para proteger nada sensible. Si alguna vez hace falta control de
+// acceso real, tiene que resolverse en el servidor Flask (o restringir
+// la red), nunca acá.
+const CLAVE_SESION_ADMIN = 'bde-unam-admin-logueado';
+const USUARIO_ADMIN = 'admin';
+const CLAVE_ADMIN = '12345';
+
 function manejarAdmin(contenedor) {
+  contenedor.innerHTML = '';
+
+  if (window.sessionStorage.getItem(CLAVE_SESION_ADMIN) === 'si') {
+    mostrarAccesoAdmin(contenedor);
+    return;
+  }
+
+  const articulo = document.createElement('article');
+  articulo.className = 'pagina-institucional pagina-institucional--login';
+  articulo.innerHTML = `
+    <h1>Acceso administrativo</h1>
+    <p>Esta sección es de uso exclusivo del personal de la Secretaría de Extensión.</p>
+    <form id="formLoginAdmin" class="login-admin" autocomplete="off">
+      <label for="campoUsuarioAdmin">Usuario</label>
+      <input type="text" id="campoUsuarioAdmin" name="usuario" required>
+      <label for="campoClaveAdmin">Contraseña</label>
+      <input type="password" id="campoClaveAdmin" name="clave" required>
+      <button type="submit" class="boton boton--primario">Ingresar</button>
+      <p id="errorLoginAdmin" class="login-admin__error" role="alert" hidden>Usuario o contraseña incorrectos.</p>
+    </form>
+  `;
+  contenedor.append(articulo);
+
+  document.getElementById('formLoginAdmin').addEventListener('submit', (evento) => {
+    evento.preventDefault();
+    const usuario = document.getElementById('campoUsuarioAdmin').value.trim();
+    const clave = document.getElementById('campoClaveAdmin').value;
+    const error = document.getElementById('errorLoginAdmin');
+
+    if (usuario === USUARIO_ADMIN && clave === CLAVE_ADMIN) {
+      window.sessionStorage.setItem(CLAVE_SESION_ADMIN, 'si');
+      mostrarAccesoAdmin(contenedor);
+    } else {
+      error.hidden = false;
+    }
+  });
+}
+
+function mostrarAccesoAdmin(contenedor) {
   contenedor.innerHTML = '';
   const articulo = document.createElement('article');
   articulo.className = 'pagina-institucional';
@@ -274,8 +325,13 @@ function manejarAdmin(contenedor) {
     <p style="color:var(--color-grey);font-size:0.85rem;">Si el enlace no funciona, es porque el panel
     no está corriendo en esta dirección en este momento, o no tenés acceso a la red donde corre.
     Contactá al equipo técnico para confirmar la dirección vigente.</p>
+    <p><button type="button" id="botonCerrarSesionAdmin" class="login-admin__cerrar">Cerrar esta sesión</button></p>
   `;
   contenedor.append(articulo);
+  document.getElementById('botonCerrarSesionAdmin').addEventListener('click', () => {
+    window.sessionStorage.removeItem(CLAVE_SESION_ADMIN);
+    manejarAdmin(contenedor);
+  });
 }
 
 function manejarNoEncontrado(contenedor) {
