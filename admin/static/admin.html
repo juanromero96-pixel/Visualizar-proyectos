@@ -35,11 +35,32 @@
           <strong>Carga rápida</strong>
           <span>Extracción automática, sin intervención. Disponible más abajo.</span>
         </a>
-        <span class="admin-dashboard__modo admin-dashboard__modo--pendiente" aria-disabled="true">
+        <button type="button" id="botonAbrirCargaPersonalizada" class="admin-dashboard__modo admin-dashboard__modo--activo" style="text-align:left;width:100%;border:none;background:none;cursor:pointer;">
           <strong>Carga personalizada</strong>
-          <span>Revisión asistida con el PDF y los campos lado a lado antes de extraer. No implementado todavía.</span>
-        </span>
+          <span>Un solo PDF: extrae y te lleva directo a revisarlo con el original al lado, antes de publicar nada.</span>
+        </button>
       </div>
+
+      <form id="formCargaPersonalizada" class="admin-carga-personalizada d-none">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-4">
+            <label for="archivoPersonalizado" class="form-label">PDF a revisar</label>
+            <input type="file" id="archivoPersonalizado" accept="application/pdf" class="form-control" required>
+          </div>
+          <div class="col-6 col-md-3">
+            <label for="unidadPersonalizada" class="form-label">Unidad académica</label>
+            <select id="unidadPersonalizada" class="form-select"><option value="">— Sin asignar —</option></select>
+          </div>
+          <div class="col-6 col-md-2">
+            <label for="anioPersonalizado" class="form-label">Año</label>
+            <input type="number" id="anioPersonalizado" class="form-control" min="1990" max="2100">
+          </div>
+          <div class="col-12 col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Cargar y revisar →</button>
+          </div>
+        </div>
+        <p id="estadoCargaPersonalizada" class="admin-editor__guardado" aria-live="polite"></p>
+      </form>
     </section>
 
     <!-- MÓDULO 1: Carga de documentos -->

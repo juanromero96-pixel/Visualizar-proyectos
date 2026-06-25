@@ -55,6 +55,70 @@ async function cargarDashboard() {
   }
 }
 
+// ---------- Carga personalizada: un PDF, derecho al editor ----------
+
+const botonAbrirCargaPersonalizada = document.getElementById('botonAbrirCargaPersonalizada');
+const formCargaPersonalizada = document.getElementById('formCargaPersonalizada');
+const unidadPersonalizada = document.getElementById('unidadPersonalizada');
+
+botonAbrirCargaPersonalizada.addEventListener('click', () => {
+  formCargaPersonalizada.classList.toggle('d-none');
+});
+
+async function cargarUnidadesEnSelector(select) {
+  const categorias = await obtenerJSON('/admin/api/categorias');
+  categorias.unidades_academicas.forEach((unidad) => {
+    const opcion = document.createElement('option');
+    opcion.value = unidad.id;
+    opcion.textContent = `${unidad.sigla} — ${unidad.nombre}`;
+    select.append(opcion);
+  });
+}
+cargarUnidadesEnSelector(unidadPersonalizada);
+
+formCargaPersonalizada.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  const estado = document.getElementById('estadoCargaPersonalizada');
+  const archivo = document.getElementById('archivoPersonalizado').files[0];
+  if (!archivo) return;
+
+  const botonEnviar = formCargaPersonalizada.querySelector('button[type="submit"]');
+  botonEnviar.disabled = true;
+  estado.textContent = 'Subiendo PDF…';
+
+  try {
+    const formData = new FormData();
+    formData.append('archivos', archivo);
+    if (unidadPersonalizada.value) formData.append('unidad_academica', unidadPersonalizada.value);
+    const anio = document.getElementById('anioPersonalizado').value;
+    if (anio) formData.append('anio', anio);
+
+    const resultadoCarga = await obtenerJSON('/admin/api/upload', { method: 'POST', body: formData });
+    const agregado = resultadoCarga.agregados[0];
+    if (!agregado || agregado.estado === 'Error') {
+      estado.textContent = agregado ? `Error: ${agregado.detalle_error}` : 'No se pudo cargar el archivo.';
+      botonEnviar.disabled = false;
+      return;
+    }
+
+    estado.textContent = 'Extrayendo contenido del PDF…';
+    const resultadoProceso = await obtenerJSON(`/admin/api/procesar/${agregado.id}`, { method: 'POST' });
+
+    if (resultadoProceso.estado === 'Error') {
+      estado.textContent = `Error en la extracción: ${resultadoProceso.detalle_error}`;
+      botonEnviar.disabled = false;
+      await actualizarCola();
+      return;
+    }
+
+    estado.textContent = 'Listo, abriendo el editor…';
+    window.location.href = `/admin/editor?id=${encodeURIComponent(agregado.id)}`;
+  } catch (error) {
+    estado.textContent = `Error: ${error.message}`;
+    botonEnviar.disabled = false;
+  }
+});
+
 function formatearTamano(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -141,6 +205,12 @@ function crearFilaDocumento(doc) {
     boton.textContent = doc.estado === 'Error' ? 'Reintentar' : 'Procesar';
     boton.addEventListener('click', () => procesarDocumento(doc.id));
     celdaAcciones.append(boton);
+  } else if (doc.estado === 'Extraído') {
+    const enlaceEditar = document.createElement('a');
+    enlaceEditar.className = 'btn btn-sm btn-primary';
+    enlaceEditar.href = `/admin/editor?id=${encodeURIComponent(doc.id)}`;
+    enlaceEditar.textContent = 'Revisar y editar →';
+    celdaAcciones.append(enlaceEditar);
   }
 
   fila.append(celdaNombre, celdaTamano, celdaFecha, celdaEstado, celdaNotas, celdaAcciones);

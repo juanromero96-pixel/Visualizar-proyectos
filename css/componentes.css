@@ -373,6 +373,7 @@
   left: 0;
   width: 100%;
   background: var(--color-bg);
+  will-change: transform;
 }
 
 .hoja-transicion__capa--saliente {

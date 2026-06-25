@@ -169,10 +169,24 @@ def slug_desde_nombre(nombre_archivo):
 
 
 def id_unico(cola, slug_base):
+    """
+    Un id no puede chocar con la cola actual NI con un proyecto que ya
+    existe como borrador o como publicado — si dos PDFs distintos
+    generan el mismo slug (nombres de archivo parecidos, o el mismo
+    PDF subido en otro momento con otro propósito), el segundo tiene
+    que recibir un id distinto, nunca pisar silenciosamente al primero.
+    """
     candidato = slug_base
     sufijo = 2
-    ids_existentes = {d['id'] for d in cola}
-    while candidato in ids_existentes:
+    ids_en_cola = {d['id'] for d in cola}
+
+    def ya_existe(id_candidato):
+        if id_candidato in ids_en_cola:
+            return True
+        proyecto_existente, _ = almacen.obtener_proyecto(id_candidato)
+        return proyecto_existente is not None
+
+    while ya_existe(candidato):
         candidato = f'{slug_base}-{sufijo}'
         sufijo += 1
     return candidato
