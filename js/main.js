@@ -321,17 +321,20 @@ function manejarAdmin(contenedor) {
 function mostrarAccesoAdmin(contenedor) {
   contenedor.innerHTML = '';
   const articulo = document.createElement('article');
-  articulo.className = 'pagina-institucional';
+  articulo.className = 'pagina-institucional pagina-institucional--panel';
   articulo.innerHTML = `
-    <h1>Acceso administrativo</h1>
-    <p>El panel de carga, extracción y publicación de proyectos es una herramienta interna
-    de la Secretaría de Extensión. No corre en este sitio público (que es estático): corre
-    en un servidor Python/Flask aparte, de uso exclusivo del equipo que gestiona la biblioteca.</p>
-    <p><a class="boton boton--primario" href="${URL_PANEL_ADMIN}" target="_blank" rel="noopener">Abrir panel administrativo →</a></p>
-    <p style="color:var(--color-grey);font-size:0.85rem;">Si el enlace no funciona, es porque el panel
-    no está corriendo en esta dirección en este momento, o no tenés acceso a la red donde corre.
-    Contactá al equipo técnico para confirmar la dirección vigente.</p>
-    <p><button type="button" id="botonCerrarSesionAdmin" class="login-admin__cerrar">Cerrar esta sesión</button></p>
+    <div class="panel-admin-embebido__barra">
+      <h1>Panel administrativo</h1>
+      <div class="panel-admin-embebido__acciones">
+        <a href="${URL_PANEL_ADMIN}" target="_blank" rel="noopener">Abrir en una pestaña aparte ↗</a>
+        <button type="button" id="botonCerrarSesionAdmin" class="login-admin__cerrar">Cerrar sesión</button>
+      </div>
+    </div>
+    <iframe id="iframeAdmin" class="panel-admin-embebido__iframe" src="${URL_PANEL_ADMIN}"
+      title="Panel administrativo"></iframe>
+    <p class="panel-admin-embebido__nota">¿No se ve nada arriba? El panel no está corriendo en
+      <code>${URL_PANEL_ADMIN}</code> en este momento, o no tenés acceso a esa red. Iniciálo
+      (<code>python3 admin/server.py</code>) o confirmá la dirección con el equipo técnico.</p>
   `;
   contenedor.append(articulo);
   document.getElementById('botonCerrarSesionAdmin').addEventListener('click', () => {
