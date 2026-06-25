@@ -170,13 +170,39 @@ def _limpiar_placeholders(texto):
 
 
 def _agrupar_en_lineas(palabras):
-    """Agrupa palabras (con bounding box) en líneas por posición vertical."""
-    palabras = sorted(palabras, key=lambda p: (round(p['top']), p['x0']))
+    """
+    Agrupa palabras (con bounding box) en líneas por posición vertical.
+
+    La tolerancia de "es el mismo renglón" se deriva de la altura real
+    de las palabras de ESTA llamada, no de una constante fija. Una
+    constante fija rompe en cuanto cambia la escala de coordenadas: con
+    pdfplumber (texto nativo) 'top' está en puntos PDF (~72/pulgada);
+    con Tesseract a 300dpi (ver _ocr_palabras_pagina) 'top' está en
+    píxeles — casi 4.2 veces más grande para la misma distancia física.
+
+    Confirmado en el corpus real: con una tolerancia fija calibrada en
+    puntos aplicada a píxeles de OCR, "FACULTAD" y "DISEÑO" (mismo
+    renglón del encabezado institucional, top=132 y top=123 en
+    píxeles) quedaban en líneas separadas, y el RESUMEN del póster de
+    FAyD salía con palabras de renglones distintos intercaladas — exactamente
+    el síntoma de "salta renglones y mezcla bloques" reportado. La
+    altura de palabra está disponible en ambas fuentes (pdfplumber la
+    da de fábrica; _ocr_palabras_pagina ahora también la conserva), así
+    que sirve como ancla de escala sin necesitar saber de antemano si
+    el origen es nativo u OCR, ni a qué dpi se renderizó.
+    """
+    if not palabras:
+        return []
+
+    alturas = [p['height'] for p in palabras if p.get('height', 0) > 0]
+    tolerancia = max(3.0, (sum(alturas) / len(alturas)) * 0.6) if alturas else 3.0
+
+    palabras = sorted(palabras, key=lambda p: (round(p['top'] / tolerancia), p['x0']))
     lineas = []
     actual = []
     top_actual = None
     for palabra in palabras:
-        if top_actual is None or abs(palabra['top'] - top_actual) <= 3:
+        if top_actual is None or abs(palabra['top'] - top_actual) <= tolerancia:
             actual.append(palabra)
             top_actual = palabra['top'] if top_actual is None else top_actual
         else:
@@ -304,7 +330,7 @@ def _ocr_palabras_pagina(imagen):
             pass
         # 'top' en image_to_data ya es la esquina superior de la
         # palabra: misma convención que pdfplumber.extract_words().
-        palabras.append({'text': texto, 'x0': float(x), 'top': float(top)})
+        palabras.append({'text': texto, 'x0': float(x), 'top': float(top), 'height': float(alto)})
     return palabras
 
 
@@ -445,6 +471,20 @@ def extraer_cita_destacada(texto_resultados):
     completar (confirmado en el póster real de FAyD: literalmente
     "[Insertar frase o cita destacada del proyecto]"), NO se publica
     como cita real: se descarta y se deja cita_destacada en None.
+
+    Guarda de seguridad: si una comilla de apertura pierde su cierre
+    real por ruido de extracción (confirmado en el póster real de
+    FHyCS: el resultado tiene una cita corta dentro de un ítem de lista,
+    "...identificado como 'otro género'...", cuya comilla de cierre se
+    perdió por el mismo arrastre de columnas que mezcla esa sección), el
+    regex no tiene forma de saber dónde termina esa cita y sigue de
+    largo hasta la PRÓXIMA comilla de cierre que encuentre — que puede
+    ser la de la cita destacada real, mucho más adelante, pegando dos
+    fragmentos no relacionados como si fueran una sola cita. Una cita
+    real de este corpus nunca pasó de ~140 caracteres ni de 2 saltos de
+    línea; un valor muy por encima de eso es más señal de fragmentos
+    pegados que de una cita larga genuina, así que se descarta sin
+    publicar (no se inventa dónde debería haber cortado).
     """
     if not texto_resultados:
         return texto_resultados, None
@@ -455,10 +495,15 @@ def extraer_cita_destacada(texto_resultados):
 
     ultima = coincidencias[-1]
     texto_cita = ultima.group(1).strip()
+
+    if len(texto_cita) > 170 or texto_cita.count('\n') > 3:
+        return texto_resultados, None
+
     resto_sin_cita = (texto_resultados[:ultima.start()] + texto_resultados[ultima.end():]).strip()
 
     if PATRON_PLACEHOLDER_PLANTILLA.search(texto_cita):
         return resto_sin_cita, None
+
 
     fuente = texto_resultados[ultima.end():].strip(' \n.-')
     fuente = fuente or None

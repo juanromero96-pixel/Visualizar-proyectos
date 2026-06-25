@@ -84,6 +84,39 @@ app = Flask(__name__, static_folder=str(DIR_ADMIN / 'static'), static_url_path='
 
 
 # --------------------------------------------------------------------
+# Autenticación mínima. Este panel no tenía ninguna — bien mientras
+# solo escuchaba en 127.0.0.1, pero apenas se expone a otra máquina
+# (LAN, túnel, hosting) cualquiera que llegue a la URL puede subir
+# PDFs, editar y publicar. Usuario/clave se toman de variables de
+# entorno, nunca hardcodeados: si no están seteadas, el servidor NO
+# arranca en modo expuesto (ver bloque __main__ al final) — sí puede
+# arrancar sin auth en 127.0.0.1 puro, que sigue siendo inofensivo.
+# --------------------------------------------------------------------
+import os
+import secrets
+
+ADMIN_USUARIO = os.environ.get('ADMIN_USUARIO')
+ADMIN_CLAVE = os.environ.get('ADMIN_CLAVE')
+
+
+@app.before_request
+def _exigir_autenticacion():
+    if not (ADMIN_USUARIO and ADMIN_CLAVE):
+        return  # sin variables seteadas: solo válido si host=127.0.0.1 (ver __main__)
+    auth = request.authorization
+    credenciales_ok = (
+        auth
+        and secrets.compare_digest(auth.username or '', ADMIN_USUARIO)
+        and secrets.compare_digest(auth.password or '', ADMIN_CLAVE)
+    )
+    if not credenciales_ok:
+        return (
+            'Autenticación requerida.', 401,
+            {'WWW-Authenticate': 'Basic realm="Panel administrativo BDE-UNaM"'}
+        )
+
+
+# --------------------------------------------------------------------
 # Persistencia simple en JSON (sin base de datos: a esta escala, un
 # archivo es suficiente y consistente con el resto del proyecto).
 # --------------------------------------------------------------------
@@ -170,11 +203,16 @@ def slug_desde_nombre(nombre_archivo):
 
 def id_unico(cola, slug_base):
     """
-    Un id no puede chocar con la cola actual NI con un proyecto que ya
-    existe como borrador o como publicado — si dos PDFs distintos
-    generan el mismo slug (nombres de archivo parecidos, o el mismo
-    PDF subido en otro momento con otro propósito), el segundo tiene
-    que recibir un id distinto, nunca pisar silenciosamente al primero.
+    Un id no puede chocar con la cola actual, NI con un proyecto que ya
+    existe como borrador o como publicado, NI con un PDF que ya esté
+    físicamente en _entrantes/ aunque nunca haya llegado a tener
+    borrador ni entrada en cola — confirmado real: un PDF subido sin
+    pasar por este chequeo (por ejemplo, vía script directo en vez del
+    endpoint de upload) puede quedar huérfano ahí, y el próximo upload
+    con el mismo slug lo pisaría en silencio si solo se mirara cola +
+    almacen. Si dos PDFs distintos generan el mismo slug, el segundo
+    tiene que recibir un id distinto, nunca pisar silenciosamente al
+    primero.
     """
     candidato = slug_base
     sufijo = 2
@@ -182,6 +220,8 @@ def id_unico(cola, slug_base):
 
     def ya_existe(id_candidato):
         if id_candidato in ids_en_cola:
+            return True
+        if (DIR_ENTRANTES / f'{id_candidato}.pdf').exists():
             return True
         proyecto_existente, _ = almacen.obtener_proyecto(id_candidato)
         return proyecto_existente is not None
@@ -511,8 +551,33 @@ def servir_publico(ruta):
 
 
 if __name__ == '__main__':
-    print('Panel administrativo BDE-UNaM — http://127.0.0.1:5050/')
-    print('Este servidor es de uso interno. No exponer a internet sin autenticación.')
+    host = os.environ.get('ADMIN_HOST', '127.0.0.1')
+    puerto = int(os.environ.get('ADMIN_PORT', '5050'))
+    expuesto = host != '127.0.0.1'
+
+    if expuesto and not (ADMIN_USUARIO and ADMIN_CLAVE):
+        sys.exit(
+            f'ADMIN_HOST={host} expone este servidor más allá de tu propia PC, pero no están '
+            'seteadas ADMIN_USUARIO ni ADMIN_CLAVE. Sin eso, cualquiera que llegue a la URL '
+            'puede subir, editar y publicar sin pedir nada.\n\n'
+            'Seteá ambas variables antes de levantar el servidor, por ejemplo (Windows):\n'
+            '  set ADMIN_USUARIO=secretaria\n'
+            '  set ADMIN_CLAVE=una-clave-larga-y-propia\n'
+            '  set ADMIN_HOST=0.0.0.0\n'
+            '  python3 admin\\server.py\n'
+        )
+
+    # debug=True habilita el debugger interactivo de Werkzeug, que permite
+    # ejecutar código Python arbitrario desde el navegador en cualquier
+    # página de error. Tolerable en 127.0.0.1 (solo tu propia PC); nunca
+    # si el host es alcanzable desde otra máquina.
+    debug = not expuesto
+
+    print(f'Panel administrativo BDE-UNaM — http://{host}:{puerto}/')
+    if expuesto:
+        print(f'Expuesto más allá de 127.0.0.1, con autenticación requerida (usuario "{ADMIN_USUARIO}").')
+    else:
+        print('Este servidor es de uso interno. No exponer a internet sin autenticación.')
     print(f'Poppler:   {extraer_poster.RUTA_POPPLER or "no configurado — se busca en el PATH del sistema"}')
     print(f'Tesseract: {extraer_poster.RUTA_TESSERACT or "no configurado — se busca en el PATH del sistema"}')
-    app.run(host='127.0.0.1', port=5050, debug=True)
+    app.run(host=host, port=puerto, debug=debug)

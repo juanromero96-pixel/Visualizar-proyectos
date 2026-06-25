@@ -1,1 +1,130 @@
-[]
+[
+  {
+    "id": "fayd-sistemas-automaticos-y-robotica-tecnologia-e-innovacion-obera-2022-cristian-damian-duarte",
+    "nombre_archivo": "FAyD_Sistemas_automaticos_y_robotica_Tecnologia_e_innovacion_Obera_2022_Cristian_Damian_Duarte.pdf",
+    "tamano_bytes": 1388342,
+    "fecha_carga": "2026-06-25T13:52:30.156194+00:00",
+    "estado": "Extraído",
+    "hash": "fe389130971585e9b25f993ac1dcfec46ab5c078f0ec693ceffd0866574d2a06",
+    "unidad_academica": "fayd",
+    "anio": 2022,
+    "detalle_error": null,
+    "advertencias": [
+      "titulo no se completa automáticamente (ningún campo del extractor lo intenta todavía; ver Documento Técnico / propuesta de calibración, sección de extracción semántica). Completar a mano contra el PDF antes de publicar: es el campo más visible de la ficha.",
+      "Se descartó un placeholder de plantilla sin completar dentro de ACCIONES/RESULTADOS.",
+      "El email de contacto \"cristian.duarte@fayd.unam.edu.ar\" fue reconstruido automáticamente porque no se reconoció un símbolo \"@\" literal (síntoma de OCR confirmado en el corpus real). Confirmar el caracter exacto contra el PDF antes de publicar.",
+      "instituciones_cooperantes se detectó como texto libre: \"Facultad de Arte y Diseño — Universidad Nacional de Misiones\". Normalizar a ids del catálogo controlado (categorias.json) a mano.",
+      "\"acciones\" tiene 16 ítems extraídos: es más de lo habitual en un póster real y probablemente arrastró texto de la sección siguiente (cita, fotos o datos de contacto). Revisar contra el PDF y recortar a mano.",
+      "\"resultados_aportes\" tiene 14 ítems extraídos: es más de lo habitual en un póster real y probablemente arrastró texto de la sección siguiente (cita, fotos o datos de contacto). Revisar contra el PDF y recortar a mano."
+    ],
+    "fuente_extraccion": "ocr"
+  },
+  {
+    "id": "fce-conectando-saberes-investigacion-de-mercados-en-el-territorio-produccion-economia-y-desarrollo-local-posadas-2024-nadia-lorena-statkievicz",
+    "nombre_archivo": "FCE_Conectando_saberes_investigacion_de_mercados_en_el_territorio_Produccion_economia_y_desarrollo_local_Posadas_2024_Nadia_Lorena_Statkievicz.pdf",
+    "tamano_bytes": 3060647,
+    "fecha_carga": "2026-06-25T13:52:30.485807+00:00",
+    "estado": "Extraído",
+    "hash": "f7e9c2647551799b8a369bcc37466e77e745a6d04ac209590b44ff3bb372530f",
+    "unidad_academica": "fce",
+    "anio": 2024,
+    "detalle_error": null,
+    "advertencias": [
+      "titulo no se completa automáticamente (ningún campo del extractor lo intenta todavía; ver Documento Técnico / propuesta de calibración, sección de extracción semántica). Completar a mano contra el PDF antes de publicar: es el campo más visible de la ficha.",
+      "No se detectó un email de contacto en el bloque DATOS|CONTACTO.",
+      "instituciones_cooperantes se detectó como texto libre: \"Facultad de Ciencias Económicas UNaM | Comercios minoristas del microcentro\". Normalizar a ids del catálogo controlado (categorias.json) a mano."
+    ],
+    "fuente_extraccion": "ocr"
+  },
+  {
+    "id": "fceqyn-el-estudio-de-modelos-matematicos-del-recurso-geogebra-en-el-aula-educacion-y-trayectorias-formativas-posadas-2024-gretel-alejandrina-fernandez-von-metzen",
+    "nombre_archivo": "FCEQyN_El_estudio_de_modelos_matematicos_del_recurso_GeoGebra_en_el_aula_Educacion_y_trayectorias_formativas_Posadas_2024_Gretel_Alejandrina_Fernandez_Von_Metzen.pdf",
+    "tamano_bytes": 1198182,
+    "fecha_carga": "2026-06-25T13:52:36.395476+00:00",
+    "estado": "Extraído",
+    "hash": "c96b1d51db1a337b84858151428f5b5ddb84de7967b8d6c60e51e7ed61cba6b5",
+    "unidad_academica": "fceqyn",
+    "anio": 2024,
+    "detalle_error": null,
+    "advertencias": [
+      "No se detectó la sección OBJETIVO; revisar manualmente.",
+      "titulo no se completa automáticamente (ningún campo del extractor lo intenta todavía; ver Documento Técnico / propuesta de calibración, sección de extracción semántica). Completar a mano contra el PDF antes de publicar: es el campo más visible de la ficha.",
+      "El email de contacto \"gretel.fernandez@fceqyn.unam.edu.ar\" fue reconstruido automáticamente porque no se reconoció un símbolo \"@\" literal (síntoma de OCR confirmado en el corpus real). Confirmar el caracter exacto contra el PDF antes de publicar."
+    ],
+    "fuente_extraccion": "ocr"
+  },
+  {
+    "id": "fcf-jovenes-promotores-de-la-esi-sofia-alderete",
+    "nombre_archivo": "fcf_jovenes_promotores_de_la_esi_sofia_alderete.pdf",
+    "tamano_bytes": 492920,
+    "fecha_carga": "2026-06-25T13:52:36.621302+00:00",
+    "estado": "Extraído",
+    "hash": "8dcbeebbc4dcbb79cea0a6717cbf85678035c93bc971ffa843a109248380408d",
+    "unidad_academica": "fcf",
+    "anio": 2022,
+    "detalle_error": null,
+    "advertencias": [
+      "instituciones_cooperantes se extrajo en varias líneas (varias instituciones cooperantes listadas). Revisar que no se haya cortado ninguna al normalizar contra el catálogo controlado.",
+      "titulo no se completa automáticamente (ningún campo del extractor lo intenta todavía; ver Documento Técnico / propuesta de calibración, sección de extracción semántica). Completar a mano contra el PDF antes de publicar: es el campo más visible de la ficha.",
+      "instituciones_cooperantes se detectó como texto libre: \"Facultad de Ciencias Forestales – Universidad Nacional de Misiones.\nEscuela Provincial de Educación Técnica N°15 – Puerto Piray.\nInstituto Nuestra Señora de los Milagros N°1028 – Puerto Piray.\nBOP N°53 – San Vicente.\nEscuela Normal Superior N°3 “José Manuel Estrada” – Puerto Rico.\nCEP N°16 – Eldorado\". Normalizar a ids del catálogo controlado (categorias.json) a mano."
+    ],
+    "fuente_extraccion": "texto_nativo"
+  },
+  {
+    "id": "fhycs-observatorio-eco-social-deporte-maria-eva-muguerza",
+    "nombre_archivo": "fhycs_observatorio_eco_social_deporte_maria_eva_muguerza.pdf",
+    "tamano_bytes": 2583873,
+    "fecha_carga": "2026-06-25T13:52:36.857762+00:00",
+    "estado": "Extraído",
+    "hash": "77c6226bf4b6beed660314c16f48708ea216e6ea3127197fc9dabda46106f626",
+    "unidad_academica": "fhycs",
+    "anio": null,
+    "detalle_error": null,
+    "advertencias": [
+      "instituciones_cooperantes se extrajo en varias líneas (varias instituciones cooperantes listadas). Revisar que no se haya cortado ninguna al normalizar contra el catálogo controlado.",
+      "titulo no se completa automáticamente (ningún campo del extractor lo intenta todavía; ver Documento Técnico / propuesta de calibración, sección de extracción semántica). Completar a mano contra el PDF antes de publicar: es el campo más visible de la ficha.",
+      "No se indicó año por línea de comando; el póster rara vez lo declara en texto. Completar a mano.",
+      "instituciones_cooperantes se detectó como texto libre: \"IPEC | Ministerio de Deportes | Subsecretaría de Educación Escaneá para ver\nIG @derechoaldeporteunam la presentación en video\". Normalizar a ids del catálogo controlado (categorias.json) a mano.",
+      "\"acciones\" tiene 13 ítems extraídos: es más de lo habitual en un póster real y probablemente arrastró texto de la sección siguiente (cita, fotos o datos de contacto). Revisar contra el PDF y recortar a mano."
+    ],
+    "fuente_extraccion": "texto_nativo"
+  },
+  {
+    "id": "fi-transmision-de-potencia-con-organos-flexibles-y-eficiencia-energetica-tecnologia-e-innovacion-los-helechos-2024-alejandro-javier-kerkhoff",
+    "nombre_archivo": "FI_Transmision_de_potencia_con_organos_flexibles_y_eficiencia_energetica_Tecnologia_e_innovacion_Los_Helechos_2024_Alejandro_Javier_Kerkhoff.pdf",
+    "tamano_bytes": 2523313,
+    "fecha_carga": "2026-06-25T13:52:37.091184+00:00",
+    "estado": "Extraído",
+    "hash": "8e4f090009e62d79308adbbfbe415e8cb5eb3c7bcbaf4e1935c370783ffa388d",
+    "unidad_academica": "fi",
+    "anio": 2024,
+    "detalle_error": null,
+    "advertencias": [
+      "Se descartó un placeholder de plantilla sin completar dentro del bloque DATOS|CONTACTO.",
+      "titulo no se completa automáticamente (ningún campo del extractor lo intenta todavía; ver Documento Técnico / propuesta de calibración, sección de extracción semántica). Completar a mano contra el PDF antes de publicar: es el campo más visible de la ficha.",
+      "El email de contacto \"alejandro.kerkhoff@fio.unam.edu.ar\" fue reconstruido automáticamente porque no se reconoció un símbolo \"@\" literal (síntoma de OCR confirmado en el corpus real). Confirmar el caracter exacto contra el PDF antes de publicar.",
+      "instituciones_cooperantes se detectó como texto libre: \"Facultad de Ingeniería UNaM — EFA Cristo Rey\". Normalizar a ids del catálogo controlado (categorias.json) a mano."
+    ],
+    "fuente_extraccion": "ocr"
+  },
+  {
+    "id": "2-programa-audiovisual-poster-semana-extension-unam-2026-3-mariana-lombardini",
+    "nombre_archivo": "2_Programa_Audiovisual_Poster_Semana_Extension_UNaM_2026__3__-_Mariana_Lombardini.pdf",
+    "tamano_bytes": 409105,
+    "fecha_carga": "2026-06-25T13:52:37.230569+00:00",
+    "estado": "Extraído",
+    "hash": "215153f956dfd855f273cde1abbaffb1f4fec86ca4af5e2544364391feebd990",
+    "unidad_academica": "fhycs",
+    "anio": null,
+    "detalle_error": null,
+    "advertencias": [
+      "Se descartó un placeholder de plantilla sin completar dentro del bloque DATOS|CONTACTO.",
+      "titulo no se completa automáticamente (ningún campo del extractor lo intenta todavía; ver Documento Técnico / propuesta de calibración, sección de extracción semántica). Completar a mano contra el PDF antes de publicar: es el campo más visible de la ficha.",
+      "Se descartó un placeholder de plantilla sin completar dentro de ACCIONES/RESULTADOS.",
+      "No se indicó año por línea de comando; el póster rara vez lo declara en texto. Completar a mano.",
+      "instituciones_cooperantes se detectó como texto libre: \"FHyCS – IAAviM- FAyD- Oberá en cortos\". Normalizar a ids del catálogo controlado (categorias.json) a mano.",
+      "\"resultados_aportes\" tiene 18 ítems extraídos: es más de lo habitual en un póster real y probablemente arrastró texto de la sección siguiente (cita, fotos o datos de contacto). Revisar contra el PDF y recortar a mano."
+    ],
+    "fuente_extraccion": "texto_nativo"
+  }
+]
