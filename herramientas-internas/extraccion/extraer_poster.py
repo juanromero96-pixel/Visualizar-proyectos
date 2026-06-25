@@ -33,9 +33,24 @@ Salida:
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
+
+# Ruta a la carpeta bin/ de Poppler, SOLO si depender del PATH del
+# sistema no funciona (típicamente en Windows: el PATH de usuario no
+# siempre se propaga a una terminal ya abierta, ni siquiera a una
+# nueva, hasta reiniciar). Si no se define, se usa el PATH normal
+# (lo que ya funciona en Mac/Linux con poppler-utils instalado por
+# apt/brew) — no cambia nada para quien ya le funcionaba.
+#
+# Para usarla, antes de correr el servidor, en la misma terminal:
+#   set RUTA_POPPLER=C:\poppler-26.02.0\Library\bin
+#   python3 admin\server.py
+# (con "set", no "setx": así toma efecto inmediato en esa terminal,
+# sin reiniciar nada ni depender de que Windows guarde la variable.)
+RUTA_POPPLER = os.environ.get('RUTA_POPPLER') or None
 
 try:
     import pdfplumber
@@ -160,7 +175,7 @@ def extraer_texto_ocr(ruta_pdf, cantidad_paginas):
         sys.exit('Falta pytesseract o pdf2image. Instalá con: '
                   'pip install pytesseract pdf2image --break-system-packages')
 
-    imagenes = convert_from_path(ruta_pdf, dpi=300)
+    imagenes = convert_from_path(ruta_pdf, dpi=300, poppler_path=RUTA_POPPLER)
     texto_paginas = [pytesseract.image_to_string(img, lang='spa') for img in imagenes]
     return '\n'.join(texto_paginas)
 

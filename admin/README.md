@@ -12,6 +12,29 @@ a nivel de sistema (una sola vez por máquina).
 sudo apt-get install tesseract-ocr tesseract-ocr-spa poppler-utils
 ```
 
+**En Windows**, Tesseract y Poppler no son paquetes de Python — son programas
+aparte que hay que descargar e instalar:
+- Tesseract: https://github.com/UB-Mannheim/tesseract-ocr/wiki (instalador, marcar el idioma español durante la instalación)
+- Poppler: https://github.com/oschwartz10612/poppler-windows/releases
+
+Si después de instalar Poppler sigue apareciendo `Unable to get page count.
+Is poppler installed and in PATH?`, lo más probable es que el PATH de
+Windows no se haya propagado a la terminal (pasa seguido, incluso en una
+terminal nueva — a veces hace falta reiniciar la máquina). En vez de seguir
+peleando con el PATH, se le puede indicar la ruta directamente, en la misma
+terminal donde se va a correr el servidor:
+
+```cmd
+set RUTA_POPPLER=C:\poppler-26.02.0\Library\bin
+python3 admin\server.py
+```
+
+(usar `set`, no `setx`: así toma efecto inmediato en esa terminal, sin
+depender de que Windows guarde la variable correctamente). Hay que volver a
+escribir ese `set` cada vez que se abre una terminal nueva — si se quiere
+que sea permanente, se puede agregar esa misma línea a un script `.bat` que
+arranque el servidor.
+
 **Entorno virtual (recomendado).** Desde la raíz del proyecto (la carpeta que
 contiene `admin/`, `data/`, `index.html`):
 
