@@ -1,69 +1,69 @@
 /**
  * transicion-hoja.js
- * Efecto de "pasar de hoja" entre proyectos de la misma carpeta/unidad
- * académica. Idea tomada del repo codrops/PageFlipLayout (un barrido de
- * paneles sólidos que cubre la pantalla y se retira, sin curvatura ni
- * perspectiva 3D — el rotate3d que usa ese demo es un hack de
- * renderizado de un grado, no un giro visible) pero reconstruida nativa
- * con el GSAP que ya usa el resto del sitio, no con TweenMax.
+ * Transición de "pasar de hoja" entre proyectos de la misma carpeta.
  *
- * No se usa para la navegación genérica entre rutas (esa sigue siendo
- * animarTransicionVista, sin tocar): esto es específico para "siguiente
- * hoja / hoja anterior" dentro de una ficha.
+ * Versión anterior (descartada): un velo de 3 paneles de color sólido
+ * cubría toda la pantalla, y el contenido cambiaba escondido detrás.
+ * El problema diagnosticado: nunca se ve contenido real moviéndose, así
+ * que lee como un efecto técnico abstracto, no como una hoja física.
+ *
+ * Esta versión — "folio superpuesto" — anima el contenido real:
+ * - la hoja saliente se desplaza y pierde protagonismo (opacidad y
+ *   escala bajan progresivamente, no desaparece de golpe);
+ * - la hoja entrante llega desde el lado correspondiente y se
+ *   superpone brevemente con la saliente (ambas visibles a la vez);
+ * - un borde lateral fino + sombra suave en cada capa simula el canto
+ *   de una hoja de papel, sin texturas ni 3D.
  */
 
 let transicionEnCurso = false;
 
-export function animarPasarHoja(direccion, ejecutarCambioDeContenido) {
-  if (typeof window.gsap === 'undefined') {
-    // Sin GSAP disponible: el cambio de contenido ocurre igual, solo
-    // sin la animación de barrido. Nunca bloquea la navegación.
-    ejecutarCambioDeContenido();
-    return Promise.resolve();
-  }
-
-  if (transicionEnCurso) {
-    ejecutarCambioDeContenido();
+/**
+ * `contenedor` es el nodo cuyo contenido se está reemplazando (#app).
+ * `direccion` es 'siguiente' o 'anterior'. `renderizarEnDestino(nodo)`
+ * debe renderizar la ficha nueva DENTRO del nodo que se le pasa (no en
+ * `contenedor` directamente) — main.js le pasa la misma función que ya
+ * usaba, adaptada para aceptar el contenedor de destino.
+ */
+export function animarPasarHoja(contenedor, direccion, renderizarEnDestino) {
+  if (typeof window.gsap === 'undefined' || transicionEnCurso) {
+    renderizarEnDestino(contenedor);
     return Promise.resolve();
   }
   transicionEnCurso = true;
 
-  const overlay = document.createElement('div');
-  overlay.className = 'transicion-hoja';
-  overlay.setAttribute('aria-hidden', 'true');
+  const alturaActual = contenedor.offsetHeight;
+  contenedor.style.minHeight = `${alturaActual}px`;
+  contenedor.classList.add('hoja-transicion__contenedor');
 
-  const paneles = [];
-  for (let i = 0; i < 3; i += 1) {
-    const panel = document.createElement('div');
-    panel.className = 'transicion-hoja__panel';
-    overlay.append(panel);
-    paneles.push(panel);
-  }
-  document.body.append(overlay);
+  const capaSaliente = document.createElement('div');
+  capaSaliente.className = 'hoja-transicion__capa hoja-transicion__capa--saliente';
+  while (contenedor.firstChild) capaSaliente.append(contenedor.firstChild);
 
-  window.gsap.set(paneles, { xPercent: direccion === 'siguiente' ? 100 : -100 });
+  const capaEntrante = document.createElement('div');
+  capaEntrante.className = 'hoja-transicion__capa hoja-transicion__capa--entrante';
+
+  contenedor.append(capaSaliente, capaEntrante);
+  renderizarEnDestino(capaEntrante);
+
+  const entraDesde = direccion === 'siguiente' ? 100 : -100;
+  const saleHacia = direccion === 'siguiente' ? -16 : 16;
+
+  window.gsap.set(capaEntrante, { xPercent: entraDesde });
 
   return new Promise((resolve) => {
-    const linea = window.gsap.timeline({
+    window.gsap.timeline({
       onComplete: () => {
-        overlay.remove();
+        while (capaEntrante.firstChild) contenedor.append(capaEntrante.firstChild);
+        capaSaliente.remove();
+        capaEntrante.remove();
+        contenedor.classList.remove('hoja-transicion__contenedor');
+        contenedor.style.minHeight = '';
         transicionEnCurso = false;
         resolve();
       },
-    });
-
-    paneles.forEach((panel, indice) => {
-      linea.to(panel, { xPercent: 0, duration: 0.28, ease: 'power2.inOut' }, indice * 0.05);
-    });
-
-    linea.call(ejecutarCambioDeContenido);
-
-    paneles.forEach((panel, indice) => {
-      linea.to(panel, {
-        xPercent: direccion === 'siguiente' ? -100 : 100,
-        duration: 0.32,
-        ease: 'power2.inOut',
-      }, `+=${indice === 0 ? 0.02 : 0}`);
-    });
+    })
+      .to(capaSaliente, { xPercent: saleHacia, opacity: 0.3, scale: 0.97, duration: 0.4, ease: 'power2.inOut' }, 0)
+      .to(capaEntrante, { xPercent: 0, duration: 0.4, ease: 'power2.inOut' }, 0.06);
   });
 }

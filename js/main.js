@@ -29,7 +29,11 @@ import { debounce } from './utils.js';
 async function manejarCatalogo(contenedor) {
   contenedor.innerHTML = '<p class="estado-carga">Cargando catálogo…</p>';
   const [catalogo, categorias] = await Promise.all([obtenerCatalogo(), obtenerCategorias()]);
-  const destacados = catalogo.filter((proyecto) => proyecto.destacado);
+  // Criterio editorial simple para los destacados (no hay datos de
+  // visualizaciones/consultas todavía): año más reciente primero.
+  const destacados = catalogo
+    .filter((proyecto) => proyecto.destacado)
+    .sort((a, b) => (b.anio || 0) - (a.anio || 0));
 
   contenedor.innerHTML = '';
 
@@ -42,17 +46,8 @@ async function manejarCatalogo(contenedor) {
   hero.append(h1Hero, intro);
   contenedor.append(hero);
 
-  if (destacados.length) {
-    const seccionDestacados = document.createElement('section');
-    seccionDestacados.className = 'portada-destacados';
-    const h2 = document.createElement('h2');
-    h2.textContent = 'Proyectos destacados';
-    const contenedorGrilla = document.createElement('div');
-    seccionDestacados.append(h2, contenedorGrilla);
-    contenedor.append(seccionDestacados);
-    await renderizarCarruselDestacados(contenedorGrilla, destacados, categorias);
-  }
-
+  // Unidades académicas primero: son el índice principal de la
+  // biblioteca, no deben competir con los destacados por protagonismo.
   const encabezado = document.createElement('div');
   encabezado.className = 'catalogo-encabezado';
   const h1 = document.createElement('h2');
@@ -64,8 +59,23 @@ async function manejarCatalogo(contenedor) {
 
   const contenedorIndice = document.createElement('div');
   contenedor.append(encabezado, contenedorIndice);
-
   renderizarIndiceUnidades(contenedorIndice, catalogo, categorias);
+
+  // Destacados al final: lectura recomendada secundaria, no compite
+  // con las carpetas por ser lo primero que se ve.
+  if (destacados.length) {
+    const seccionDestacados = document.createElement('section');
+    seccionDestacados.className = 'portada-destacados';
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Lectura recomendada';
+    const subtitulo = document.createElement('p');
+    subtitulo.className = 'catalogo-encabezado__contador';
+    subtitulo.textContent = 'Una selección de proyectos de la colección, no un acceso aparte.';
+    const contenedorGrilla = document.createElement('div');
+    seccionDestacados.append(h2, subtitulo, contenedorGrilla);
+    contenedor.append(seccionDestacados);
+    await renderizarCarruselDestacados(contenedorGrilla, destacados, categorias);
+  }
 }
 
 async function manejarUnidad(contenedor, { params }) {
@@ -134,7 +144,7 @@ async function manejarFicha(contenedor, { params }) {
     unidadYPosicionAnterior = { unidadId: proyecto.unidad_academica, posicion: posicionActual };
 
     if (direccion) {
-      await animarPasarHoja(direccion, () => renderizarFicha(contenedor, proyecto, categorias, navegacion));
+      await animarPasarHoja(contenedor, direccion, (destino) => renderizarFicha(destino, proyecto, categorias, navegacion));
     } else {
       renderizarFicha(contenedor, proyecto, categorias, navegacion);
     }

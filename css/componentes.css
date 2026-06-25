@@ -361,22 +361,31 @@
   .hoja-nav-movil { display: none; }
 }
 
-/* ---------- Overlay de transición "pasar hoja" (barrido 2D, sin 3D) ---------- */
-.transicion-hoja {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  pointer-events: none;
+/* ---------- Transición "folio superpuesto" (contenido real, no un velo de color) ---------- */
+.hoja-transicion__contenedor {
+  position: relative;
+  overflow: hidden;
 }
 
-.transicion-hoja__panel {
-  flex: 1;
-  background: var(--color-navy);
+.hoja-transicion__capa {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: var(--color-bg);
 }
 
-.transicion-hoja__panel:nth-child(2) { background: var(--color-teal); }
-.transicion-hoja__panel:nth-child(3) { background: var(--color-bg-card); }
+.hoja-transicion__capa--saliente {
+  z-index: 1;
+  border-right: 1px solid var(--color-border);
+  box-shadow: 4px 0 14px -6px rgba(27, 58, 75, 0.18);
+}
+
+.hoja-transicion__capa--entrante {
+  z-index: 2;
+  border-left: 1px solid var(--color-border);
+  box-shadow: -4px 0 14px -6px rgba(27, 58, 75, 0.18);
+}
 
 .ficha-proyecto__cita {
   border-left: 4px solid var(--color-teal);
@@ -411,6 +420,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: var(--space-lg);
+  align-items: start;
 }
 
 .carpeta-unidad {
