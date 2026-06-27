@@ -1,0 +1,33 @@
+/* =============================================================================
+   animations.css — estados inicial/final por tipo de animación.
+   La transición (duración, curva) está declarada en styles.css sobre
+   .elemento; acá solo se define DESDE dónde llega cada tipo. Todas
+   convergen al mismo destino: sin offset, escala y rotación final.
+   ========================================================================== */
+
+.elemento--anim-fade   { --offset-y: 10px; }
+.elemento--anim-slide  { --offset-x: 56px; }
+.elemento--anim-drop   { --offset-y: -64px; }
+.elemento--anim-float  { --offset-y: 30px; }
+.elemento--anim-zoom   { --escala-inicio: calc(var(--escala) * 0.78); }
+
+/* "float" gana además una flotación ambiental sutil y continua una vez
+   visible. Vive en .elemento-interior (no en .elemento) para no pelear
+   con la transición de entrada/salida, que sí corre sobre .elemento. */
+.elemento--anim-float.elemento--visible .elemento-interior {
+  animation: flotar-ambiente 6800ms ease-in-out infinite alternate;
+}
+@keyframes flotar-ambiente {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-8px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .elemento,
+  .elemento--anim-float.elemento--visible .elemento-interior {
+    transition: none !important;
+    animation: none !important;
+    transform: translate(-50%, -50%) scale(var(--escala)) rotate(var(--rot)) !important;
+    opacity: 1 !important;
+  }
+}

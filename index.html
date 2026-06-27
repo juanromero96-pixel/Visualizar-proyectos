@@ -1,108 +1,46 @@
-<!DOCTYPE html>
-<!--
-  Este sitio usa módulos ES6 (import/export) y fetch() para leer los JSON
-  de /data. Ambos requieren servidor HTTP/HTTPS: NO funciona abriendo este
-  archivo directamente por file:// (el navegador bloquea ambas cosas por
-  seguridad). Ver README.md en la raíz del proyecto para cómo servirlo
-  localmente (un comando, sin instalar nada en la mayoría de los casos) o
-  cómo desplegarlo en Vercel.
--->
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Biblioteca Digital de Extensión UNaM</title>
-  <meta name="description" content="Catálogo institucional de proyectos de extensión universitaria de la UNaM.">
-  <!-- Bootstrap grid: solo la grilla responsive (sin componentes visuales ni reset) -->
-  <link rel="stylesheet" href="assets/vendor/bootstrap-grid.min.css">
-  <!-- Swiper: estilos del carrusel -->
-  <link rel="stylesheet" href="assets/vendor/swiper-bundle.min.css">
-  <!-- Estilos institucionales propios (sobreescriben lo de vendor) -->
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/componentes.css">
-  <script>
-    // Script clásico (no type="module"): a diferencia de js/main.js, este
-    // SÍ se ejecuta aunque el navegador bloquee módulos ES6 por file://,
-    // que es exactamente el caso que necesita detectar.
-    if (window.location.protocol === 'file:') {
-      document.addEventListener('DOMContentLoaded', function () {
-        document.body.innerHTML =
-          '<main style="max-width:40rem;margin:4rem auto;padding:0 1.5rem;' +
-          'font-family:-apple-system,Segoe UI,system-ui,sans-serif;line-height:1.6;">' +
-          '<h1 style="color:#1B3A4B;">Este sitio no funciona abierto como archivo</h1>' +
-          '<p>Esta página usa módulos JavaScript y carga datos JSON, y los navegadores ' +
-          'bloquean ambas cosas cuando se abre un archivo directamente ' +
-          '(<code>file://...</code>) en lugar de servirlo por HTTP.</p>' +
-          '<p><strong>Solución rápida</strong> (con Python ya instalado), desde la carpeta ' +
-          'del proyecto:</p>' +
-          '<pre style="background:#F4F7F8;padding:1em;border-radius:4px;">' +
-          'python3 -m http.server 8000</pre>' +
-          '<p>y abrir <code>http://localhost:8000/</code> en el navegador. ' +
-          'Ver <code>README.md</code> en la raíz del proyecto para más alternativas ' +
-          '(Live Server, npx serve) y cómo desplegar en Vercel.</p>' +
-          '</main>';
-      });
-    }
-  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Semana Regional de la Extensión UNaM</title>
+  <meta name="description" content="Recorrido digital por las tres sedes de la Universidad Nacional de Misiones durante la Semana Regional de la Extensión." />
+
+  <!-- Roboto es la tipografía institucional única (Manual de Identidad UNaM, sección 06).
+       Si no hay conexión a internet, cae al stack de system fonts definido en styles.css. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/animations.css" />
 </head>
 <body>
-  <a class="skip-link" href="#app">Saltar al contenido principal</a>
 
-  <header class="site-header">
-    <div class="site-header__inner">
-      <a class="site-header__brand" href="#/">
-        <span class="site-header__brand-mark">UNaM</span>
-        <span class="site-header__brand-name">Biblioteca Digital de Extensión</span>
-      </a>
+  <div class="marca-chip" aria-hidden="false">
+    <img class="marca-chip-logo" src="assets/logos/unam-badge.svg" alt="" />
+    <span class="marca-chip-texto">UNaM extensión</span>
+  </div>
 
-      <nav class="site-nav" aria-label="Navegación principal">
-        <button
-          type="button"
-          class="site-nav__toggle"
-          id="navToggle"
-          aria-expanded="false"
-          aria-controls="navMenu"
-        >
-          <span class="sr-only">Abrir menú de navegación</span>
-          <span class="site-nav__icon" aria-hidden="true"></span>
-        </button>
-
-        <ul class="site-nav__list" id="navMenu">
-          <li><a href="#/">Inicio</a></li>
-          <li><a href="#/extension">¿Qué es la extensión?</a></li>
-          <li><a href="#/buscar">Buscar</a></li>
-          <li><a href="#/admin" class="site-nav__login">Login</a></li>
-        </ul>
-      </nav>
-    </div>
+  <header class="encabezado-evento">
+    <p class="encabezado-evento-titulo"></p>
+    <p class="encabezado-evento-bajada"></p>
+    <p class="encabezado-evento-fechas"></p>
   </header>
 
-  <main id="app" class="main-content">
-    <p class="estado-carga">Cargando…</p>
+  <main id="carrusel" class="carrusel" aria-label="Recorrido por las sedes de la Semana Regional de la Extensión">
+    <!-- app.js construye acá una <section class="sede"> por cada sede visible -->
   </main>
 
-  <footer class="site-footer">
-    <div class="site-footer__inner">
-      <div class="site-footer__bloque">
-        <p class="site-footer__title">Universidad Nacional de Misiones</p>
-        <p>Secretaría de Extensión Universitaria</p>
-      </div>
-      <div class="site-footer__bloque">
-        <p><a href="#/extension">¿Qué es la extensión universitaria?</a></p>
-        <p><a href="#/catalogo">Catálogo de proyectos</a></p>
-      </div>
-      <div class="site-footer__bloque">
-        <p>Contacto: <a href="mailto:extension@unam.edu.ar">extension@unam.edu.ar</a></p>
-      </div>
-    </div>
-    <p class="site-footer__legal">Biblioteca Digital de Proyectos de Extensión — Universidad Nacional de Misiones</p>
-  </footer>
+  <nav class="ruta" aria-label="Navegación entre sedes">
+    <button class="ruta-flecha ruta-flecha--anterior" aria-label="Sede anterior">‹</button>
+    <ol class="ruta-nodos"><!-- app.js completa los nodos --></ol>
+    <button class="ruta-flecha ruta-flecha--siguiente" aria-label="Sede siguiente">›</button>
+  </nav>
 
-  <!-- Vendor JS: se cargan como globales (UMD), antes del módulo principal -->
-  <script src="assets/vendor/gsap.min.js"></script>
-  <script src="assets/vendor/swiper-bundle.min.js"></script>
-  <script type="module" src="js/main.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/carousel.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

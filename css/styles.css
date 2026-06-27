@@ -1,0 +1,424 @@
+/* =============================================================================
+   styles.css — Semana Regional de la Extensión UNaM (v2: escenas inmersivas)
+   -----------------------------------------------------------------------------
+   Paleta y tipografía del Manual de Identidad Visual UNaM (2021). Roboto es
+   la única familia autorizada — la jerarquía se construye con escala, peso
+   y espaciado, no con una segunda tipografía.
+
+   v2 reemplaza la grilla de 5 zonas de la primera versión por posiciones
+   libres en porcentaje (--x/--y), leídas desde los datos de cada elemento.
+   Por eso casi no hay reglas de layout "de grilla" en este archivo: la
+   composición vive en /data, no en el CSS.
+   ========================================================================== */
+
+:root {
+  /* — Marca institucional (Manual UNaM, sección 05) — */
+  --unam-cian: #00a3e0;
+  --unam-negro: #000000;
+  --unam-marron: #7d4e24; /* tronco de la araucaria */
+  --unam-verde: #3aaa35; /* hojas de la araucaria */
+
+  /* — Lienzo editorial (no es "el signo", es el escenario) — */
+  --tinta: #0a0e10;
+  --papel: #f5f3ee;
+  --niebla: rgba(245, 243, 238, 0.1);
+  --niebla-borde: rgba(245, 243, 238, 0.18);
+
+  --fuente: 'Roboto', -apple-system, 'Segoe UI', sans-serif;
+  --modulo: 27px; /* mismo módulo que la grilla 1080×1080 del manual, sección 14 */
+  --progreso-ruta: 0;
+  --total-sedes: 3;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--tinta);
+  color: var(--papel);
+  font-family: var(--fuente);
+  overflow: hidden; /* el scroll vive dentro de #carrusel */
+}
+
+body { position: relative; }
+img, video { max-width: 100%; display: block; }
+button { font-family: inherit; cursor: pointer; }
+
+/* =============================================================================
+   Chip de marca — el isologotipo SIEMPRE sobre zócalo sólido, nunca sobre
+   la fotografía (Manual UNaM, "Usos no permitidos" punto 8 / sección 14).
+   Es de los pocos elementos que NO es parte de la escena: es interfaz fija.
+   ========================================================================== */
+.marca-chip {
+  position: fixed;
+  top: calc(var(--modulo) * 1.2);
+  left: calc(var(--modulo) * 1.2);
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--papel);
+  color: var(--unam-negro);
+  border-radius: 999px;
+  padding: 8px 16px 8px 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.marca-chip-logo { height: 28px; width: 28px; display: block; }
+.marca-chip-texto { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.02em; white-space: nowrap; }
+
+.encabezado-evento {
+  position: fixed;
+  top: calc(var(--modulo) * 1.2);
+  right: calc(var(--modulo) * 1.2);
+  z-index: 80;
+  text-align: right;
+  max-width: min(46vw, 420px);
+}
+.encabezado-evento-titulo { margin: 0; font-weight: 700; font-size: clamp(0.85rem, 1.4vw, 1rem); letter-spacing: 0.01em; }
+.encabezado-evento-bajada { margin: 4px 0 0; font-weight: 300; font-size: 0.72rem; opacity: 0.75; display: none; }
+.encabezado-evento-fechas { margin: 2px 0 0; font-weight: 300; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--unam-cian); }
+@media (min-width: 821px) { .encabezado-evento-bajada { display: block; } }
+
+/* =============================================================================
+   Carrusel — scroll nativo con snap. Sigue igual que en v1: no se tocó.
+   ========================================================================== */
+.carrusel {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+.carrusel::-webkit-scrollbar { display: none; }
+
+.sede {
+  position: relative;
+  flex: 0 0 100vw;
+  height: 100vh;
+  scroll-snap-align: start;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* =============================================================================
+   El fondo es el escenario, no un "background-image" más: por eso arranca
+   invisible y se revela como primer paso de la secuencia narrativa (lo
+   dispara js/animations.js al entrar a la sede), en vez de estar ahí desde
+   el primer frame. El transform de paralaje NO se transiciona por CSS:
+   lo actualiza JS en cada frame de scroll, y agregarle easing de CSS
+   encima generaría lag respecto del dedo/rueda del mouse.
+   ========================================================================== */
+.sede-bg {
+  position: absolute;
+  inset: -4%;
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 900ms ease;
+}
+.sede-bg--visible { opacity: 1; }
+
+.sede-velo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(115deg, rgba(10, 14, 16, 0.88) 0%, rgba(10, 14, 16, 0.55) 38%, rgba(10, 14, 16, 0.25) 62%, rgba(10, 14, 16, 0.55) 100%);
+}
+/* Posadas (composición "convergente" por defecto): la foto aérea tiene un
+   monumento pequeño justo donde se apoya el título, y el cielo despejado
+   arriba no necesita oscurecerse. Se agrega un segundo degradado vertical
+   para reforzar el contraste solo donde hace falta, sin tocar el resto. */
+.sede--convergente .sede-velo {
+  background:
+    linear-gradient(115deg, rgba(10, 14, 16, 0.7) 0%, rgba(10, 14, 16, 0.4) 38%, rgba(10, 14, 16, 0.18) 62%, rgba(10, 14, 16, 0.45) 100%),
+    linear-gradient(0deg, rgba(10, 14, 16, 0.78) 0%, rgba(10, 14, 16, 0.15) 45%, rgba(10, 14, 16, 0) 70%);
+}
+
+/* — Personalidad por sede (Manual UNaM se respeta igual: solo cambia el
+     velo y un acento estructural, nunca color de marca ni tipografía) — */
+.sede--diagonal .sede-velo {
+  background: linear-gradient(205deg, rgba(10, 14, 16, 0.9) 0%, rgba(10, 14, 16, 0.45) 45%, rgba(10, 14, 16, 0.2) 65%, rgba(10, 14, 16, 0.6) 100%);
+}
+.sede--diagonal::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  left: -10%;
+  top: 0;
+  width: 1px;
+  height: 140%;
+  background: linear-gradient(180deg, transparent, var(--unam-cian) 40%, transparent 80%);
+  opacity: 0.25;
+  transform: rotate(24deg);
+  transform-origin: top left;
+  pointer-events: none;
+}
+.sede--vertical .sede-velo {
+  background: linear-gradient(185deg, rgba(10, 14, 16, 0.92) 0%, rgba(10, 14, 16, 0.4) 50%, rgba(10, 14, 16, 0.7) 100%);
+}
+
+/* — Bloque editorial de cada sede (kicker): se mantiene anclado abajo a la
+     izquierda en las tres sedes a propósito — es el único punto fijo que
+     le da al usuario un "dónde estoy" estable mientras todo lo demás
+     cambia de composición. — */
+.sede-kicker {
+  position: absolute;
+  z-index: 5;
+  left: calc(var(--modulo) * 1.2);
+  bottom: calc(var(--modulo) * 2.4);
+  max-width: min(34vw, 460px);
+  border-left: 2px solid var(--unam-cian);
+  padding-left: 20px;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 700ms ease, transform 700ms cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+.sede-kicker--visible { opacity: 1; transform: translateY(0); }
+.sede--vertical .sede-kicker { border-left-width: 4px; }
+
+.sede-kicker-num { display: block; font-weight: 300; letter-spacing: 0.22em; font-size: 0.78rem; color: var(--unam-cian); margin-bottom: 10px; }
+.sede-kicker-titulo { margin: 0 0 6px; font-weight: 700; font-size: clamp(2.4rem, 7vw, 4.6rem); line-height: 0.98; letter-spacing: -0.01em; }
+.sede-kicker-subtitulo { margin: 0 0 14px; font-weight: 400; font-style: italic; font-size: 1rem; color: var(--unam-verde); }
+.sede-kicker-descripcion { margin: 0 0 14px; font-weight: 300; font-size: 0.95rem; line-height: 1.5; opacity: 0.92; }
+.sede-kicker-unidades { list-style: none; margin: 0; padding: 0; font-weight: 400; font-size: 0.78rem; letter-spacing: 0.03em; text-transform: uppercase; opacity: 0.8; }
+.sede-kicker-unidades li { padding: 3px 0; border-top: 1px solid var(--niebla-borde); }
+.sede-kicker-unidades li:first-child { border-top: none; }
+
+/* =============================================================================
+   Escenario — el contenedor de los elementos libres. Ya no es una grilla:
+   es simplemente el lienzo sobre el que cada elemento se posiciona con
+   sus propias coordenadas. La zona inferior izquierda (donde vive el
+   kicker) queda libre por convención de los datos, no por una regla CSS
+   que la reserve — por eso el editor visual (panel de administración)
+   dibuja esa zona como guía, no como límite duro.
+   ========================================================================== */
+.escenario {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+
+.elemento {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  --escala-inicio: var(--escala);
+  --offset-x: 0px;
+  --offset-y: 0px;
+  transform: translate(calc(-50% + var(--offset-x)), calc(-50% + var(--offset-y))) scale(var(--escala-inicio)) rotate(var(--rot));
+  z-index: var(--z);
+  opacity: 0;
+  pointer-events: auto;
+  transition: opacity var(--duracion) ease, transform var(--duracion) cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+.elemento--visible {
+  opacity: var(--opacidad-final, 1);
+  transform: translate(-50%, -50%) scale(var(--escala)) rotate(var(--rot));
+}
+
+.elemento-interior { display: block; }
+
+/* — Testimonios: tarjeta editorial completa (foto/monograma + identidad
+     institucional + cita). Fotos/video van "desnudos": son objetos de la
+     escena, no tarjetas de interfaz. — */
+.elemento--testimonio .elemento-interior {
+  background: var(--niebla);
+  border: 1px solid var(--niebla-borde);
+  backdrop-filter: blur(10px);
+  border-radius: 4px;
+  padding: 18px 20px;
+  max-width: 290px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.elemento--foto .elemento-interior,
+.elemento--video .elemento-interior {
+  max-width: 240px;
+  filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.45));
+}
+.elemento--foto img,
+.elemento--video video {
+  border-radius: 3px;
+  max-height: 220px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.testimonio-foto {
+  margin: 0 0 12px;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+.testimonio-foto img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--unam-cian);
+  display: block;
+}
+.testimonio-foto--rota { display: none; }
+.testimonio-monograma {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-monograma, var(--unam-cian));
+  color: var(--papel);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(245, 243, 238, 0.4);
+}
+
+.testimonio-cuerpo { width: 100%; }
+.testimonio-nombre { margin: 0; font-weight: 700; font-size: 0.92rem; letter-spacing: 0.01em; }
+.testimonio-cargo { margin: 3px 0 0; font-weight: 400; font-size: 0.74rem; color: var(--unam-verde); }
+.testimonio-institucion { margin: 1px 0 12px; font-weight: 300; font-size: 0.7rem; opacity: 0.75; }
+.testimonio-cita {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--niebla-borde);
+  font-weight: 300;
+  font-style: italic;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  position: relative;
+}
+.testimonio-cita::before {
+  content: '“';
+  position: absolute;
+  top: 6px;
+  left: -2px;
+  font-family: Georgia, serif;
+  font-style: normal;
+  font-size: 1.6rem;
+  color: var(--unam-cian);
+  opacity: 0.7;
+  line-height: 1;
+}
+.testimonio-cita { padding-left: 14px; }
+
+.elemento-caption { margin: 8px 4px 4px; font-weight: 300; font-size: 0.75rem; opacity: 0.85; text-align: center; }
+.elemento--sin-imagen { display: none; }
+
+/* =============================================================================
+   Ruta — indicador de recorrido. No es el isologotipo institucional, así
+   que sí puede flotar (no aplica la regla del zócalo).
+   ========================================================================== */
+.ruta {
+  position: fixed;
+  z-index: 90;
+  left: 50%;
+  bottom: calc(var(--modulo) * 0.9);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(10, 14, 16, 0.55);
+  border: 1px solid var(--niebla-borde);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  padding: 8px 10px;
+}
+.ruta-flecha { background: none; border: none; color: var(--papel); width: 30px; height: 30px; border-radius: 50%; font-size: 1.1rem; display: grid; place-items: center; transition: background 150ms ease; }
+.ruta-flecha:hover, .ruta-flecha:focus-visible { background: rgba(255, 255, 255, 0.12); }
+.ruta-nodos { position: relative; list-style: none; display: flex; gap: 26px; margin: 0; padding: 0 8px; }
+.ruta-nodos::before, .ruta-nodos::after { content: ''; position: absolute; top: 5px; height: 2px; background: rgba(255, 255, 255, 0.22); }
+.ruta-nodos::before { left: 5px; right: 5px; }
+.ruta-nodos::after { left: 5px; width: calc((100% - 10px) * var(--progreso-ruta)); background: var(--unam-cian); transition: width 400ms ease; }
+.ruta-nodo { position: relative; background: none; border: none; color: var(--papel); display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0.55; transition: opacity 200ms ease; }
+.ruta-nodo:hover, .ruta-nodo:focus-visible { opacity: 0.85; }
+.ruta-nodo--activo { opacity: 1; }
+.ruta-nodo-punto { width: 10px; height: 10px; border-radius: 50%; background: var(--tinta); border: 2px solid rgba(255, 255, 255, 0.4); transition: background 200ms ease, border-color 200ms ease, transform 200ms ease; }
+.ruta-nodo--activo .ruta-nodo-punto { background: var(--unam-cian); border-color: var(--unam-cian); transform: scale(1.25); }
+.ruta-nodo-num { display: none; }
+.ruta-nodo-nombre { font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 400; white-space: nowrap; }
+
+.estado-error { height: 100vh; width: 100vw; display: grid; place-items: center; text-align: center; padding: 0 24px; }
+.estado-error h1 { font-weight: 700; font-size: 1.4rem; }
+.estado-error p { font-weight: 300; opacity: 0.8; max-width: 420px; }
+
+:focus-visible { outline: 2px solid var(--unam-cian); outline-offset: 2px; }
+
+/* =============================================================================
+   Responsive — la posición de cada elemento es un porcentaje del propio
+   escenario (100vw × 100vh en cualquier tamaño), así que la composición se
+   reescala sola entre desktop, tablet y celular: no se desarma en una
+   columna. Lo único que cambia por breakpoint es la legibilidad (tamaños,
+   anchos máximos) y, en pantallas muy angostas, la intensidad del paralaje
+   y el recorrido pasa de horizontal a vertical por el motivo de
+   accesibilidad ya documentado en v1.
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .elemento--testimonio .elemento-interior,
+  .elemento--foto .elemento-interior,
+  .elemento--video .elemento-interior {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 820px) {
+  html, body { overflow: auto; }
+  .carrusel { flex-direction: column; scroll-snap-type: y mandatory; height: 100vh; }
+  .sede { flex: 0 0 100vh; width: 100vw; }
+
+  .sede-kicker {
+    max-width: calc(100vw - var(--modulo) * 2.4);
+    bottom: auto;
+    top: calc(var(--modulo) * 4.2);
+  }
+  .sede-kicker-titulo { font-size: clamp(2rem, 11vw, 2.8rem); }
+  .sede-kicker-descripcion,
+  .sede-kicker-unidades { display: none; } /* en celular el escenario necesita el espacio: la bajada larga se reserva para desktop */
+
+  .ruta-flecha { display: none; }
+  .encabezado-evento { max-width: 60vw; }
+
+  /* Con 7 a 9 elementos por escena, el posicionamiento libre se superpone
+     en una pantalla angosta. La reinterpretación responsive no es "una
+     columna sin lógica": es la MISMA secuencia narrativa (orden-narrativo,
+     ya reflejado en el orden del DOM), leída de arriba a abajo en vez de
+     leída en el espacio. */
+  .escenario {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: calc(var(--modulo) * 0.6) calc(var(--modulo) * 1.2) calc(var(--modulo) * 2);
+    margin-top: 58vh;
+  }
+  .elemento {
+    position: relative;
+    left: auto !important;
+    top: auto !important;
+    z-index: auto !important;
+    transform: translateY(14px) !important;
+  }
+  .elemento--visible {
+    transform: none !important;
+  }
+  .elemento--testimonio .elemento-interior,
+  .elemento--foto .elemento-interior,
+  .elemento--video .elemento-interior {
+    max-width: min(340px, 80vw);
+  }
+  .testimonio-cita { font-size: 0.82rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sede-bg, .sede-kicker, .elemento { transition: none !important; }
+}

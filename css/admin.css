@@ -1,0 +1,566 @@
+/* =============================================================================
+   admin.css — panel de administración y login.
+   Tema claro y utilitario a propósito: es una herramienta de trabajo, no
+   la experiencia inmersiva del sitio público. Mismos colores de marca.
+   ========================================================================== */
+
+:root {
+  --unam-cian: #00a3e0;
+  --unam-negro: #000000;
+  --unam-verde: #3aaa35;
+  --unam-rojo: #c0392b;
+  --gris-100: #f5f4f0;
+  --gris-200: #e7e4dc;
+  --gris-400: #b8b3a6;
+  --gris-700: #4a463d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Roboto', -apple-system, 'Segoe UI', sans-serif;
+  background: var(--gris-100);
+  color: var(--unam-negro);
+}
+
+/* =============================================================================
+   Login
+   ========================================================================== */
+.login-pagina {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, var(--gris-100) 0%, var(--gris-200) 100%);
+}
+
+.login-tarjeta {
+  width: min(380px, 90vw);
+  background: #fff;
+  border-radius: 6px;
+  padding: 36px 32px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  border-top: 4px solid var(--unam-cian);
+}
+
+.login-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.login-marca-texto {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+
+.login-tarjeta h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.login-tarjeta p.login-bajada {
+  font-weight: 300;
+  font-size: 0.85rem;
+  color: var(--gris-700);
+  margin: 0 0 22px;
+}
+
+.campo-login {
+  margin-bottom: 16px;
+}
+
+.campo-login label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+  color: var(--gris-700);
+}
+
+.campo-login input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--gris-400);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+.campo-login input:focus-visible {
+  outline: 2px solid var(--unam-cian);
+  outline-offset: 1px;
+}
+
+.mensaje-login {
+  min-height: 1.2em;
+  font-size: 0.82rem;
+  margin: 0 0 12px;
+}
+.mensaje-login--error {
+  color: var(--unam-rojo);
+}
+
+.aviso-prototipo {
+  margin-top: 20px;
+  font-size: 0.72rem;
+  color: var(--gris-700);
+  line-height: 1.5;
+  border-top: 1px dashed var(--gris-400);
+  padding-top: 14px;
+}
+
+/* =============================================================================
+   Botones
+   ========================================================================== */
+.boton {
+  border: none;
+  border-radius: 4px;
+  padding: 10px 18px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+}
+
+.boton--primario {
+  background: var(--unam-negro);
+  color: #fff;
+  width: 100%;
+}
+.boton--primario:hover {
+  background: #222;
+}
+
+.boton--secundario {
+  background: #fff;
+  color: var(--unam-negro);
+  border: 1px solid var(--gris-400);
+}
+.boton--secundario:hover {
+  border-color: var(--unam-negro);
+}
+
+.boton--peligro {
+  background: #fff;
+  color: var(--unam-rojo);
+  border: 1px solid var(--unam-rojo);
+}
+.boton--peligro:hover {
+  background: var(--unam-rojo);
+  color: #fff;
+}
+
+.boton--chico {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+}
+
+/* =============================================================================
+   Barra superior
+   ========================================================================== */
+.barra-superior {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--gris-200);
+  padding: 14px calc(var(--modulo, 24px));
+}
+
+.barra-superior-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.barra-superior-marca img {
+  height: 26px;
+}
+
+.barra-superior-marca span {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.barra-superior-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.barra-superior-acciones a {
+  font-size: 0.82rem;
+  color: var(--unam-negro);
+  text-decoration: none;
+  font-weight: 700;
+  border-bottom: 1px solid transparent;
+}
+.barra-superior-acciones a:hover {
+  border-color: var(--unam-negro);
+}
+
+.indicador-guardado {
+  position: fixed;
+  top: 14px;
+  right: 50%;
+  transform: translate(50%, -60px);
+  background: var(--unam-negro);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 999px;
+  z-index: 100;
+  transition: transform 220ms ease;
+}
+.indicador-guardado--visible {
+  transform: translate(50%, 0);
+}
+
+/* =============================================================================
+   Pestañas
+   ========================================================================== */
+.pestañas {
+  display: flex;
+  gap: 4px;
+  padding: 0 calc(var(--modulo, 24px));
+  background: #fff;
+  border-bottom: 1px solid var(--gris-200);
+  overflow-x: auto;
+}
+
+.pestaña-boton {
+  background: none;
+  border: none;
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--gris-700);
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+.pestaña-boton:hover {
+  color: var(--unam-negro);
+}
+.pestaña-boton--activa {
+  color: var(--unam-negro);
+  border-bottom-color: var(--unam-cian);
+}
+
+.contenido-admin {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px calc(var(--modulo, 24px)) 80px;
+}
+
+.panel-tab {
+  display: none;
+}
+.panel-tab--activo {
+  display: block;
+}
+
+.panel-tab-encabezado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.panel-tab-encabezado h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.panel-tab-acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.boton-archivo {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
+.boton-archivo input[type='file'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* =============================================================================
+   Grupos por sede + listas arrastrables
+   ========================================================================== */
+.grupo-sede {
+  margin-bottom: 32px;
+}
+
+.grupo-sede h3 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gris-700);
+  border-bottom: 2px solid var(--unam-cian);
+  display: inline-block;
+  padding-bottom: 4px;
+  margin: 0 0 12px;
+}
+
+.lista-arrastrable {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* =============================================================================
+   Tarjeta admin (details/summary nativo: accesible, sin JS para abrir/cerrar)
+   ========================================================================== */
+.tarjeta-admin {
+  background: #fff;
+  border: 1px solid var(--gris-200);
+  border-radius: 6px;
+  padding: 0;
+}
+.tarjeta-admin--arrastrando {
+  opacity: 0.4;
+}
+
+.tarjeta-admin > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.tarjeta-admin > summary::-webkit-details-marker {
+  display: none;
+}
+
+.tarjeta-admin-arrastre {
+  cursor: grab;
+  color: var(--gris-400);
+  font-size: 1rem;
+}
+
+.tarjeta-admin-titulo {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* =============================================================================
+   Formularios de edición
+   ========================================================================== */
+.formulario-item {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  padding: 6px 14px 18px;
+  border-top: 1px solid var(--gris-200);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.campo--textarea {
+  grid-column: 1 / -1;
+}
+
+.campo label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gris-700);
+}
+
+.campo input[type='text'],
+.campo input[type='number'],
+.campo textarea,
+.campo select {
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 8px 10px;
+  border: 1px solid var(--gris-400);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--unam-negro);
+}
+
+.campo input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+}
+
+.campo input[type='file'] {
+  font-size: 0.8rem;
+}
+
+.campo-ayuda {
+  font-size: 0.72rem;
+  color: var(--gris-700);
+}
+
+@media (max-width: 640px) {
+  .formulario-item {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =============================================================================
+   Configuración (formulario único, sin lista)
+   ========================================================================== */
+#panel-configuracion .formulario-item {
+  border-top: none;
+  background: #fff;
+  border: 1px solid var(--gris-200);
+  border-radius: 6px;
+  padding: 18px;
+}
+
+/* =============================================================================
+   v2 — Editor visual de escenas (pestaña "Escenas")
+   ========================================================================== */
+.escenario-intro {
+  font-size: 0.85rem;
+  color: var(--gris-700);
+  max-width: 640px;
+  margin: 0 0 16px;
+}
+
+.escenas-nav-sedes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.escenas-boton-sede--activo {
+  background: var(--unam-negro);
+  color: #fff;
+  border-color: var(--unam-negro);
+}
+
+.escenario-editor {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 18px;
+  align-items: start;
+}
+
+.escenario-lienzo-envoltorio {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.escenario-lienzo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-size: cover;
+  background-position: center;
+  background-color: #111;
+  border-radius: 6px;
+  border: 1px solid var(--gris-200);
+  overflow: hidden;
+}
+
+.escenario-zona-guia {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 38%;
+  height: 55%;
+  border: 1px dashed rgba(255, 255, 255, 0.5);
+  border-left: none;
+  border-bottom: none;
+  display: flex;
+  align-items: flex-end;
+  padding: 6px;
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+
+.escenario-token {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--unam-cian);
+  background: rgba(255, 255, 255, 0.92);
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  cursor: grab;
+  touch-action: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+.escenario-token:active { cursor: grabbing; }
+.escenario-token--seleccionado {
+  outline: 3px solid var(--unam-verde);
+  outline-offset: 2px;
+}
+.escenario-token--plano-2 { border-color: #7fd3ef; }
+.escenario-token--plano-3 { border-color: var(--unam-cian); }
+.escenario-token--plano-4 { border-color: #0072a3; }
+.escenario-token--plano-5 { border-color: var(--unam-verde); }
+.escenario-token--plano-6 { border-color: var(--gris-700); }
+
+.escenario-leyenda {
+  font-size: 0.74rem;
+  color: var(--gris-700);
+  margin: 0;
+}
+
+.escenario-panel {
+  background: #fff;
+  border: 1px solid var(--gris-200);
+  border-radius: 6px;
+  padding: 14px;
+  min-height: 200px;
+  position: sticky;
+  top: 90px;
+}
+.escenario-panel-titulo {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+}
+.escenario-panel-ayuda {
+  font-size: 0.78rem;
+  color: var(--gris-700);
+  margin: 0;
+}
+.escenario-panel .formulario-item {
+  grid-template-columns: 1fr;
+  border-top: none;
+  padding: 0;
+}
+
+@media (max-width: 820px) {
+  .escenario-editor { grid-template-columns: 1fr; }
+  .escenario-panel { position: static; }
+}

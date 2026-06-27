@@ -1,0 +1,1 @@
+Carpeta opcional para íconos propios del sitio (no incluye nada del manual de identidad, que vive en /assets/logos).

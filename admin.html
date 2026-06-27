@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel de administración — Semana Regional UNaM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <div class="indicador-guardado" id="indicador-guardado"></div>
+
+  <header class="barra-superior">
+    <div class="barra-superior-marca">
+      <img src="assets/logos/unam-badge.svg" alt="" />
+      <span>Semana Regional · Panel de administración</span>
+    </div>
+    <div class="barra-superior-acciones">
+      <a href="index.html" target="_blank" rel="noopener">Ver sitio ↗</a>
+      <button type="button" class="boton boton--secundario boton--chico" id="boton-cerrar-sesion">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <nav class="pestañas">
+    <button class="pestaña-boton pestaña-boton--activa" data-tab="escenas">Escenas</button>
+    <button class="pestaña-boton" data-tab="sedes">Sedes</button>
+    <button class="pestaña-boton" data-tab="testimonios">Testimonios</button>
+    <button class="pestaña-boton" data-tab="multimedia">Multimedia</button>
+    <button class="pestaña-boton" data-tab="configuracion">Configuración</button>
+  </nav>
+
+  <main class="contenido-admin">
+
+    <section class="panel-tab panel-tab--activo" id="panel-tab-escenas">
+      <div class="panel-tab-encabezado">
+        <h2>Editor visual de escenas</h2>
+      </div>
+      <p class="escenario-intro">Arrastrá cada elemento para ubicarlo en el escenario. Tocalo para ajustar profundidad, escala, rotación y orden de aparición.</p>
+      <div class="escenas-nav-sedes" id="escenas-nav-sedes"></div>
+      <div class="escenario-editor">
+        <div class="escenario-lienzo-envoltorio" id="escenario-lienzo-envoltorio"></div>
+        <aside class="escenario-panel" id="escenario-panel"></aside>
+      </div>
+    </section>
+
+    <section class="panel-tab" id="panel-tab-sedes">
+      <div class="panel-tab-encabezado">
+        <h2>Sedes</h2>
+        <div class="panel-tab-acciones">
+          <button class="boton boton--secundario boton--chico" data-exportar="sedes">Exportar sedes.json</button>
+          <label class="boton boton--secundario boton--chico boton-archivo">
+            Importar
+            <input type="file" accept="application/json" data-importar="sedes" />
+          </label>
+          <button class="boton boton--peligro boton--chico" data-restablecer="sedes">Restablecer</button>
+        </div>
+      </div>
+      <div id="panel-sedes"></div>
+    </section>
+
+    <section class="panel-tab" id="panel-tab-testimonios">
+      <div class="panel-tab-encabezado">
+        <h2>Testimonios</h2>
+        <div class="panel-tab-acciones">
+          <button class="boton boton--secundario boton--chico" data-exportar="testimonios">Exportar testimonios.json</button>
+          <label class="boton boton--secundario boton--chico boton-archivo">
+            Importar
+            <input type="file" accept="application/json" data-importar="testimonios" />
+          </label>
+          <button class="boton boton--peligro boton--chico" data-restablecer="testimonios">Restablecer</button>
+        </div>
+      </div>
+      <div id="panel-testimonios"></div>
+    </section>
+
+    <section class="panel-tab" id="panel-tab-multimedia">
+      <div class="panel-tab-encabezado">
+        <h2>Multimedia</h2>
+        <div class="panel-tab-acciones">
+          <button class="boton boton--secundario boton--chico" data-exportar="multimedia">Exportar multimedia.json</button>
+          <label class="boton boton--secundario boton--chico boton-archivo">
+            Importar
+            <input type="file" accept="application/json" data-importar="multimedia" />
+          </label>
+          <button class="boton boton--peligro boton--chico" data-restablecer="multimedia">Restablecer</button>
+        </div>
+      </div>
+      <div id="panel-multimedia"></div>
+    </section>
+
+    <section class="panel-tab" id="panel-tab-configuracion">
+      <div class="panel-tab-encabezado">
+        <h2>Configuración general</h2>
+        <div class="panel-tab-acciones">
+          <button class="boton boton--secundario boton--chico" data-exportar="config">Exportar config.json</button>
+          <label class="boton boton--secundario boton--chico boton-archivo">
+            Importar
+            <input type="file" accept="application/json" data-importar="config" />
+          </label>
+          <button class="boton boton--peligro boton--chico" data-restablecer="config">Restablecer</button>
+        </div>
+      </div>
+      <div id="panel-configuracion"></div>
+    </section>
+
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/escenario.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

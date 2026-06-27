@@ -1,0 +1,1 @@
+Carpeta para las fotos reales de cada sede. Los nombres de archivo deben coincidir con el campo 'src' que se configura en el panel de administración (pestaña Multimedia).

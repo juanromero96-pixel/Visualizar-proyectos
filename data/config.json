@@ -1,0 +1,17 @@
+{
+  "evento": {
+    "nombre": "Semana Regional de la Extensión UNaM",
+    "edicion": "semana-regional-2026-1",
+    "fechas": "26 al 29 de mayo de 2026",
+    "resolucion": "Resolución Rectoral N.º 287/26",
+    "leyendaSecretaria": "Secretaría General de Extensión Universitaria",
+    "bajada": "Memoria digital de la primera edición — un recorrido por las tres sedes de la Universidad Nacional de Misiones."
+  },
+  "marca": {
+    "badge": "UNaM extensión",
+    "universidad": "Universidad Nacional de Misiones",
+    "logoPath": "assets/logos/unam-badge.svg"
+  },
+  "ordenSedes": ["posadas", "obera", "eldorado"],
+  "version": 1
+}

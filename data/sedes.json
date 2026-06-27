@@ -1,0 +1,45 @@
+[
+  {
+    "id": "posadas",
+    "orden": 1,
+    "nombre": "Posadas",
+    "subtitulo": "Rectorado y sede central",
+    "descripcion": "En el Campus Universitario se concentran el Rectorado y tres unidades académicas. Durante la Semana Regional, sus equipos de extensión abrieron sus proyectos acreditados a la comunidad.",
+    "unidadesAcademicas": [
+      "Facultad de Ciencias Económicas",
+      "Facultad de Ciencias Exactas, Químicas y Naturales",
+      "Facultad de Humanidades y Ciencias Sociales"
+    ],
+    "imagenFondo": "assets/backgrounds/posadas.jpg",
+    "composicion": "convergente",
+    "visible": true
+  },
+  {
+    "id": "obera",
+    "orden": 2,
+    "nombre": "Oberá",
+    "subtitulo": "Regional Oberá",
+    "descripcion": "Entre talleres de diseño y laboratorios de ingeniería, la regional Oberá sumó a la exhibición proyectos que cruzan arte, tecnología y territorio.",
+    "unidadesAcademicas": [
+      "Facultad de Arte y Diseño",
+      "Facultad de Ingeniería"
+    ],
+    "imagenFondo": "assets/backgrounds/obera.jpg",
+    "composicion": "diagonal",
+    "visible": true
+  },
+  {
+    "id": "eldorado",
+    "orden": 3,
+    "nombre": "Eldorado",
+    "subtitulo": "Regional Eldorado",
+    "descripcion": "Rodeada de selva, la regional Eldorado presentó proyectos de extensión vinculados al manejo forestal y la producción agrotécnica de la región.",
+    "unidadesAcademicas": [
+      "Facultad de Ciencias Forestales",
+      "Escuela Agrotécnica Eldorado"
+    ],
+    "imagenFondo": "assets/backgrounds/eldorado.jpg",
+    "composicion": "vertical",
+    "visible": true
+  }
+]

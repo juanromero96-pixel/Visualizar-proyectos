@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ingresar — Panel de administración</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="login-pagina">
+
+  <div class="login-tarjeta">
+    <div class="login-marca">
+      <img src="assets/logos/unam-badge.svg" alt="" height="26" />
+      <span class="login-marca-texto">UNaM extensión</span>
+    </div>
+
+    <h1>Panel de administración</h1>
+    <p class="login-bajada">Semana Regional de la Extensión UNaM</p>
+
+    <form id="formulario-login" autocomplete="off">
+      <div class="campo-login">
+        <label for="campo-usuario">Usuario</label>
+        <input type="text" id="campo-usuario" name="usuario" autocomplete="username" required />
+      </div>
+      <div class="campo-login">
+        <label for="campo-clave">Contraseña</label>
+        <input type="password" id="campo-clave" name="clave" autocomplete="current-password" required />
+      </div>
+      <p class="mensaje-login" id="mensaje-login" role="alert"></p>
+      <button type="submit" class="boton boton--primario">Ingresar</button>
+    </form>
+
+    <p class="aviso-prototipo">
+      Prototipo local: el acceso se valida en el propio navegador y no reemplaza
+      un sistema de autenticación real. No usar con datos sensibles en un
+      servidor expuesto a internet.
+    </p>
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+</html>
