@@ -300,6 +300,7 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 0.86rem;
   line-height: 1.5;
   position: relative;
+  transition: opacity 260ms ease;
 }
 .testimonio-cita::before {
   content: '“';
@@ -450,4 +451,34 @@ button { font-family: inherit; cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {
   .sede-bg, .sede-kicker, .elemento { transition: none !important; }
+}
+
+/* =============================================================================
+   Objetivos táctiles — en cualquier dispositivo con puntero "grueso"
+   (touch), no solo en pantallas angostas: una notebook con pantalla
+   táctil grande también necesita botones de al menos ~44px, no solo un
+   celular. Se detecta por capacidad de puntero, no por ancho de viewport.
+   ========================================================================== */
+@media (pointer: coarse) {
+  .ruta-flecha {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+  }
+  .ruta {
+    padding: 10px 12px;
+    gap: 18px;
+  }
+  .ruta-nodo {
+    padding: 8px 4px;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .ruta-nodo-punto {
+    width: 14px;
+    height: 14px;
+  }
+  .marca-chip {
+    padding: 10px 18px 10px 12px;
+  }
 }

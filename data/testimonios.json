@@ -3,7 +3,11 @@
     "id": "t-franco-posadas", "sede": "posadas",
     "nombreCompleto": "Mauricio Franco", "cargo": "Secretario General de Extensión", "institucion": "UNaM",
     "foto": "assets/personas/mauricio-franco.webp",
-    "texto": "Para nosotros, la extensión transforma.",
+    "citas": [
+      "Para nosotros, la extensión transforma.",
+      "Es la actividad silenciosa que pasa, que muchas veces no conocemos, no sabemos qué están haciendo los colegas.",
+      "Entender que la extensión no es un espacio de transferencia, sino un espacio de construcción colectiva."
+    ],
     "x": 56, "y": 16, "escala": 1.0, "rotacion": -3, "profundidad": 4,
     "animacion": "fade", "duracion": 700, "ordenNarrativo": 1, "visible": true
   },
@@ -11,7 +15,10 @@
     "id": "t-gonzalez-posadas", "sede": "posadas",
     "nombreCompleto": "Néida González", "cargo": "Secretaria de Extensión", "institucion": "Facultad de Humanidades y Ciencias Sociales (FHyCS)",
     "foto": null,
-    "texto": "La extensión para nosotros es una política institucional de la universidad pública, junto con la docencia y con la investigación, para transformar a la sociedad. Esa es nuestra premisa de cómo vemos nosotros a la extensión.",
+    "citas": [
+      "La extensión para nosotros es una política institucional de la universidad pública, junto con la docencia y con la investigación, para transformar a la sociedad. Esa es nuestra premisa de cómo vemos nosotros a la extensión.",
+      "Nosotros nos paramos en lo que conocemos como la extensión crítica: trabajar en primer lugar con la comunidad, y sobre todo con los miembros de la comunidad que necesitan a la universidad, y por otro lado, coconstruir conocimiento y una transformación mutua de los docentes extensionistas, de los estudiantes, pero también de los miembros de la comunidad. Nos relacionamos con los miembros de la comunidad a partir de determinados proyectos y desde allí nos transformamos, y los miembros de la comunidad se transforman, de tal manera que después podamos volver a la universidad mejores."
+    ],
     "x": 84, "y": 22, "escala": 0.9, "rotacion": 4, "profundidad": 3,
     "animacion": "slide", "duracion": 700, "ordenNarrativo": 2, "visible": true
   },
@@ -19,7 +26,11 @@
     "id": "t-catogui-posadas", "sede": "posadas",
     "nombreCompleto": "Ing. Sergio Catogui", "cargo": "Vicerrector", "institucion": "UNaM",
     "foto": "assets/personas/sergio-catogui.jpeg",
-    "texto": "Lo que se busca a través de la extensión es que los saberes y los conocimientos que están en la universidad no queden encerrados dentro de la universidad, en una especie de torre de marfil, sino que salgamos a vincularnos en forma activa con toda la sociedad.",
+    "citas": [
+      "Lo que se busca a través de la extensión es que los saberes y los conocimientos que están en la universidad no queden encerrados dentro de la universidad, en una especie de torre de marfil, sino que salgamos a vincularnos en forma activa con toda la sociedad.",
+      "Expresar la satisfacción con la gran cantidad de docentes, no docentes y estudiantes que están comprometidos en esta actividad de extensión, que nos vincula con el medio y también nos trae una reflexión acerca de nuestras actividades.",
+      "Estas actividades generan mucha empatía en la comunidad. Tiene que ver con la territorialidad: un proyecto de extensión se vincula con la gente, está al lado de la gente, es un concepto de cercanía."
+    ],
     "x": 68, "y": 32, "escala": 0.95, "rotacion": -2, "profundidad": 5,
     "animacion": "fade", "duracion": 750, "ordenNarrativo": 3, "visible": true
   },
@@ -27,7 +38,10 @@
     "id": "t-rofe-posadas", "sede": "posadas",
     "nombreCompleto": "Mariano Rofé", "cargo": "Secretario de Extensión", "institucion": "Facultad de Ciencias Económicas (FCE)",
     "foto": "assets/personas/mariano-rofe.jpg",
-    "texto": "Estamos convencidos de que la extensión es una herramienta fundamental de la universidad y que nosotros tenemos que generar ese impacto positivo en la sociedad a través de la extensión universitaria. Una función esencial.",
+    "citas": [
+      "Estamos convencidos de que la extensión es una herramienta fundamental de la universidad y que nosotros tenemos que generar ese impacto positivo en la sociedad a través de la extensión universitaria. Una función esencial.",
+      "La extensión involucra a todos los actores: docentes, no docentes, estudiantes y graduados. Es importante que nosotros desde el inicio empecemos con actividades para sensibilizar a toda la comunidad académica y a la sociedad de qué es la extensión, porque por ahí falta romper esa primera barrera todavía."
+    ],
     "x": 48, "y": 40, "escala": 1.0, "rotacion": 5, "profundidad": 2,
     "animacion": "float", "duracion": 700, "ordenNarrativo": 4, "visible": true
   },
@@ -35,7 +49,10 @@
     "id": "t-spasiuk-posadas", "sede": "posadas",
     "nombreCompleto": "Mg. Gisela Spasiuk", "cargo": "Secretaria General Académica", "institucion": "UNaM",
     "foto": "assets/personas/gisela-spasiuk.jpeg",
-    "texto": "Estamos mostrando que formar profesionales no es exclusivamente la currícula, sino que es también esa serie de actividades. El estudiante se presenta con un analítico donde, de modo integral, mostramos cómo ha priorizado esa formación, que no es solo de profesional, sino también de ciudadano.",
+    "citas": [
+      "Estamos mostrando que formar profesionales no es exclusivamente la currícula, sino que es también esa serie de actividades. El estudiante se presenta con un analítico donde, de modo integral, mostramos cómo ha priorizado esa formación, que no es solo de profesional, sino también de ciudadano.",
+      "Es una gran deuda que tiene el sistema universitario argentino: poner en valor dentro de los currículum y las trayectorias docentes el amplio, arduo y profundo trabajo, con mucho compromiso, que llevamos adelante los docentes como integrantes o coordinadores de proyectos de extensión."
+    ],
     "x": 90, "y": 46, "escala": 1.0, "rotacion": -4, "profundidad": 6,
     "animacion": "zoom", "duracion": 800, "ordenNarrativo": 5, "visible": true
   },
@@ -43,7 +60,10 @@
     "id": "t-rambo-posadas", "sede": "posadas",
     "nombreCompleto": "Mg. Alice Rambo", "cargo": "Secretaria de Extensión y Vinculación Tecnológica", "institucion": "Facultad de Ciencias Exactas, Químicas y Naturales (FCEQyN)",
     "foto": "assets/personas/alice-rambo.jpg",
-    "texto": "Nos da la oportunidad de hacer estos intercambios de saberes y formar a nuestros estudiantes en conocimientos que van más allá del aula y la academia, que tienen que ver con la sensibilidad, la responsabilidad social y la comprensión de las problemáticas existentes.",
+    "citas": [
+      "Nos da la oportunidad de hacer estos intercambios de saberes y formar a nuestros estudiantes en conocimientos que van más allá del aula y la academia, que tienen que ver con la sensibilidad, la responsabilidad social y la comprensión de las problemáticas existentes.",
+      "Siempre tratamos de llegar a la comunidad con la articulación de los saberes adaptados a cada una de las circunstancias."
+    ],
     "x": 62, "y": 56, "escala": 0.95, "rotacion": 3, "profundidad": 3,
     "animacion": "fade", "duracion": 700, "ordenNarrativo": 6, "visible": true
   },
@@ -51,7 +71,11 @@
     "id": "t-guidec-posadas", "sede": "posadas",
     "nombreCompleto": "Mg. Roberto Guidec", "cargo": "Secretario General de Posgrado", "institucion": "UNaM",
     "foto": "assets/personas/roberto-guidec.webp",
-    "texto": "Tenemos becarios realizando actividades con financiamiento de los brasileños, que de alguna manera forma parte de la currícula y de la formación del alumno.",
+    "citas": [
+      "Tenemos becarios realizando actividades con financiamiento de los brasileños, que de alguna manera forma parte de la currícula y de la formación del alumno.",
+      "Una experiencia de pasantía se puede reconocer a partir de la reforma de planes de estudio como parte de la formación. A lo que queremos tender es a ir reconociendo esas experiencias, las pasantías, entre otras experiencias de extensión, dentro de la propia currícula.",
+      "La universidad ha jerarquizado y profesionalizado la extensión para los docentes, en los desafíos de la carrera docente, y sobre todo en el plus que tiene para la formación de nuestros estudiantes en todos los niveles."
+    ],
     "x": 78, "y": 66, "escala": 0.95, "rotacion": -3, "profundidad": 4,
     "animacion": "slide", "duracion": 700, "ordenNarrativo": 7, "visible": true
   },
@@ -59,7 +83,10 @@
     "id": "t-muguersa-posadas", "sede": "posadas",
     "nombreCompleto": "Eva Muguersa", "cargo": "Secretaria Adjunta de Extensión", "institucion": "Facultad de Humanidades y Ciencias Sociales (FHyCS)",
     "foto": null,
-    "texto": "Eso que antes era impartir, impartir, y ahora es esto de construir, socializar, retroalimentarnos con la comunidad también.",
+    "citas": [
+      "Eso que antes era impartir, impartir, y ahora es esto de construir, socializar, retroalimentarnos con la comunidad también.",
+      "Lo que tiene la extensión es esa flexibilidad y esa posibilidad de adaptarse, esa dinámica para abordar los problemas que tenemos hoy, que cambian a cada rato."
+    ],
     "x": 50, "y": 74, "escala": 0.88, "rotacion": 4, "profundidad": 2,
     "animacion": "float", "duracion": 650, "ordenNarrativo": 8, "visible": true
   },
@@ -67,7 +94,10 @@
     "id": "t-matot-posadas", "sede": "posadas",
     "nombreCompleto": "Martín Matot", "cargo": "Responsable del Área de Graduados", "institucion": "UNaM",
     "foto": null,
-    "texto": "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
+    "citas": [
+      "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
+      "Tratamos de hacer cursos interdisciplinarios que abarquen a varias carreras, para que también haya interacción entre graduados de diferentes unidades académicas. Lo que intentamos hacer es relacionar todas las profesiones, porque hay núcleos en común e intereses en común con los graduados."
+    ],
     "x": 70, "y": 84, "escala": 0.9, "rotacion": -2, "profundidad": 5,
     "animacion": "fade", "duracion": 700, "ordenNarrativo": 9, "visible": true
   },
@@ -76,7 +106,11 @@
     "id": "t-catogui-obera", "sede": "obera",
     "nombreCompleto": "Ing. Sergio Catogui", "cargo": "Vicerrector", "institucion": "UNaM",
     "foto": "assets/personas/sergio-catogui.jpeg",
-    "texto": "Lo que se busca a través de la extensión es que los saberes y los conocimientos que están en la universidad no queden encerrados dentro de la universidad, en una especie de torre de marfil, sino que salgamos a vincularnos en forma activa con toda la sociedad.",
+    "citas": [
+      "Lo que se busca a través de la extensión es que los saberes y los conocimientos que están en la universidad no queden encerrados dentro de la universidad, en una especie de torre de marfil, sino que salgamos a vincularnos en forma activa con toda la sociedad.",
+      "Expresar la satisfacción con la gran cantidad de docentes, no docentes y estudiantes que están comprometidos en esta actividad de extensión, que nos vincula con el medio y también nos trae una reflexión acerca de nuestras actividades.",
+      "Estas actividades generan mucha empatía en la comunidad. Tiene que ver con la territorialidad: un proyecto de extensión se vincula con la gente, está al lado de la gente, es un concepto de cercanía."
+    ],
     "x": 46, "y": 14, "escala": 0.95, "rotacion": -4, "profundidad": 5,
     "animacion": "slide", "duracion": 750, "ordenNarrativo": 1, "visible": true
   },
@@ -84,7 +118,10 @@
     "id": "t-casabone-obera", "sede": "obera",
     "nombreCompleto": "Adrián/Ariana Casabone", "cargo": "Representante de extensión", "institucion": "Facultad de Arte y Diseño (FAyD)",
     "foto": null,
-    "texto": "Mañana estaremos realizando un conversatorio que va a convocar a docentes y no docentes que vienen trabajando en la extensión, para generar estos espacios de intercambio y reflexión sobre nuestros modos de hacer extensión y construir conocimiento colectivo con la comunidad.",
+    "citas": [
+      "Mañana estaremos realizando un conversatorio que va a convocar a docentes y no docentes que vienen trabajando en la extensión, para generar estos espacios de intercambio y reflexión sobre nuestros modos de hacer extensión y construir conocimiento colectivo con la comunidad.",
+      "Nos posibilita pensarnos, reflexionando sobre nuestros modos de hacer extensión, de cómo construimos conocimiento con la comunidad, y de cómo vamos trabajando en estos espacios que vinculan tanto los saberes académicos como la extensión y la investigación, fortaleciendo las trayectorias formativas de nuestros estudiantes."
+    ],
     "x": 64, "y": 20, "escala": 0.92, "rotacion": 5, "profundidad": 3,
     "animacion": "fade", "duracion": 700, "ordenNarrativo": 2, "visible": true
   },
@@ -92,7 +129,11 @@
     "id": "t-franco-obera", "sede": "obera",
     "nombreCompleto": "Mauricio Franco", "cargo": "Secretario General de Extensión", "institucion": "UNaM",
     "foto": "assets/personas/mauricio-franco.webp",
-    "texto": "Para nosotros, la extensión transforma.",
+    "citas": [
+      "Para nosotros, la extensión transforma.",
+      "Es la actividad silenciosa que pasa, que muchas veces no conocemos, no sabemos qué están haciendo los colegas.",
+      "Entender que la extensión no es un espacio de transferencia, sino un espacio de construcción colectiva."
+    ],
     "x": 52, "y": 30, "escala": 1.0, "rotacion": -3, "profundidad": 4,
     "animacion": "zoom", "duracion": 800, "ordenNarrativo": 3, "visible": true
   },
@@ -100,7 +141,9 @@
     "id": "t-fayd-obera", "sede": "obera",
     "nombreCompleto": "Representante de FAyD", "cargo": "Equipo de extensión", "institucion": "Facultad de Arte y Diseño (FAyD)",
     "foto": null,
-    "texto": "Estamos muy contentos de poder compartir las experiencias que se vienen desarrollando y todo el trabajo que se viene desarrollando en todas las unidades académicas. La extensión es uno de los pilares más importantes que tiene la universidad, y esta posibilidad de fortalecer el diálogo y poder trabajar desde el territorio, detectando problemas y encontrando alternativas para poder interactuar con la sociedad.",
+    "citas": [
+      "Estamos muy contentos de poder compartir las experiencias que se vienen desarrollando y todo el trabajo que se viene desarrollando en todas las unidades académicas. La extensión es uno de los pilares más importantes que tiene la universidad, y esta posibilidad de fortalecer el diálogo y poder trabajar desde el territorio, detectando problemas y encontrando alternativas para poder interactuar con la sociedad."
+    ],
     "x": 74, "y": 36, "escala": 0.85, "rotacion": 4, "profundidad": 2,
     "animacion": "float", "duracion": 650, "ordenNarrativo": 4, "visible": true
   },
@@ -108,32 +151,45 @@
     "id": "t-guidec-obera", "sede": "obera",
     "nombreCompleto": "Mg. Roberto Guidec", "cargo": "Secretario General de Posgrado", "institucion": "UNaM",
     "foto": "assets/personas/roberto-guidec.webp",
-    "texto": "Tenemos becarios realizando actividades con financiamiento de los brasileños, que de alguna manera forma parte de la currícula y de la formación del alumno.",
-    "x": 60, "y": 44, "escala": 0.95, "rotacion": -5, "profundidad": 6,
+    "citas": [
+      "Tenemos becarios realizando actividades con financiamiento de los brasileños, que de alguna manera forma parte de la currícula y de la formación del alumno.",
+      "Una experiencia de pasantía se puede reconocer a partir de la reforma de planes de estudio como parte de la formación. A lo que queremos tender es a ir reconociendo esas experiencias, las pasantías, entre otras experiencias de extensión, dentro de la propia currícula.",
+      "La universidad ha jerarquizado y profesionalizado la extensión para los docentes, en los desafíos de la carrera docente, y sobre todo en el plus que tiene para la formación de nuestros estudiantes en todos los niveles."
+    ],
+    "x": 58, "y": 48, "escala": 0.95, "rotacion": -5, "profundidad": 6,
     "animacion": "fade", "duracion": 700, "ordenNarrativo": 5, "visible": true
   },
   {
     "id": "t-barbaro-obera", "sede": "obera",
     "nombreCompleto": "Marcos Bárbaro", "cargo": "Representante de extensión", "institucion": "Facultad de Ingeniería (FI)",
     "foto": null,
-    "texto": "Creo, personalmente e institucionalmente, que sostener y fortalecer la extensión también es una forma de defender el rol social de la universidad y su compromiso con la sociedad.",
-    "x": 86, "y": 54, "escala": 0.95, "rotacion": 3, "profundidad": 3,
+    "citas": [
+      "Creo, personalmente e institucionalmente, que sostener y fortalecer la extensión también es una forma de defender el rol social de la universidad y su compromiso con la sociedad.",
+      "Si estamos hablando de 16 proyectos en estos últimos 4 años, son actividades que enmarcan a equipos completos de docentes, estudiantes y graduados, que tienen un gran trabajo, pero también un compromiso y una construcción colectiva que se da."
+    ],
+    "x": 80, "y": 54, "escala": 0.95, "rotacion": 3, "profundidad": 3,
     "animacion": "slide", "duracion": 700, "ordenNarrativo": 6, "visible": true
   },
   {
     "id": "t-spasiuk-obera", "sede": "obera",
     "nombreCompleto": "Mg. Gisela Spasiuk", "cargo": "Secretaria General Académica", "institucion": "UNaM",
     "foto": "assets/personas/gisela-spasiuk.jpeg",
-    "texto": "Estamos mostrando que formar profesionales no es exclusivamente la currícula, sino que es también esa serie de actividades. El estudiante se presenta con un analítico donde, de modo integral, mostramos cómo ha priorizado esa formación, que no es solo de profesional, sino también de ciudadano.",
-    "x": 76, "y": 72, "escala": 1.0, "rotacion": -2, "profundidad": 5,
+    "citas": [
+      "Estamos mostrando que formar profesionales no es exclusivamente la currícula, sino que es también esa serie de actividades. El estudiante se presenta con un analítico donde, de modo integral, mostramos cómo ha priorizado esa formación, que no es solo de profesional, sino también de ciudadano.",
+      "Es una gran deuda que tiene el sistema universitario argentino: poner en valor dentro de los currículum y las trayectorias docentes el amplio, arduo y profundo trabajo, con mucho compromiso, que llevamos adelante los docentes como integrantes o coordinadores de proyectos de extensión."
+    ],
+    "x": 66, "y": 66, "escala": 1.0, "rotacion": -2, "profundidad": 5,
     "animacion": "float", "duracion": 750, "ordenNarrativo": 7, "visible": true
   },
   {
     "id": "t-matot-obera", "sede": "obera",
     "nombreCompleto": "Martín Matot", "cargo": "Responsable del Área de Graduados", "institucion": "UNaM",
     "foto": null,
-    "texto": "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
-    "x": 90, "y": 82, "escala": 0.88, "rotacion": 4, "profundidad": 4,
+    "citas": [
+      "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
+      "Tratamos de hacer cursos interdisciplinarios que abarquen a varias carreras, para que también haya interacción entre graduados de diferentes unidades académicas. Lo que intentamos hacer es relacionar todas las profesiones, porque hay núcleos en común e intereses en común con los graduados."
+    ],
+    "x": 86, "y": 76, "escala": 0.88, "rotacion": 4, "profundidad": 4,
     "animacion": "fade", "duracion": 700, "ordenNarrativo": 8, "visible": true
   },
 
@@ -141,39 +197,56 @@
     "id": "t-spasiuk-eldorado", "sede": "eldorado",
     "nombreCompleto": "Mg. Gisela Spasiuk", "cargo": "Secretaria General Académica", "institucion": "UNaM",
     "foto": "assets/personas/gisela-spasiuk.jpeg",
-    "texto": "Estamos mostrando que formar profesionales no es exclusivamente la currícula, sino que es también esa serie de actividades. El estudiante se presenta con un analítico donde, de modo integral, mostramos cómo ha priorizado esa formación, que no es solo de profesional, sino también de ciudadano.",
-    "x": 78, "y": 28, "escala": 1.0, "rotacion": -3, "profundidad": 5,
+    "citas": [
+      "Estamos mostrando que formar profesionales no es exclusivamente la currícula, sino que es también esa serie de actividades. El estudiante se presenta con un analítico donde, de modo integral, mostramos cómo ha priorizado esa formación, que no es solo de profesional, sino también de ciudadano.",
+      "Es una gran deuda que tiene el sistema universitario argentino: poner en valor dentro de los currículum y las trayectorias docentes el amplio, arduo y profundo trabajo, con mucho compromiso, que llevamos adelante los docentes como integrantes o coordinadores de proyectos de extensión."
+    ],
+    "x": 62, "y": 12, "escala": 1.0, "rotacion": -3, "profundidad": 5,
     "animacion": "fade", "duracion": 750, "ordenNarrativo": 1, "visible": true
   },
   {
     "id": "t-lucasdelima-eldorado", "sede": "eldorado",
     "nombreCompleto": "Lucas de Lima", "cargo": "Secretario de Extensión", "institucion": "Escuela Agrotécnica Eldorado",
     "foto": null,
-    "texto": "También el valor que tiene, en nuestro caso, que trabajamos con estudiantes secundarios que están en plena formación profesional, académica y también como personas: el poder vincularse con la comunidad, no solamente desde las unidades académicas sembrar comunidad, sino también lo que ese vínculo siembra en cada uno de nuestros estudiantes.",
-    "x": 92, "y": 40, "escala": 0.92, "rotacion": 4, "profundidad": 3,
+    "citas": [
+      "También el valor que tiene, en nuestro caso, que trabajamos con estudiantes secundarios que están en plena formación profesional, académica y también como personas: el poder vincularse con la comunidad, no solamente desde las unidades académicas sembrar comunidad, sino también lo que ese vínculo siembra en cada uno de nuestros estudiantes.",
+      "Esta semana en la escuela tuvimos el regreso de más de 20 estudiantes que estuvieron haciendo un intercambio en Brasil, también haciendo extensión."
+    ],
+    "x": 78, "y": 22, "escala": 0.92, "rotacion": 4, "profundidad": 3,
     "animacion": "float", "duracion": 700, "ordenNarrativo": 2, "visible": true
   },
   {
     "id": "t-franco-eldorado", "sede": "eldorado",
     "nombreCompleto": "Mauricio Franco", "cargo": "Secretario General de Extensión", "institucion": "UNaM",
     "foto": "assets/personas/mauricio-franco.webp",
-    "texto": "Para nosotros, la extensión transforma.",
-    "x": 76, "y": 50, "escala": 1.0, "rotacion": -4, "profundidad": 4,
+    "citas": [
+      "Para nosotros, la extensión transforma.",
+      "Es la actividad silenciosa que pasa, que muchas veces no conocemos, no sabemos qué están haciendo los colegas.",
+      "Entender que la extensión no es un espacio de transferencia, sino un espacio de construcción colectiva."
+    ],
+    "x": 58, "y": 34, "escala": 1.0, "rotacion": -4, "profundidad": 4,
     "animacion": "fade", "duracion": 700, "ordenNarrativo": 3, "visible": true
   },
   {
     "id": "t-berger-eldorado", "sede": "eldorado",
     "nombreCompleto": "Silvina Berger", "cargo": "Secretaria de Vinculación Tecnológica", "institucion": "Facultad de Ciencias Forestales (FCF)",
     "foto": null,
-    "texto": "Las acciones que ellos fueron haciendo en su carrera las pueden ver plasmadas después en su analítico.",
-    "x": 88, "y": 60, "escala": 0.9, "rotacion": 3, "profundidad": 2,
+    "citas": [
+      "Las acciones que ellos fueron haciendo en su carrera las pueden ver plasmadas después en su analítico.",
+      "Queríamos felicitar a todo el equipo de los secretarios de extensión, al secretario general que han organizado esta actividad coordinada entre las diferentes unidades académicas, y felicitar a todos los docentes y estudiantes que han presentado trabajos en esta convocatoria, que son proyectos de extensión del año 2022 al 2024."
+    ],
+    "x": 74, "y": 46, "escala": 0.9, "rotacion": 3, "profundidad": 2,
     "animacion": "slide", "duracion": 650, "ordenNarrativo": 4, "visible": true
   },
   {
     "id": "t-catogui-eldorado", "sede": "eldorado",
     "nombreCompleto": "Ing. Sergio Catogui", "cargo": "Vicerrector", "institucion": "UNaM",
     "foto": "assets/personas/sergio-catogui.jpeg",
-    "texto": "Lo que se busca a través de la extensión es que los saberes y los conocimientos que están en la universidad no queden encerrados dentro de la universidad, en una especie de torre de marfil, sino que salgamos a vincularnos en forma activa con toda la sociedad.",
+    "citas": [
+      "Lo que se busca a través de la extensión es que los saberes y los conocimientos que están en la universidad no queden encerrados dentro de la universidad, en una especie de torre de marfil, sino que salgamos a vincularnos en forma activa con toda la sociedad.",
+      "Expresar la satisfacción con la gran cantidad de docentes, no docentes y estudiantes que están comprometidos en esta actividad de extensión, que nos vincula con el medio y también nos trae una reflexión acerca de nuestras actividades.",
+      "Estas actividades generan mucha empatía en la comunidad. Tiene que ver con la territorialidad: un proyecto de extensión se vincula con la gente, está al lado de la gente, es un concepto de cercanía."
+    ],
     "x": 78, "y": 70, "escala": 0.95, "rotacion": -2, "profundidad": 6,
     "animacion": "zoom", "duracion": 800, "ordenNarrativo": 5, "visible": true
   },
@@ -181,16 +254,23 @@
     "id": "t-guidec-eldorado", "sede": "eldorado",
     "nombreCompleto": "Mg. Roberto Guidec", "cargo": "Secretario General de Posgrado", "institucion": "UNaM",
     "foto": "assets/personas/roberto-guidec.webp",
-    "texto": "Tenemos becarios realizando actividades con financiamiento de los brasileños, que de alguna manera forma parte de la currícula y de la formación del alumno.",
-    "x": 92, "y": 80, "escala": 0.95, "rotacion": 4, "profundidad": 4,
+    "citas": [
+      "Tenemos becarios realizando actividades con financiamiento de los brasileños, que de alguna manera forma parte de la currícula y de la formación del alumno.",
+      "Una experiencia de pasantía se puede reconocer a partir de la reforma de planes de estudio como parte de la formación. A lo que queremos tender es a ir reconociendo esas experiencias, las pasantías, entre otras experiencias de extensión, dentro de la propia currícula.",
+      "La universidad ha jerarquizado y profesionalizado la extensión para los docentes, en los desafíos de la carrera docente, y sobre todo en el plus que tiene para la formación de nuestros estudiantes en todos los niveles."
+    ],
+    "x": 80, "y": 70, "escala": 0.95, "rotacion": 4, "profundidad": 4,
     "animacion": "fade", "duracion": 700, "ordenNarrativo": 6, "visible": true
   },
   {
     "id": "t-matot-eldorado", "sede": "eldorado",
     "nombreCompleto": "Martín Matot", "cargo": "Responsable del Área de Graduados", "institucion": "UNaM",
     "foto": null,
-    "texto": "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
-    "x": 80, "y": 88, "escala": 0.88, "rotacion": -3, "profundidad": 5,
+    "citas": [
+      "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
+      "Tratamos de hacer cursos interdisciplinarios que abarquen a varias carreras, para que también haya interacción entre graduados de diferentes unidades académicas. Lo que intentamos hacer es relacionar todas las profesiones, porque hay núcleos en común e intereses en común con los graduados."
+    ],
+    "x": 64, "y": 84, "escala": 0.88, "rotacion": -3, "profundidad": 5,
     "animacion": "float", "duracion": 700, "ordenNarrativo": 7, "visible": true
   }
 ]

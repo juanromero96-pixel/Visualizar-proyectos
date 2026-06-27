@@ -2,9 +2,8 @@
  * app.js
  * -----------------------------------------------------------------------
  * Arma la escena pública a partir de los datos en /data. La posición de
- * cada elemento ya no se fija acá: se deja como "ancla" en data-* y la
- * resuelve js/layout.js una vez que el elemento está en el DOM y se puede
- * medir su tamaño real.
+ * cada elemento se resuelve en js/layout.js; la cita que muestra cada
+ * tarjeta de testimonio se resuelve acá mismo, al entrar a la sede.
  */
 (async function iniciarSitio() {
   let sedes, testimonios, multimedia, config;
@@ -29,15 +28,19 @@
   const contenedor = document.getElementById('carrusel');
   const secciones = Array.from(contenedor.querySelectorAll('.sede'));
 
-  // Distribución inicial: ya con todo en el DOM y medible (las tres
-  // sedes están montadas aunque solo una esté a la vista, así que se
-  // resuelven las tres de una vez).
-  secciones.forEach((s) => Distribuidor.distribuir(s));
+  const recalcular = () => secciones.forEach((s) => Distribuidor.distribuir(s));
+  recalcular();
+
+  // Si la tipografía web todavía no había cargado en el momento de medir
+  // las tarjetas, las medidas usadas para distribuir no coinciden con el
+  // tamaño real una vez que Roboto termina de cargar — se recalcula una
+  // vez más cuando eso pasa, además de en cada cambio de tamaño de ventana.
+  if (document.fonts?.ready) document.fonts.ready.then(recalcular);
 
   let pendienteResize = null;
   window.addEventListener('resize', () => {
     clearTimeout(pendienteResize);
-    pendienteResize = setTimeout(() => secciones.forEach((s) => Distribuidor.distribuir(s)), 180);
+    pendienteResize = setTimeout(recalcular, 180);
   });
 
   iniciarInteraccionDeEnfoque(secciones);
@@ -50,6 +53,7 @@
     onCambio: (indice, seccionNueva) => {
       actualizarRuta(indice);
       Secuenciador.entrar(seccionNueva); // si ya se reveló antes, esto no hace nada
+      refrescarCitas(seccionNueva, testimonios); // esto sí corre siempre, aunque ya se haya visitado
     },
   });
 
@@ -60,7 +64,10 @@
   document.querySelector('.ruta-flecha--siguiente')?.addEventListener('click', () => carrusel.siguiente());
 
   actualizarRuta(0);
-  if (secciones[0]) Secuenciador.entrar(secciones[0]);
+  if (secciones[0]) {
+    Secuenciador.entrar(secciones[0]);
+    refrescarCitas(secciones[0], testimonios);
+  }
 })();
 
 function mostrarErrorCarga(error) {
@@ -142,21 +149,17 @@ function crearElemento(item) {
   el.className = `elemento elemento--${item._tipo} elemento--anim-${item.animacion || 'fade'}`;
   el.tabIndex = 0;
   el.dataset.orden = item.ordenNarrativo || 0;
-
-  // Estos cuatro son los que lee js/layout.js para calcular la posición
-  // final — el x/y del dato es la preferencia de partida, no el destino.
   el.dataset.anclaX = item.x;
   el.dataset.anclaY = item.y;
   el.dataset.escala = item.escala ?? 1;
   el.dataset.rotacion = item.rotacion ?? 0;
+  if (item._tipo === 'testimonio') el.dataset.testimonioId = item.id;
 
   el.style.setProperty('--escala', item.escala ?? 1);
   el.style.setProperty('--rot', `${item.rotacion ?? 0}deg`);
   el.style.setProperty('--z', String(4 + Number(item.profundidad || 3)));
   el.style.setProperty('--opacidad-final', item.opacidadFinal ?? 1);
   el.style.setProperty('--duracion', `${item.duracion || 600}ms`);
-  // Posición de arranque (antes de que layout.js mida y reubique): el
-  // mismo % del dato, así no hay un "salto" visible una vez calculado.
   el.style.setProperty('--x', `${item.x}%`);
   el.style.setProperty('--y', `${item.y}%`);
 
@@ -167,14 +170,23 @@ function crearElemento(item) {
     interior.appendChild(crearTarjetaTestimonio(item));
   } else if (item._tipo === 'foto') {
     interior.innerHTML = `
-      <img src="${item.src}" alt="${escaparHTML(item.alt || '')}" loading="lazy" onerror="this.closest('.elemento').classList.add('elemento--sin-imagen')">
+      <img src="${item.src}" alt="${escaparHTML(item.alt || '')}" loading="lazy">
       ${item.caption ? `<p class="elemento-caption">${escaparHTML(item.caption)}</p>` : ''}
     `;
+    interior.querySelector('img').addEventListener('error', () => el.classList.add('elemento--sin-imagen'));
   } else if (item._tipo === 'video') {
     interior.innerHTML = `
-      <video src="${item.src}" poster="${item.poster || ''}" controls preload="none"></video>
+      <video poster="${item.poster || ''}" controls preload="none"><source src="${item.src}"></video>
       ${item.caption ? `<p class="elemento-caption">${escaparHTML(item.caption)}</p>` : ''}
     `;
+    // <video> no falla tan prolijo como <img>: si el archivo no existe,
+    // el reproductor nativo queda visible vacío en vez de desaparecer.
+    // Acá se oculta toda la tarjeta apenas falla la carga, igual que con
+    // las fotos — antes esto no estaba y un video sin archivo real
+    // quedaba como ruido visual permanente en la escena.
+    const video = interior.querySelector('video');
+    video.addEventListener('error', () => el.classList.add('elemento--sin-imagen'), true);
+    video.querySelector('source').addEventListener('error', () => el.classList.add('elemento--sin-imagen'));
   }
 
   el.appendChild(interior);
@@ -190,7 +202,8 @@ function crearTarjetaTestimonio(item) {
   figura.className = 'testimonio-foto';
 
   if (item.foto) {
-    figura.innerHTML = `<img src="${item.foto}" alt="${escaparHTML(item.nombreCompleto)}" loading="lazy" onerror="this.parentElement.classList.add('testimonio-foto--rota')">`;
+    figura.innerHTML = `<img src="${item.foto}" alt="${escaparHTML(item.nombreCompleto)}" loading="lazy">`;
+    figura.querySelector('img').addEventListener('error', () => figura.classList.add('testimonio-foto--rota'));
   } else {
     const iniciales = inicialesDe(item.nombreCompleto);
     const color = PALETA_MONOGRAMA[hashSimple(item.nombreCompleto) % PALETA_MONOGRAMA.length];
@@ -203,13 +216,79 @@ function crearTarjetaTestimonio(item) {
     <p class="testimonio-nombre">${escaparHTML(item.nombreCompleto)}</p>
     <p class="testimonio-cargo">${escaparHTML(item.cargo)}</p>
     <p class="testimonio-institucion">${escaparHTML(item.institucion)}</p>
-    <blockquote class="testimonio-cita">${escaparHTML(item.texto)}</blockquote>
+    <blockquote class="testimonio-cita"></blockquote>
   `;
+  // La cita se completa en refrescarCitas() — no acá — porque tiene que
+  // poder volver a elegirse cada vez que se reingresa a la sede, no solo
+  // una vez cuando se construye la tarjeta.
 
   const envoltorio = document.createElement('div');
   envoltorio.appendChild(figura);
   envoltorio.appendChild(cuerpo);
   return envoltorio;
+}
+
+/**
+ * Elige qué cita mostrar para una persona. Si tiene una sola, siempre es
+ * esa. Si tiene varias, elige al azar evitando repetir la que se mostró
+ * la última vez PARA ESA PERSONA (no por tarjeta: una autoridad general
+ * que aparece en las tres sedes comparte el mismo "último mostrado", así
+ * que entrar a una sede distinta tiene más chances de traer una cita
+ * distinta). Se guarda en sessionStorage: dura la sesión, no la cita
+ * elegida en sí, sino cuál fue la última — al cerrar la pestaña se pierde
+ * y la siguiente sesión vuelve a elegir libremente.
+ */
+function elegirCita(item) {
+  const citas = Array.isArray(item.citas) && item.citas.length ? item.citas : [item.texto || ''];
+  if (citas.length <= 1) return citas[0];
+
+  const clave = `unam_semana_regional_ultima_cita_${normalizarClave(item.nombreCompleto)}`;
+  const ultima = sessionStorage.getItem(clave);
+  const candidatas = ultima ? citas.filter((c) => c !== ultima) : citas;
+  const elegida = candidatas[Math.floor(Math.random() * candidatas.length)] || citas[0];
+
+  sessionStorage.setItem(clave, elegida);
+  return elegida;
+}
+
+function normalizarClave(texto = '') {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Vuelve a elegir la cita de cada tarjeta de testimonio de una sede y
+ * actualiza el texto en pantalla. Se llama tanto al entrar por primera
+ * vez como en cada reingreso — a diferencia de la animación de entrada
+ * (que solo se reproduce una vez), la cita sí puede cambiar cada vez.
+ * Si la tarjeta ya está visible, el cambio de texto se hace con una
+ * transición suave en vez de un salto.
+ */
+function refrescarCitas(seccion, testimonios) {
+  seccion.querySelectorAll('.elemento--testimonio').forEach((el) => {
+    const item = testimonios.find((t) => t.id === el.dataset.testimonioId);
+    const nodoTexto = el.querySelector('.testimonio-cita');
+    if (!item || !nodoTexto) return;
+
+    const nuevaCita = elegirCita(item);
+    if (nodoTexto.dataset.citaActual === nuevaCita) return;
+
+    const yaVisible = el.classList.contains('elemento--visible');
+    if (!yaVisible) {
+      nodoTexto.textContent = nuevaCita;
+      nodoTexto.dataset.citaActual = nuevaCita;
+      return;
+    }
+    nodoTexto.style.opacity = '0';
+    window.setTimeout(() => {
+      nodoTexto.textContent = nuevaCita;
+      nodoTexto.dataset.citaActual = nuevaCita;
+      nodoTexto.style.opacity = '1';
+    }, 260);
+  });
 }
 
 function inicialesDe(nombreCompleto = '') {

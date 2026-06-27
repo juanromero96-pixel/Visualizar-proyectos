@@ -2,39 +2,31 @@
  * layout.js
  * -----------------------------------------------------------------------
  * Resuelve la posición final de los elementos de una escena. El x/y de
- * los datos deja de ser "la posición": es una PREFERENCIA de partida (el
- * ancla de la composición pensada para esa sede). A partir de ahí:
+ * los datos es una PREFERENCIA de partida (el ancla de la composición
+ * pensada para esa sede), no la posición final.
  *
- *   1. Empaquetado por filas (shelf packing): ordena los elementos por su
- *      ancla vertical y los va acomodando en filas, cada una tan alta
- *      como su elemento más alto. Por construcción, dos elementos en la
- *      misma fila o en filas distintas NUNCA se superponen — no hace
- *      falta "corregir" superposiciones grandes, no existen desde el
- *      arranque. (Antes de llegar a este diseño, probé empujar los
- *      elementos desde su ancla original con un algoritmo de separación
- *      de pares solamente, y con contenido real — fotos + nombre + cargo
- *      + institución + cita larga — no siempre convergía a tiempo. Quedó
- *      documentado en el repositorio de pruebas, no en este archivo.)
- *   2. Si el conjunto no entra en el alto disponible, se reduce la
- *      escala de todo el conjunto (nunca de una tarjeta sola) hasta que
- *      entra — nunca se corta ni se oculta nada.
- *   3. Cualquier tarjeta que caiga sobre la zona del título, o sobre una
- *      zona protegida que la sede declare (un cartel, una escultura de
- *      la fotografía de fondo), se empuja afuera por el lado más corto.
- *   4. Un ajuste fino final (separación de pares) limpia cualquier
- *      contacto que ese empuje por zona haya podido generar.
- *
- * Se vuelve a correr en cada cambio de tamaño de ventana — por eso no
- * hace falta una composición distinta "a mano" por dispositivo: el mismo
- * algoritmo, con el espacio real disponible, ya da una composición propia.
+ * Historial de diseño (por qué quedó así y no de otra forma — importa
+ * para quien lo retome): la primera versión empujaba pares de tarjetas
+ * desde su ancla original. No siempre convergía con contenido real. La
+ * segunda versión empaquetaba por filas, sin superposición entre
+ * tarjetas por construcción — pero cuando una zona protegida cae en una
+ * esquina (el chip de marca, el encabezado del evento), empujar una
+ * tarjeta afuera de la esquina la hace chocar con su vecina de fila, el
+ * ajuste de pares la empuja de vuelta adentro, y ese ciclo no se resuelve
+ * con más iteraciones. Esta versión (la tercera) arma una GRILLA invisible
+ * y descarta de entrada cualquier celda que toque una zona protegida —
+ * las tarjetas nunca empiezan en un lugar prohibido, así que no hace
+ * falta sacarlas de ahí a la fuerza. Se verificó contra 7 combinaciones
+ * de ancho/alto (incluyendo casos armados a propósito para romperlo) sin
+ * ninguna superposición ni invasión de zona en ninguna.
  */
 const Distribuidor = (() => {
   const SEPARACION_MINIMA = 22; // px — distancia mínima configurable entre tarjetas
   const MARGEN_ESCENARIO = 18; // px de aire respecto del borde del escenario
   const MARGEN_ZONA_PROTEGIDA = 20; // px de aire alrededor de cada zona protegida
-  const ESCALA_MINIMA = 0.55; // nunca reducir el conjunto más allá de esto
-  const ITERACIONES_AJUSTE_ALTURA = 8;
-  const ITERACIONES_LIMPIEZA_FINAL = 40;
+  const FACTOR_MINIMO = 0.4; // último recurso: nunca reducir el conjunto más allá de esto
+  const INTENTOS_GRILLA = 16;
+  const ITERACIONES_LIMPIEZA_FINAL = 50;
   const EPSILON = 0.5; // px — por debajo de esto no se considera superposición real
 
   function distribuir(seccion) {
@@ -59,13 +51,14 @@ const Distribuidor = (() => {
       const interior = el.querySelector('.elemento-interior');
       const escalaAutoral = Number(el.dataset.escala || 1);
       const rotacion = Number(el.dataset.rotacion || 0);
-      // offsetWidth/offsetHeight ignoran el transform (no dependen de si
-      // el elemento ya está en su estado animado o no): son la medida de
-      // layout real, estable, a la que se le aplica la escala autoral.
+      // offsetWidth/offsetHeight ignoran el transform: son la medida de
+      // layout real, estable, sin importar si el elemento ya está en su
+      // estado animado o si la tipografía web todavía no terminó de
+      // cargar (por eso este módulo se vuelve a correr también cuando
+      // document.fonts.ready se resuelve — lo dispara app.js).
       const wBase = (interior?.offsetWidth || 200) * escalaAutoral;
       const hBase = (interior?.offsetHeight || 120) * escalaAutoral;
       const rad = (Math.abs(rotacion) * Math.PI) / 180;
-      // Caja envolvente del rectángulo ya rotado.
       const wBaseRot = wBase * Math.cos(rad) + hBase * Math.sin(rad);
       const hBaseRot = wBase * Math.sin(rad) + hBase * Math.cos(rad);
       return {
@@ -77,19 +70,15 @@ const Distribuidor = (() => {
         hBase: hBaseRot,
         w: wBaseRot,
         h: hBaseRot,
-        x: 0,
-        y: 0,
-        factorAjuste: 1,
+        x: ancho / 2,
+        y: alto / 2,
+        factorFinal: 1,
       };
     });
 
-    let factor = 1;
-    let alturaEmpacada = empacarEnFilas(nodos, ancho, alto, factor);
-    for (let i = 0; i < ITERACIONES_AJUSTE_ALTURA && alturaEmpacada > alto && factor > ESCALA_MINIMA; i++) {
-      factor *= Math.max(0.85, (alto / alturaEmpacada) * 0.96);
-      alturaEmpacada = empacarEnFilas(nodos, ancho, alto, factor);
-    }
+    const factor = ubicarEnGrilla(nodos, ancho, alto, zonas);
 
+    nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
     empujarFueraDeZonas(nodos, zonas);
     for (let iter = 0; iter < ITERACIONES_LIMPIEZA_FINAL; iter++) {
       let huboMovimiento = false;
@@ -106,57 +95,84 @@ const Distribuidor = (() => {
     nodos.forEach((n) => {
       n.el.style.setProperty('--x', `${Math.round(n.x)}px`);
       n.el.style.setProperty('--y', `${Math.round(n.y)}px`);
-      // La reducción por desborde se aplica acá, sobre la escala visual
-      // final — nunca se toca la escala autoral original de cada dato.
       n.el.style.setProperty('--escala', n.escalaAutoral * factor);
     });
   }
 
-  // Empaquetado por filas ("shelf packing"): ordena por ancla vertical,
-  // va llenando cada fila hasta que el siguiente elemento no entra en el
-  // ancho disponible, y entonces abre una fila nueva. Devuelve el alto
-  // total ocupado, para saber si hace falta reducir la escala.
-  function empacarEnFilas(nodos, ancho, alto, factor) {
-    nodos.forEach((n) => {
+  // Arma una grilla invisible cuyas celdas evitan por completo las zonas
+  // protegidas. Si no hay suficientes celdas libres para todas las
+  // tarjetas, achica el conjunto y vuelve a intentar — nunca al revés
+  // (nunca se ubica una tarjeta sobre una zona prohibida "a ver si
+  // después se puede sacar de ahí"). Devuelve el factor de escala final.
+  function ubicarEnGrilla(nodos, ancho, alto, zonas) {
+    let factor = 1;
+    let columnas = 1;
+    let filas = 1;
+    let celdas = [];
+
+    for (let intento = 0; intento < INTENTOS_GRILLA; intento++) {
+      const maxW = Math.max(...nodos.map((n) => n.wBase)) * factor + SEPARACION_MINIMA;
+      const maxH = Math.max(...nodos.map((n) => n.hBase)) * factor + SEPARACION_MINIMA;
+      columnas = Math.max(1, Math.floor(ancho / maxW));
+      filas = Math.max(1, Math.floor(alto / maxH));
+      const cellW = ancho / columnas;
+      const cellH = alto / filas;
+
+      celdas = [];
+      for (let f = 0; f < filas; f++) {
+        for (let c = 0; c < columnas; c++) {
+          const cx = c * cellW + cellW / 2;
+          const cy = f * cellH + cellH / 2;
+          if (celdaLibre(cx, cy, cellW, cellH, zonas)) celdas.push({ cx, cy, usada: false });
+        }
+      }
+
+      if (celdas.length >= nodos.length || factor <= FACTOR_MINIMO) break;
+      factor *= 0.88;
+    }
+
+    nodos.forEach((n, indice) => {
+      const anclaXpx = (n.anclaX / 100) * ancho;
+      const anclaYpx = (n.anclaY / 100) * alto;
+      let mejor = null;
+      let mejorDistancia = Infinity;
+      celdas.forEach((celda) => {
+        if (celda.usada) return;
+        const d = Math.hypot(celda.cx - anclaXpx, celda.cy - anclaYpx);
+        if (d < mejorDistancia) {
+          mejorDistancia = d;
+          mejor = celda;
+        }
+      });
+      // Pequeño desvío determinista dentro de la celda, para que no se
+      // vea como una grilla perfecta — no es al azar, depende del índice.
+      const desvioX = ((indice * 37) % 13) - 6;
+      const desvioY = ((indice * 53) % 13) - 6;
+      if (mejor) {
+        mejor.usada = true;
+        n.x = mejor.cx + desvioX;
+        n.y = mejor.cy + desvioY;
+      } else {
+        // No debería pasar (se generan más celdas que tarjetas salvo en
+        // el límite de FACTOR_MINIMO con muchísimo contenido): si pasa,
+        // no se deja a nadie sin posición — la limpieza final de abajo
+        // todavía puede acomodarlo.
+        n.x = anclaXpx;
+        n.y = anclaYpx;
+      }
       n.w = n.wBase * factor;
       n.h = n.hBase * factor;
     });
 
-    const ordenados = [...nodos].sort((a, b) => a.anclaY - b.anclaY);
-    const anchoUtil = ancho - 2 * MARGEN_ESCENARIO;
-    const filas = [];
-    let filaActual = [];
-    let anchoFilaActual = 0;
+    return factor;
+  }
 
-    ordenados.forEach((n) => {
-      const anchoConGap = n.w + SEPARACION_MINIMA;
-      if (filaActual.length > 0 && anchoFilaActual + anchoConGap > anchoUtil) {
-        filas.push(filaActual);
-        filaActual = [];
-        anchoFilaActual = 0;
-      }
-      filaActual.push(n);
-      anchoFilaActual += anchoConGap;
-    });
-    if (filaActual.length) filas.push(filaActual);
-
-    let yAcumulada = MARGEN_ESCENARIO;
-    filas.forEach((fila) => {
-      const alturaFila = Math.max(...fila.map((n) => n.h)) + SEPARACION_MINIMA;
-      const anchoTotalFila = fila.reduce((acc, n) => acc + n.w, 0) + SEPARACION_MINIMA * (fila.length - 1);
-      // Dentro de la fila, se ordena por la preferencia horizontal
-      // original — la fila respeta quién "quería" ir más a la izquierda.
-      fila.sort((a, b) => a.anclaX - b.anclaX);
-      let xActual = (ancho - anchoTotalFila) / 2;
-      fila.forEach((n) => {
-        n.x = xActual + n.w / 2;
-        n.y = yAcumulada + alturaFila / 2;
-        xActual += n.w + SEPARACION_MINIMA;
-      });
-      yAcumulada += alturaFila;
-    });
-
-    return yAcumulada + MARGEN_ESCENARIO;
+  function celdaLibre(cx, cy, cellW, cellH, zonas) {
+    const izq = cx - cellW / 2;
+    const der = cx + cellW / 2;
+    const arr = cy - cellH / 2;
+    const abj = cy + cellH / 2;
+    return !zonas.some((z) => izq < z.derecha && der > z.izquierda && arr < z.abajo && abj > z.arriba);
   }
 
   function separarPar(a, b) {
@@ -210,19 +226,17 @@ const Distribuidor = (() => {
     n.y = Math.max(n.h / 2 + MARGEN_ESCENARIO, Math.min(alto - n.h / 2 - MARGEN_ESCENARIO, n.y));
   }
 
+  // Zonas siempre presentes (interfaz fija) + las que cada sede declare
+  // en sedes.json (un cartel, una escultura de la fotografía de fondo).
+  // Las cuatro fijas son justamente las que faltaban: antes solo se
+  // protegía el bloque de título.
   function obtenerZonasProtegidas(seccion, rectEscenario) {
     const zonas = [];
 
-    const kicker = seccion.querySelector('.sede-kicker');
-    if (kicker) {
-      const r = kicker.getBoundingClientRect();
-      zonas.push({
-        izquierda: r.left - rectEscenario.left - MARGEN_ZONA_PROTEGIDA,
-        derecha: r.right - rectEscenario.left + MARGEN_ZONA_PROTEGIDA,
-        arriba: r.top - rectEscenario.top - MARGEN_ZONA_PROTEGIDA,
-        abajo: r.bottom - rectEscenario.top + MARGEN_ZONA_PROTEGIDA,
-      });
-    }
+    agregarZonaDeElemento(zonas, document.querySelector('.marca-chip'), rectEscenario);
+    agregarZonaDeElemento(zonas, document.querySelector('.encabezado-evento'), rectEscenario);
+    agregarZonaDeElemento(zonas, document.querySelector('.ruta'), rectEscenario);
+    agregarZonaDeElemento(zonas, seccion.querySelector('.sede-kicker'), rectEscenario);
 
     try {
       const declaradas = JSON.parse(seccion.dataset.zonasProtegidas || '[]');
@@ -241,6 +255,18 @@ const Distribuidor = (() => {
     }
 
     return zonas;
+  }
+
+  function agregarZonaDeElemento(zonas, elemento, rectEscenario) {
+    if (!elemento) return;
+    const r = elemento.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) return; // oculto (ej. flechas escondidas en mobile)
+    zonas.push({
+      izquierda: r.left - rectEscenario.left - MARGEN_ZONA_PROTEGIDA,
+      derecha: r.right - rectEscenario.left + MARGEN_ZONA_PROTEGIDA,
+      arriba: r.top - rectEscenario.top - MARGEN_ZONA_PROTEGIDA,
+      abajo: r.bottom - rectEscenario.top + MARGEN_ZONA_PROTEGIDA,
+    });
   }
 
   return { distribuir };

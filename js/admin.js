@@ -49,7 +49,7 @@ const ESQUEMA_TESTIMONIO = [
   { clave: 'institucion', etiqueta: 'Institución / unidad académica', tipo: 'text' },
   { clave: 'foto', etiqueta: 'Ruta de la foto (vacío = monograma automático)', tipo: 'text', ayuda: 'Ej: assets/personas/nombre-apellido.jpg' },
   { clave: 'fotoArchivo', etiqueta: 'Subir foto (sugiere la ruta)', tipo: 'archivo', aceptar: 'image/*', objetivo: 'foto', rutaSugerida: 'assets/personas/' },
-  { clave: 'texto', etiqueta: 'Cita textual', tipo: 'textarea', filas: 4, ayuda: 'Se muestra exactamente como se escriba acá — no se recorta' },
+  { clave: 'citasTexto', etiqueta: 'Citas (una o varias)', tipo: 'textarea', filas: 6, ayuda: 'Si hay más de una, separarlas con una línea con solo "---". El sitio elige una al azar cada vez que se entra a la sede, sin repetir la última. Cada cita se muestra exactamente como se escriba acá.' },
   { clave: 'animacion', etiqueta: 'Animación de entrada', tipo: 'select', opciones: OPCIONES_ANIMACION },
   { clave: 'x', etiqueta: 'Posición X (%)', tipo: 'number', min: 0, max: 100, paso: 1, ayuda: 'También se puede arrastrar en la pestaña Escenas' },
   { clave: 'y', etiqueta: 'Posición Y (%)', tipo: 'number', min: 0, max: 100, paso: 1 },
@@ -203,7 +203,10 @@ function renderizarTestimonios() {
     estado.testimonios
       .filter((t) => t.sede === sede.id)
       .sort((a, b) => a.ordenNarrativo - b.ordenNarrativo)
-      .forEach((item) => lista.appendChild(crearTarjetaAdmin(item, ESQUEMA_TESTIMONIO, guardarTestimonios, eliminarTestimonio, (i) => `${i.nombreCompleto || '(sin nombre)'} — ${i.cargo || ''}`, renderizarTestimonios)));
+      .forEach((item) => {
+        item.citasTexto = (Array.isArray(item.citas) ? item.citas : [item.texto || '']).join('\n\n---\n\n');
+        lista.appendChild(crearTarjetaAdmin(item, ESQUEMA_TESTIMONIO, guardarTestimonios, eliminarTestimonio, (i) => `${i.nombreCompleto || '(sin nombre)'} — ${i.cargo || ''}`, renderizarTestimonios));
+      });
 
     habilitarArrastre(lista, (idsEnOrden) => {
       idsEnOrden.forEach((id, indice) => {
@@ -222,7 +225,7 @@ function renderizarTestimonios() {
       estado.testimonios.push({
         id: `t-${sede.id}-${Date.now()}`,
         sede: sede.id,
-        nombreCompleto: '', cargo: '', institucion: '', foto: null, texto: '',
+        nombreCompleto: '', cargo: '', institucion: '', foto: null, citas: [''],
         animacion: 'fade', x: 50, y: 50, escala: 1, rotacion: 0, profundidad: '3',
         opacidadFinal: 1, ordenNarrativo: cantidad + 1, duracion: 650,
         visible: true,
@@ -244,7 +247,16 @@ function eliminarTestimonio(item) {
 }
 
 function guardarTestimonios() {
-  Almacen.guardar('testimonios', estado.testimonios);
+  estado.testimonios.forEach((item) => {
+    if (typeof item.citasTexto === 'string') {
+      item.citas = item.citasTexto
+        .split(/\n*-{3,}\n*/)
+        .map((c) => c.trim())
+        .filter(Boolean);
+      if (!item.citas.length) item.citas = [''];
+    }
+  });
+  Almacen.guardar('testimonios', estado.testimonios.map(({ citasTexto, ...resto }) => resto));
   mostrarEstado('Testimonios guardados en este navegador');
   refrescarEscenaSiCorresponde();
 }

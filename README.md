@@ -244,23 +244,94 @@ pude conseguir un navegador real dentro de este entorno para confirmarlo
 con una captura de pantalla — lo más honesto es decir eso en vez de
 asumir que la simulación matemática es infalible.
 
-**Por qué no hay paginación ni carrusel de testimonios:** con 7 a 9
-elementos por escena, el empaquetado por filas entra cómodo en cualquier
-ancho ≥ 821px sin necesitar ocultar contenido. Si en una futura edición
-una sede llegara a tener muchos más testimonios (20+), ahí sí valdría la
-pena revisar esto — no antes, para no agregar una complejidad que hoy no
-hace falta.
+## Cuarta vuelta: bugs reales encontrados en capturas de pantalla
 
-**Interacción.** Pasar el mouse o el foco de teclado por una tarjeta la
-trae al frente (z-index), la agranda levemente y atenúa —sin ocultar— a
-las demás. Al salir, todo vuelve solo por las transiciones CSS.
+Las tres capturas que mandaste mostraban tres problemas distintos, no uno:
 
-**Responsive.** Por debajo de 821px el motor ni corre: el CSS ya pasa a
-una secuencia vertical simple (ver más arriba). De los 821px en adelante,
-el mismo algoritmo recibe el espacio real disponible en cada momento —
-eso ya produce composiciones distintas por tamaño de pantalla (no una
-versión escalada de la misma), porque la forma del espacio disponible
-cambia, no solo su tamaño. No agregué una tercera estrategia específica
-"para tablet": los dos modos que existen ya cubren ese rango razonablemente
-y sumar una tercera lógica de layout aumentaba el riesgo sin un problema
-concreto que la justificara.
+**1. Tarjetas tapando el encabezado fijo y el menú inferior.** El algoritmo
+anterior solo protegía la zona del título de cada sede — nunca el chip de
+marca (arriba izquierda), el encabezado del evento (arriba derecha) ni la
+navegación entre sedes (abajo centro). Ahora las cuatro están protegidas
+siempre, además de las zonas que cada sede declare.
+
+**2. Un video vacío visible como ruido.** `<img>` tenía manejo de error
+(se oculta si el archivo no existe); `<video>` no lo tenía, así que un
+video sin archivo real quedaba con el reproductor nativo vacío y visible
+en vez de desaparecer. Corregido con el mismo criterio que las fotos.
+
+**3. Posible desajuste por carga de tipografía.** Si Roboto todavía no
+había cargado en el momento exacto de medir las tarjetas, se medían con
+la fuente de reemplazo del sistema — que ocupa otro espacio — y la
+distribución calculada dejaba de coincidir con el tamaño real una vez que
+Roboto cargaba. Ahora se vuelve a calcular cuando `document.fonts.ready`
+se resuelve, además de en cada cambio de tamaño de ventana.
+
+### El algoritmo de distribución, rediseñado una tercera vez
+
+Al simular la versión anterior (empaquetado por filas) con las cuatro
+zonas fijas nuevas, encontré el motivo real de por qué seguía fallando:
+cuando una zona protegida cae en una esquina, empujar una tarjeta para
+afuera de la esquina la hace chocar con su vecina de fila: el ajuste de
+pares la empuja de vuelta adentro, y ese ciclo no se resuelve agregando
+más iteraciones, porque no es un problema de cantidad de pasos sino de
+que las dos correcciones se pelean entre sí.
+
+La solución: una **grilla invisible que descarta de entrada cualquier
+celda que toque una zona protegida** (chip, encabezado, menú inferior,
+título de la sede, zonas declaradas por la sede). Las tarjetas nunca
+empiezan en un lugar prohibido, así que no hace falta sacarlas de ahí a
+la fuerza — y un ajuste fino de separación de pares al final limpia
+cualquier contacto menor entre tarjetas. Si no hay suficientes celdas
+libres para todas (pantalla muy chica o muy ocupada por zonas), se achica
+el conjunto entero y se reintenta, nunca al revés.
+
+Se verificó (de nuevo, por simulación matemática — sigo sin poder
+conseguir un navegador real en este entorno) contra 7 combinaciones de
+pantalla, dos de ellas armadas a propósito para romperlo: cero
+superposiciones y cero invasión de zona protegida en las 7.
+
+## Citas múltiples por persona (antes: una sola, siempre la misma)
+
+`data/testimonios.json` reemplazó el campo `texto` por `citas` (una
+lista). 13 de las 14 personas tienen ahora 2 o 3 citas reales —
+extraídas del mismo documento de la transcripción, ninguna inventada—;
+"Representante de FAyD" quedó con una sola porque es la única que la
+fuente registra para esa intervención.
+
+**Cómo se elige:** al entrar a una sede (la primera vez, y cada
+reingreso — esto sí se repite, a diferencia de la animación de entrada),
+se elige una cita al azar para cada persona, evitando repetir la última
+que se le mostró a esa persona en cualquier sede de esta sesión. Una
+autoridad general que aparece en las tres sedes comparte ese "último
+mostrado", así que recorrer Posadas → Oberá → Eldorado tiene buenas
+chances de traer una cita distinta cada vez, tal como pedía el ejemplo
+del brief. Se guarda en `sessionStorage`: dura la sesión del navegador,
+no algo permanente.
+
+Si la tarjeta ya está visible cuando se reingresa, el cambio de texto se
+hace con una transición suave, no un salto.
+
+**Cómo se edita desde el panel:** el campo "Citas" de cada testimonio
+acepta una o varias, separadas por una línea con `---`. Internamente se
+guardan como lista en el JSON; el textarea es solo la forma de editarlas
+sin tener que tocar el archivo a mano.
+
+## Objetivos táctiles (Problema 5 del brief)
+
+Los controles de navegación (flechas, indicadores de sede) ahora miden al
+menos 44px en cualquier dispositivo con puntero táctil — se detecta por
+capacidad de puntero (`pointer: coarse`), no por ancho de pantalla, así
+que también aplica a una notebook con pantalla táctil grande.
+
+## Lo que no toqué de las "5 mejoras responsive" del brief
+
+El resto del Problema 5 (recortar fotos de fondo distinto por dispositivo,
+rediseñar la composición mobile más allá de lo que ya existía) y el
+Problema 4 completo (que la composición espacial — no solo las citas — se
+reordene en cada reingreso) quedaron afuera de esta vuelta a propósito: ya
+hay tres causas reales confirmadas por captura de pantalla más el sistema
+de citas, que es mucho para una sola entrega, y tocar la composición
+espacial de nuevo sin verificarla a fondo es exactamente el tipo de
+cambio que generó los problemas anteriores. Prefiero entregar esto
+verificado y avisar qué quedó pendiente, antes que sumar más superficie
+sin la misma verificación.
