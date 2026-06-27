@@ -256,11 +256,11 @@ function crearTarjetaTestimonio(item, interior) {
  * tres aplicada a cada cita.
  */
 function anchoSegunLargoDeCita(longitud) {
-  if (longitud < 70) return 230;
-  if (longitud < 140) return 270;
-  if (longitud < 220) return 310;
-  if (longitud < 320) return 350;
-  return 390;
+  if (longitud < 70) return 250;
+  if (longitud < 140) return 290;
+  if (longitud < 220) return 330;
+  if (longitud < 320) return 370;
+  return 410;
 }
 
 /**

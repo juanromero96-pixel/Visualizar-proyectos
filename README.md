@@ -276,6 +276,31 @@ necesario un campo ni un mecanismo nuevo — el campo `escala` ya existía
 para variar tamaño, solo le faltaba aplicarse con un criterio narrativo
 en vez de solo decorativo.
 
+## Octava vuelta: tamaño general y la zona del cartel de Oberá
+
+Liberé la zona del cartel "OBERA" — mismo criterio que la escultura de
+Eldorado la vez pasada: marcaste explícitamente que está bien tapar ese
+cartel, así que sacué esa zona protegida por completo.
+
+**Sobre el tamaño:** medí antes de tocar nada. Con 8-9 tarjetas de texto
+real compitiendo por el mismo escenario, hay un límite físico real — no
+es un parámetro mal puesto, es que ese contenido (fotos, nombre, cargo,
+institución y una cita de hasta 300+ caracteres, multiplicado por 8 o 9
+personas) ocupa lo que ocupa. Dicho esto, encontré margen real para
+agrandar sin volver a superponer:
+
+- Las bandas de ancho subieron 20px en cada nivel (250 a 410, antes 230 a 390).
+- La separación mínima entre tarjetas bajó de 22 a 16px — seguía siendo
+  más espacio del que hace falta para que no se toquen.
+- Sumado a liberar la zona del cartel en Oberá, el ancho promedio final en
+  escritorio (1920×956) pasó de 257–300px a 273–324px según la sede.
+
+Verificado de nuevo por simulación con los textos reales: sin
+superposición ni invasión de zona, en escritorio y en notebook
+(1280×800, donde el límite físico es más evidente — ahí las tarjetas
+sí quedan más chicas, 163-194px, porque genuinamente no entra más en
+ese espacio sin tapar algo).
+
 ## Séptima vuelta: el espacio vacío no estaba bloqueado — nadie lo pedía
 
 Marcaste en rojo zonas vacías de Oberá y Eldorado que "está bien que

@@ -39,7 +39,7 @@
  * ninguna.
  */
 const Distribuidor = (() => {
-  const SEPARACION_MINIMA = 22; // px — distancia mínima configurable entre tarjetas
+  const SEPARACION_MINIMA = 16; // px — distancia mínima configurable entre tarjetas
   const MARGEN_ESCENARIO = 18; // px de aire respecto del borde del escenario
   const MARGEN_ZONA_PROTEGIDA = 20; // px de aire alrededor de cada zona protegida
   const PASO_BUSQUEDA = 24; // px — resolución de la búsqueda de posición, fija

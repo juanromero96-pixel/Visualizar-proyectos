@@ -26,9 +26,6 @@
     ],
     "imagenFondo": "assets/backgrounds/obera.jpg",
     "composicion": "diagonal",
-    "zonasProtegidas": [
-      { "x": 28, "y": 48, "ancho": 42, "alto": 44, "motivo": "cartel monumental OBERA, no debe quedar tapado" }
-    ],
     "visible": true
   },
   {
