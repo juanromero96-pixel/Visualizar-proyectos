@@ -276,6 +276,32 @@ necesario un campo ni un mecanismo nuevo — el campo `escala` ya existía
 para variar tamaño, solo le faltaba aplicarse con un criterio narrativo
 en vez de solo decorativo.
 
+## Séptima vuelta: el espacio vacío no estaba bloqueado — nadie lo pedía
+
+Marcaste en rojo zonas vacías de Oberá y Eldorado que "está bien que
+tengan comentarios". Reviso las dos por separado porque tenían causas
+distintas:
+
+**Oberá — no era un bloqueo, era que ningún ancla apuntaba ahí.** Las 8
+anclas de Oberá arrancaban todas en x≥46% (la mitad derecha del
+escenario); la izquierda nunca se reclamaba porque ninguna tarjeta "quería"
+ir ahí, no porque hubiera una zona prohibiéndolo. Redistribuí las 8 anclas
+de Oberá (y las 7 de Eldorado, mismo problema) para que cubran de x=20% a
+x=86% — toda la escena, no solo la mitad derecha.
+
+**Eldorado — ahí sí había una zona puesta a propósito, y la marca roja
+pasa por encima de ella.** Tres actualizaciones atrás protegí el texto
+"Ciudad de Eldorado" del arco y la escultura central para que ninguna
+tarjeta los tapara. Tu marca en rojo atraviesa la escultura de punta a
+punta y parte del cielo sobre el arco — interpreto eso como que, viendo el
+resultado real, esa protección era más conservadora de lo necesario.
+Saqué la zona de la escultura por completo y achiqué la del arco a solo
+la franja del texto (11% de alto en vez de 22%), no todo el cielo arriba.
+
+Verificado de nuevo por simulación con los datos reales de las 15
+tarjetas reposicionadas: sin superposición ni invasión de zona en los
+casos probados.
+
 ## Sexta vuelta: el bug no estaba en el algoritmo — estaba en el orden
 
 Con las posiciones reales medidas en las capturas, el patrón era raro:

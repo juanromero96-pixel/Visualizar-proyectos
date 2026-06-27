@@ -44,8 +44,7 @@
     "imagenFondo": "assets/backgrounds/eldorado.jpg",
     "composicion": "vertical",
     "zonasProtegidas": [
-      { "x": 0, "y": 0, "ancho": 100, "alto": 22, "motivo": "arco con el texto 'Ciudad de Eldorado', no debe quedar tapado" },
-      { "x": 45, "y": 12, "ancho": 32, "alto": 80, "motivo": "escultura central del arco" }
+      { "x": 0, "y": 0, "ancho": 100, "alto": 11, "motivo": "texto 'Ciudad de Eldorado' del arco — solo la franja del texto, no todo el cielo arriba" }
     ],
     "visible": true
   }
