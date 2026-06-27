@@ -276,6 +276,41 @@ necesario un campo ni un mecanismo nuevo — el campo `escala` ya existía
 para variar tamaño, solo le faltaba aplicarse con un criterio narrativo
 en vez de solo decorativo.
 
+## Sexta vuelta: el bug no estaba en el algoritmo — estaba en el orden
+
+Con las posiciones reales medidas en las capturas, el patrón era raro:
+tarjetas que debían estar separadas terminaban tocándose, justo las que
+muestran citas largas. Revisando el código en vez de seguir ajustando el
+algoritmo, encontré la causa real: `js/layout.js` mide cada tarjeta con
+`offsetWidth`/`offsetHeight` para saber cuánto espacio reservarle — pero
+en `app.js`, el cuadro de la cita (`<blockquote class="testimonio-cita">`)
+se deja **vacío a propósito** hasta que `refrescarCitas()` sortea cuál
+mostrar, y esa función se llamaba *después* de medir y distribuir, no
+antes.
+
+Es decir: el motor medía una tarjeta de ~150px de alto (foto + nombre +
+cargo + institución, sin nada de cita) y le reservaba ese espacio. Recién
+después aparecía el texto real — que según la persona puede ir de 110 a
+586 caracteres, hasta 500px de alto — y la tarjeta crecía hacia donde ya
+no había lugar reservado. El algoritmo de distribución funcionaba
+perfecto; estaba resolviendo un problema con datos que ya estaban mal
+desde el momento en que se midieron.
+
+**La solución:** la tarjeta arranca mostrando la cita **más larga**
+disponible para esa persona (no vacía, no la elegida al azar) — así la
+primera medición ya es la del peor caso posible. Recién después de medir
+y distribuir con ese tamaño "de máxima", se sortea la cita real que
+efectivamente se va a mostrar. Como esa elección nunca puede ser más
+larga que la que ya se usó para medir, nunca puede necesitar más espacio
+del que ya tiene asignado — pase la primera vez, al reingresar a la
+sede, o después de un resize. El cambio de "cita más larga" a "cita al
+azar" ocurre antes de que nada sea visible, así que no se nota.
+
+De paso, separé dos anclas de Eldorado que habían quedado casi idénticas
+(Catogui y Guidec, a 2% de distancia entre sí) — no causaban superposición
+por sí solas, pero competían por el mismo lugar y no ayudaban a la
+dispersión que pedía el reporte anterior.
+
 ## Cuarta vuelta: bugs reales encontrados en capturas de pantalla
 
 Las tres capturas que mandaste mostraban tres problemas distintos, no uno:

@@ -31,6 +31,14 @@
   const recalcular = () => secciones.forEach((s) => Distribuidor.distribuir(s));
   recalcular();
 
+  // Recién ahora se sortea la cita real de cada tarjeta — la medición de
+  // arriba ya midió la más larga posible, así que esta nunca puede
+  // necesitar más espacio del que se le asignó. Nada es visible todavía
+  // (la secuencia de entrada no arrancó), así que el cambio de texto no
+  // se ve: no hace falta la transición suave que sí usa refrescarCitas()
+  // en los reingresos.
+  secciones.forEach((s) => refrescarCitas(s, testimonios));
+
   // Si la tipografía web todavía no había cargado en el momento de medir
   // las tarjetas, las medidas usadas para distribuir no coinciden con el
   // tamaño real una vez que Roboto termina de cargar — se recalcula una
@@ -64,10 +72,7 @@
   document.querySelector('.ruta-flecha--siguiente')?.addEventListener('click', () => carrusel.siguiente());
 
   actualizarRuta(0);
-  if (secciones[0]) {
-    Secuenciador.entrar(secciones[0]);
-    refrescarCitas(secciones[0], testimonios);
-  }
+  if (secciones[0]) Secuenciador.entrar(secciones[0]);
 })();
 
 function mostrarErrorCarga(error) {
@@ -224,11 +229,18 @@ function crearTarjetaTestimonio(item, interior) {
     <p class="testimonio-nombre">${escaparHTML(item.nombreCompleto)}</p>
     <p class="testimonio-cargo">${escaparHTML(item.cargo)}</p>
     <p class="testimonio-institucion">${escaparHTML(item.institucion)}</p>
-    <blockquote class="testimonio-cita"></blockquote>
+    <blockquote class="testimonio-cita">${escaparHTML(citas.reduce((mas, c) => (c.length > mas.length ? c : mas), ''))}</blockquote>
   `;
-  // La cita se completa en refrescarCitas() — no acá — porque tiene que
-  // poder volver a elegirse cada vez que se reingresa a la sede, no solo
-  // una vez cuando se construye la tarjeta.
+  // Arranca mostrando la cita MÁS LARGA disponible — no vacía, no la que
+  // termine eligiéndose al azar — para que la primera medición de alto
+  // (la que usa layout.js) ya sea la del peor caso posible. Antes el
+  // recuadro de la cita se dejaba vacío hasta refrescarCitas(), así que
+  // el motor de distribución medía una tarjeta de ~150px y le asignaba
+  // ese espacio; cuando la cita real (de 250 a 500px según la persona)
+  // aparecía después, la tarjeta crecía hacia vecinos para los que ya no
+  // había lugar — esa era la superposición real. refrescarCitas() ya se
+  // encarga de reemplazar este texto por la elección al azar real
+  // inmediatamente después de medir, así que nunca llega a verse.
 
   interior.appendChild(figura);
   interior.appendChild(cuerpo);
