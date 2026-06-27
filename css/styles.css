@@ -238,7 +238,8 @@ button { font-family: inherit; cursor: pointer; }
   backdrop-filter: blur(10px);
   border-radius: 4px;
   padding: 18px 20px;
-  max-width: 290px;
+  width: var(--ancho-testimonio, 290px);
+  max-width: 92vw;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
@@ -392,11 +393,17 @@ button { font-family: inherit; cursor: pointer; }
    y el recorrido pasa de horizontal a vertical por el motivo de
    accesibilidad ya documentado en v1.
    ========================================================================== */
+/* El tope de 200px que había acá para pantallas medianas se sacó: el
+   ancho de cada tarjeta ya lo decide app.js según el largo de la cita
+   (--ancho-testimonio), y el factor de escala de layout.js ya reduce el
+   conjunto cuando el espacio real disponible lo exige. Un tope fijo de
+   CSS encima de eso volvía a angostar tarjetas que el motor ya había
+   dimensionado a propósito. Las fotos/video sin texto variable sí
+   conservan un tope razonable, por las dudas. */
 @media (max-width: 1024px) {
-  .elemento--testimonio .elemento-interior,
   .elemento--foto .elemento-interior,
   .elemento--video .elemento-interior {
-    max-width: 200px;
+    max-width: 220px;
   }
 }
 

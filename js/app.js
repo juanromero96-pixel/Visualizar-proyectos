@@ -167,7 +167,7 @@ function crearElemento(item) {
   interior.className = 'elemento-interior';
 
   if (item._tipo === 'testimonio') {
-    interior.appendChild(crearTarjetaTestimonio(item));
+    crearTarjetaTestimonio(item, interior);
   } else if (item._tipo === 'foto') {
     interior.innerHTML = `
       <img src="${item.src}" alt="${escaparHTML(item.alt || '')}" loading="lazy">
@@ -197,7 +197,15 @@ function crearElemento(item) {
 // nombre, no al azar: la misma persona siempre tiene el mismo color.
 const PALETA_MONOGRAMA = ['#00a3e0', '#3aaa35', '#7d4e24', '#4a463d'];
 
-function crearTarjetaTestimonio(item) {
+function crearTarjetaTestimonio(item, interior) {
+  // El ancho se calcula según la cita MÁS LARGA disponible para esta
+  // persona (no la que esté mostrándose en este momento): así el ancho
+  // de la tarjeta queda fijo aunque después se sorteen citas más cortas,
+  // y el layout no tiene que recalcularse cada vez que cambia el texto.
+  const citas = Array.isArray(item.citas) && item.citas.length ? item.citas : [item.texto || ''];
+  const largoMaximo = Math.max(...citas.map((c) => c.length));
+  interior.style.setProperty('--ancho-testimonio', `${anchoSegunLargoDeCita(largoMaximo)}px`);
+
   const figura = document.createElement('figure');
   figura.className = 'testimonio-foto';
 
@@ -222,10 +230,25 @@ function crearTarjetaTestimonio(item) {
   // poder volver a elegirse cada vez que se reingresa a la sede, no solo
   // una vez cuando se construye la tarjeta.
 
-  const envoltorio = document.createElement('div');
-  envoltorio.appendChild(figura);
-  envoltorio.appendChild(cuerpo);
-  return envoltorio;
+  interior.appendChild(figura);
+  interior.appendChild(cuerpo);
+}
+
+/**
+ * El ancho de la tarjeta crece con el largo de la cita más larga que
+ * esa persona puede mostrar — antes el ancho era fijo (uno solo para
+ * todas) y una cita larga se fragmentaba en muchísimas líneas, volviendo
+ * la tarjeta angosta y altísima en vez de legible. Las bandas son
+ * deliberadamente pocas (no un cálculo continuo) para que el resultado
+ * se siga viendo como un puñado de tamaños pensados, no una regla de
+ * tres aplicada a cada cita.
+ */
+function anchoSegunLargoDeCita(longitud) {
+  if (longitud < 70) return 230;
+  if (longitud < 140) return 270;
+  if (longitud < 220) return 310;
+  if (longitud < 320) return 350;
+  return 390;
 }
 
 /**

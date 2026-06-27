@@ -230,19 +230,51 @@ actual — nada de eso se puede saber de antemano).
 4. Un último repaso de separación de pares limpia cualquier contacto que
    ese empuje pueda haber generado.
 
-**Por qué no fue la primera versión que probé:** el primer intento
-arrancaba desde el ancla original de cada dato y solo empujaba pares que
-se tocaban. Con tarjetas reales (foto + nombre + cargo + institución +
-cita, no un mockup) y 7 a 9 por escena, simulé esa versión con tamaños
-reales y *no* convergía sin superposición en varios tamaños de pantalla.
-Lo cambié por el empaquetado por filas, que no necesita corregir
-superposiciones grandes porque nunca las genera. Quedó verificado por
-simulación (Node, reproduciendo exactamente la misma lógica que corre en
-el navegador) contra 6 combinaciones de ancho/alto, incluyendo dos casos
-extremos de pantalla muy baja, todas sin superposición y sin desborde. No
-pude conseguir un navegador real dentro de este entorno para confirmarlo
-con una captura de pantalla — lo más honesto es decir eso en vez de
-asumir que la simulación matemática es infalible.
+## Quinta vuelta: por qué las tarjetas quedaban chicas y algunas se superponían
+
+El informe de incidentes apuntaba a varios síntomas (Posadas muy chico,
+Oberá superpuesto, Eldorado descompensado, proporciones inconsistentes)
+pero medí los datos reales y eran **una sola causa común**: las citas
+varían de 110 a 586 caracteres, y todas las tarjetas usaban el mismo
+ancho fijo. Una cita de 586 caracteres en un ancho de 290px se fragmenta
+en 10+ líneas — una columna angosta y altísima (eso explica el Incidente
+04 tal cual). Y como `layout.js` (v3) dimensionaba **todas** las celdas
+de su grilla según la tarjeta más alta de la escena, esa única cita larga
+forzaba celdas enormes para las nueve, dejando pocas filas/columnas, lo
+que hacía que una sola zona protegida tapara la grilla casi entera y el
+sistema achicara todo el conjunto para compensar — el "tarjetas
+chiquitas con la pantalla vacía" del Incidente 01 viene de ahí, no de que
+falte espacio.
+
+**La solución no fue ajustar más números — fue separar dos cosas que
+estaban acopladas:** cuánto mide cada tarjeta, y con qué resolución se
+busca dónde ponerla.
+
+1. **Ancho adaptativo según la cita más larga de cada persona**
+   (`anchoSegunLargoDeCita` en `app.js`): 230 a 390px en 5 bandas. Se
+   calcula sobre la cita más larga disponible, no la que esté mostrándose
+   en ese momento, para que el ancho no cambie cuando se sortea otra cita.
+2. **`layout.js` (v4): la búsqueda de posición usa una grilla fina fija
+   (24px), independiente del tamaño de cualquier tarjeta.** Cada elemento
+   busca el punto libre más cercano a su ancla; los más grandes se ubican
+   primero. Una cita larga ya no le quita espacio a las demás.
+3. **Si todas entran con margen, el conjunto se agranda; si no entran
+   todas, se achica** — antes solo se podía achicar, nunca crecer, así
+   que una escena con poca densidad (Posadas) quedaba chica aunque hubiera
+   espacio de sobra.
+
+Verificado por simulación con las longitudes de cita reales de las 24
+tarjetas, contra 8 combinaciones de sede/pantalla: cero superposición,
+cero invasión de zona en todas. En Desktop el factor de escala pasó de
+0.68 a 0.77–0.88 — más cerca del tamaño pensado, sin necesidad de tocar
+ninguna posición a mano.
+
+**Jerarquía visual (Incidente 06):** las cinco autoridades de alcance
+UNaM (Franco, Catogui, Spasiuk, Guidec, Matot) tienen ahora `escala`
+~12% más alta; los representantes de facultad, ~8% más baja. No fue
+necesario un campo ni un mecanismo nuevo — el campo `escala` ya existía
+para variar tamaño, solo le faltaba aplicarse con un criterio narrativo
+en vez de solo decorativo.
 
 ## Cuarta vuelta: bugs reales encontrados en capturas de pantalla
 
