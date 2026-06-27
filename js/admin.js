@@ -32,7 +32,7 @@ const OPCIONES_PROFUNDIDAD = [
 const ESQUEMA_SEDE = [
   { clave: 'nombre', etiqueta: 'Nombre', tipo: 'text' },
   { clave: 'subtitulo', etiqueta: 'Subtítulo', tipo: 'text' },
-  { clave: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea', filas: 4 },
+  { clave: 'descripcion', etiqueta: 'Descripción institucional', tipo: 'textarea', filas: 8, ayuda: 'Dos párrafos separados por una línea vacía: el primero presenta la sede y sus unidades, el segundo su rol en la Semana Regional.' },
   { clave: 'imagenFondo', etiqueta: 'Ruta de la imagen de fondo', tipo: 'text', ayuda: 'Ej: assets/backgrounds/posadas.jpg' },
   { clave: 'imagenFondoArchivo', etiqueta: 'Subir imagen (sugiere la ruta)', tipo: 'archivo', aceptar: 'image/*', objetivo: 'imagenFondo', rutaSugerida: 'assets/backgrounds/' },
   { clave: 'composicion', etiqueta: 'Personalidad de la escena', tipo: 'select', opciones: [

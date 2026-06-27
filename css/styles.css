@@ -174,6 +174,9 @@ button { font-family: inherit; cursor: pointer; }
   left: calc(var(--modulo) * 1.2);
   bottom: calc(var(--modulo) * 2.4);
   max-width: min(34vw, 460px);
+  max-height: calc(100vh - 150px);
+  overflow-y: auto;
+  scrollbar-width: thin;
   border-left: 2px solid var(--unam-cian);
   padding-left: 20px;
   opacity: 0;
@@ -186,7 +189,8 @@ button { font-family: inherit; cursor: pointer; }
 .sede-kicker-num { display: block; font-weight: 300; letter-spacing: 0.22em; font-size: 0.78rem; color: var(--unam-cian); margin-bottom: 10px; }
 .sede-kicker-titulo { margin: 0 0 6px; font-weight: 700; font-size: clamp(2.4rem, 7vw, 4.6rem); line-height: 0.98; letter-spacing: -0.01em; }
 .sede-kicker-subtitulo { margin: 0 0 14px; font-weight: 400; font-style: italic; font-size: 1rem; color: var(--unam-verde); }
-.sede-kicker-descripcion { margin: 0 0 14px; font-weight: 300; font-size: 0.95rem; line-height: 1.5; opacity: 0.92; }
+.sede-kicker-descripcion { margin: 0 0 12px; font-weight: 300; font-size: 0.92rem; line-height: 1.55; opacity: 0.92; }
+.sede-kicker-descripcion + .sede-kicker-descripcion { margin-top: -4px; }
 .sede-kicker-unidades { list-style: none; margin: 0; padding: 0; font-weight: 400; font-size: 0.78rem; letter-spacing: 0.03em; text-transform: uppercase; opacity: 0.8; }
 .sede-kicker-unidades li { padding: 3px 0; border-top: 1px solid var(--niebla-borde); }
 .sede-kicker-unidades li:first-child { border-top: none; }
@@ -313,6 +317,31 @@ button { font-family: inherit; cursor: pointer; }
 
 .elemento-caption { margin: 8px 4px 4px; font-weight: 300; font-size: 0.75rem; opacity: 0.85; text-align: center; }
 .elemento--sin-imagen { display: none; }
+
+/* =============================================================================
+   Interacción de foco — pasar el mouse o el teclado por una tarjeta la
+   trae al frente y la agranda; las demás se atenúan, nunca se ocultan.
+   El cambio de tamaño/sombra vive en .elemento-interior (no en .elemento)
+   para no pelear con la posición/rotación que ya tiene el contenedor.
+   ========================================================================== */
+.elemento-interior {
+  transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
+}
+.elemento--enfocado .elemento-interior {
+  transform: scale(1.08);
+  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.5);
+}
+.escenario--enfocando .elemento--visible:not(.elemento--enfocado) .elemento-interior {
+  opacity: 0.55;
+}
+.elemento:focus-visible {
+  outline: none; /* el propio agrandado ya señala el foco; un outline duro sobre una tarjeta rotada se ve mal */
+}
+.elemento--enfocado {
+  outline: 2px solid var(--unam-cian);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
 
 /* =============================================================================
    Ruta — indicador de recorrido. No es el isologotipo institucional, así

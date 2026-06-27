@@ -44,7 +44,8 @@ SemanaRegionalUNaM/
 │   ├── storage.js       (sin cambios) lectura/escritura vía localStorage
 │   ├── carousel.js       (sin cambios) navegación entre sedes
 │   ├── animations.js      Secuenciador narrativo: entrar(sede) / salir(sede)
-│   ├── app.js               Renderiza elementos libres + dispara el secuenciador
+│   ├── layout.js            Motor de distribución sin superposición (nuevo)
+│   ├── app.js                  Renderiza elementos libres + dispara el secuenciador
 │   ├── login.js               (sin cambios)
 │   ├── editor.js                (sin cambios) generador de formularios
 │   ├── escenario.js              NUEVO — editor visual de arrastre
@@ -196,3 +197,70 @@ el orden.
 - [x] No hay tarjetas repetidas por error (cada `id` es único; los 5 casos de autoridades repetidas en varias sedes son intencionales, un `id` distinto por sede).
 - [x] Distribución visual: 9/8/7 — sin necesidad de inventar contenido para emparejar.
 - [ ] Una persona (foto WhatsApp sin nombre) queda pendiente de confirmación — ver arriba.
+
+## El motor de distribución (`js/layout.js`)
+
+Las posiciones que traían los datos (`x`/`y` en `%`) ya no son la posición
+final: son la **preferencia de partida** de cada elemento — la composición
+que se pensó a mano para esa sede. La posición real la calcula este motor,
+una vez que el elemento ya está en el DOM y se puede medir su tamaño real
+(que depende del largo de la cita, si tiene foto, y el ancho de pantalla
+actual — nada de eso se puede saber de antemano).
+
+**Cómo llega a una posición sin superposición:**
+
+1. **Empaquetado por filas.** Ordena los elementos por su preferencia
+   vertical y los acomoda en filas — cada fila tan alta como su elemento
+   más alto, cada elemento dentro de la fila con su espacio propio. Dos
+   elementos en la misma fila, o en filas distintas, no pueden superponerse:
+   no es una regla que se verifique después, es una consecuencia de cómo
+   se construye la fila.
+2. **Si no entra de pie, se achica el conjunto, no se corta nada.** Si el
+   total empaquetado es más alto que la pantalla, se reduce la escala de
+   *todo* el conjunto de esa escena (nunca de una tarjeta sola, para no
+   romper la jerarquía de tamaños que ya tiene la composición) y se vuelve
+   a empaquetar, hasta que entra.
+3. **Zona del título y zonas declaradas por la sede.** Cualquier tarjeta
+   que caiga sobre el bloque de texto introductorio, o sobre una zona que
+   la sede declare en `sedes.json` (`zonasProtegidas`, en % del escenario
+   — así quedó registrado el cartel de Oberá y el arco de Eldorado de la
+   actualización anterior, en datos que el motor respeta en cualquier
+   tamaño de pantalla, no en coordenadas fijas que se rompen apenas cambia
+   la fotografía de fondo), se empuja afuera por el lado más corto.
+4. Un último repaso de separación de pares limpia cualquier contacto que
+   ese empuje pueda haber generado.
+
+**Por qué no fue la primera versión que probé:** el primer intento
+arrancaba desde el ancla original de cada dato y solo empujaba pares que
+se tocaban. Con tarjetas reales (foto + nombre + cargo + institución +
+cita, no un mockup) y 7 a 9 por escena, simulé esa versión con tamaños
+reales y *no* convergía sin superposición en varios tamaños de pantalla.
+Lo cambié por el empaquetado por filas, que no necesita corregir
+superposiciones grandes porque nunca las genera. Quedó verificado por
+simulación (Node, reproduciendo exactamente la misma lógica que corre en
+el navegador) contra 6 combinaciones de ancho/alto, incluyendo dos casos
+extremos de pantalla muy baja, todas sin superposición y sin desborde. No
+pude conseguir un navegador real dentro de este entorno para confirmarlo
+con una captura de pantalla — lo más honesto es decir eso en vez de
+asumir que la simulación matemática es infalible.
+
+**Por qué no hay paginación ni carrusel de testimonios:** con 7 a 9
+elementos por escena, el empaquetado por filas entra cómodo en cualquier
+ancho ≥ 821px sin necesitar ocultar contenido. Si en una futura edición
+una sede llegara a tener muchos más testimonios (20+), ahí sí valdría la
+pena revisar esto — no antes, para no agregar una complejidad que hoy no
+hace falta.
+
+**Interacción.** Pasar el mouse o el foco de teclado por una tarjeta la
+trae al frente (z-index), la agranda levemente y atenúa —sin ocultar— a
+las demás. Al salir, todo vuelve solo por las transiciones CSS.
+
+**Responsive.** Por debajo de 821px el motor ni corre: el CSS ya pasa a
+una secuencia vertical simple (ver más arriba). De los 821px en adelante,
+el mismo algoritmo recibe el espacio real disponible en cada momento —
+eso ya produce composiciones distintas por tamaño de pantalla (no una
+versión escalada de la misma), porque la forma del espacio disponible
+cambia, no solo su tamaño. No agregué una tercera estrategia específica
+"para tablet": los dos modos que existen ya cubren ese rango razonablemente
+y sumar una tercera lógica de layout aumentaba el riesgo sin un problema
+concreto que la justificara.

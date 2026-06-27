@@ -4,7 +4,7 @@
     "orden": 1,
     "nombre": "Posadas",
     "subtitulo": "Rectorado y sede central",
-    "descripcion": "En el Campus Universitario se concentran el Rectorado y tres unidades académicas. Durante la Semana Regional, sus equipos de extensión abrieron sus proyectos acreditados a la comunidad.",
+    "descripcion": "En el Campus Universitario y en pleno centro de Posadas se concentran el Rectorado y tres unidades académicas de perfiles muy distintos —económicas, exactas y humanidades—, lo que vuelve a esta sede la más diversa disciplinariamente de las tres. Esa densidad institucional, en una ciudad capital con vida universitaria cotidiana, es también su forma particular de articular universidad y territorio: no por un único vínculo temático, sino por la superposición de muchas líneas de trabajo en un mismo espacio urbano.\n\nDurante la Semana Regional, Posadas funcionó como sede de apertura y como centro de coordinación: aquí se transmitió el lanzamiento oficial del micrositio y de los más de 120 proyectos acreditados, y aquí los equipos de extensión de sus tres facultades —junto con las áreas generales de la universidad— pusieron en común un trabajo que durante el resto del año avanza, en buena medida, sin saber qué hace la unidad vecina.",
     "unidadesAcademicas": [
       "Facultad de Ciencias Económicas",
       "Facultad de Ciencias Exactas, Químicas y Naturales",
@@ -19,13 +19,16 @@
     "orden": 2,
     "nombre": "Oberá",
     "subtitulo": "Regional Oberá",
-    "descripcion": "Entre talleres de diseño y laboratorios de ingeniería, la regional Oberá sumó a la exhibición proyectos que cruzan arte, tecnología y territorio.",
+    "descripcion": "A más de cien kilómetros de Posadas, Oberá reúne a la Facultad de Ingeniería y a la Facultad de Arte y Diseño en una misma regional: dos disciplinas que rara vez comparten edificio, y que en la extensión universitaria encuentran un punto de cruce poco habitual entre cálculo y diseño, prototipo y obra.\n\nEsa combinación atraviesa el trabajo territorial de la sede: proyectos de ingeniería que nacen de cátedras y se ponen a prueba con comunidades locales, y proyectos de diseño que piensan la identidad visual y el espacio público de la región. Durante la Semana Regional, ambas facultades mostraron ese cruce interdisciplinario como su sello propio.",
     "unidadesAcademicas": [
       "Facultad de Arte y Diseño",
       "Facultad de Ingeniería"
     ],
     "imagenFondo": "assets/backgrounds/obera.jpg",
     "composicion": "diagonal",
+    "zonasProtegidas": [
+      { "x": 28, "y": 48, "ancho": 42, "alto": 44, "motivo": "cartel monumental OBERA, no debe quedar tapado" }
+    ],
     "visible": true
   },
   {
@@ -33,13 +36,17 @@
     "orden": 3,
     "nombre": "Eldorado",
     "subtitulo": "Regional Eldorado",
-    "descripcion": "Rodeada de selva, la regional Eldorado presentó proyectos de extensión vinculados al manejo forestal y la producción agrotécnica de la región.",
+    "descripcion": "Eldorado está rodeada de selva, y esa cercanía con el ambiente no es un dato paisajístico: es el eje de todo lo que produce la sede. La Facultad de Ciencias Forestales y la Escuela Agrotécnica Eldorado trabajan ahí donde la universidad se vuelve, literalmente, territorio forestal y producción regional.\n\nManejo forestal, producción agrotécnica y vínculos con productores de la zona organizan una extensión orientada al desarrollo sostenible, con estudiantes de nivel secundario y universitario compartiendo proyectos. En la Semana Regional, Eldorado presentó ese trabajo como una muestra de extensión pensada desde y para el territorio que la rodea.",
     "unidadesAcademicas": [
       "Facultad de Ciencias Forestales",
       "Escuela Agrotécnica Eldorado"
     ],
     "imagenFondo": "assets/backgrounds/eldorado.jpg",
     "composicion": "vertical",
+    "zonasProtegidas": [
+      { "x": 0, "y": 0, "ancho": 100, "alto": 22, "motivo": "arco con el texto 'Ciudad de Eldorado', no debe quedar tapado" },
+      { "x": 45, "y": 12, "ancho": 32, "alto": 80, "motivo": "escultura central del arco" }
+    ],
     "visible": true
   }
 ]
