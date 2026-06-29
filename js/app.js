@@ -52,6 +52,7 @@
   });
 
   iniciarInteraccionDeEnfoque(secciones);
+  Lector.iniciar();
 
   Secuenciador.iniciar();
 
@@ -173,6 +174,17 @@ function crearElemento(item) {
 
   if (item._tipo === 'testimonio') {
     crearTarjetaTestimonio(item, interior);
+    el.setAttribute('aria-haspopup', 'dialog');
+    el.setAttribute('aria-expanded', 'false');
+    el.addEventListener('click', () => Lector.abrir(el));
+    el.addEventListener('keydown', (evento) => {
+      // Enter/Espacio abren el lector ampliado — el resto de las teclas
+      // (Tab, flechas del carrusel, etc.) siguen funcionando normalmente.
+      if (evento.key === 'Enter' || evento.key === ' ') {
+        evento.preventDefault();
+        Lector.abrir(el);
+      }
+    });
   } else if (item._tipo === 'foto') {
     interior.innerHTML = `
       <img src="${item.src}" alt="${escaparHTML(item.alt || '')}" loading="lazy">

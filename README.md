@@ -44,7 +44,8 @@ SemanaRegionalUNaM/
 │   ├── storage.js       (sin cambios) lectura/escritura vía localStorage
 │   ├── carousel.js       (sin cambios) navegación entre sedes
 │   ├── animations.js      Secuenciador narrativo: entrar(sede) / salir(sede)
-│   ├── layout.js            Motor de distribución sin superposición (nuevo)
+│   ├── layout.js            Motor de distribución sin superposición
+│   ├── lector.js              Lector ampliado: click/tap abre la cita completa en un modal
 │   ├── app.js                  Renderiza elementos libres + dispara el secuenciador
 │   ├── login.js               (sin cambios)
 │   ├── editor.js                (sin cambios) generador de formularios
@@ -275,6 +276,46 @@ UNaM (Franco, Catogui, Spasiuk, Guidec, Matot) tienen ahora `escala`
 necesario un campo ni un mecanismo nuevo — el campo `escala` ya existía
 para variar tamaño, solo le faltaba aplicarse con un criterio narrativo
 en vez de solo decorativo.
+
+## Novena vuelta: lector ampliado (click/tap) + tipografía responsiva con clamp()
+
+Hasta ahora el hover/foco solo traía la tarjeta al frente y la agrandaba
+apenas — una vista previa, no una lectura cómoda. Esto agrega la
+interacción que faltaba.
+
+**`js/lector.js` (nuevo).** Click, tap o Enter sobre una tarjeta de
+testimonio abre un modal único y reutilizable (no uno por tarjeta) con la
+foto, el nombre, el cargo, la institución y la cita completa, en
+tipografía más grande y fondo sólido — ahí el objetivo es solo legibilidad,
+no que se vea el paisaje detrás como en las tarjetas de la escena. Lee el
+contenido directamente del DOM de la tarjeta que se activó (no de los
+datos originales), así siempre coincide con la cita que esa persona tenía
+en pantalla en ese momento, incluida la que haya tocado en el sorteo.
+
+Se cierra con el botón, con clic afuera, o con Escape. Mientras está
+abierto, Tab no se escapa al fondo (el único elemento interactivo del
+modal es el botón de cerrar, así que atraparlo ahí fue simple) y el foco
+vuelve a la tarjeta que lo abrió al cerrarlo. El scroll de fondo se
+bloquea mientras está abierto.
+
+**Por qué no toqué el hover existente:** seguía siendo necesario como
+vista previa antes de decidir si abrir el lector — separar "destacarse un
+poco" (hover/foco) de "leer entero" (click/tap/Enter) es más claro que
+hacer que el hover ya abra todo.
+
+**Equivalente táctil:** en touch no existe el hover, pero tampoco hace
+mucha falta — tocar ya abre directamente el lector completo, que es el
+equivalente táctil natural a "acercar el cursor y después hacer clic".
+
+**Tipografía con `clamp()`:** dentro del lector, donde no hay presión de
+espacio (no compite con otras tarjetas), el tamaño de fuente crece con el
+viewport usando `clamp()` en vez de un valor fijo. En las tarjetas de la
+escena no toqué esto — ahí el tamaño ya lo resuelve el factor de escala de
+`layout.js`, agregar `clamp()` encima pelearía contra ese cálculo en vez
+de complementarlo. Sí reemplacé un salto duro de breakpoint (el ancho de
+las fotos/video pasaba de golpe a 220px a los 1024px) por
+`clamp(170px, 18vw, 240px)`, que se achica en proporción al viewport en
+vez de saltar.
 
 ## Octava vuelta: tamaño general y la zona del cartel de Oberá
 

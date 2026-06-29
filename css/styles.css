@@ -248,7 +248,9 @@ button { font-family: inherit; cursor: pointer; }
 }
 .elemento--foto .elemento-interior,
 .elemento--video .elemento-interior {
-  max-width: 240px;
+  /* clamp() en vez de un ancho fijo + un salto en el breakpoint de 1024px:
+     se va achicando en proporción al viewport, nunca de golpe. */
+  max-width: clamp(170px, 18vw, 240px);
   filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.45));
 }
 .elemento--foto img,
@@ -326,6 +328,7 @@ button { font-family: inherit; cursor: pointer; }
    El cambio de tamaño/sombra vive en .elemento-interior (no en .elemento)
    para no pelear con la posición/rotación que ya tiene el contenedor.
    ========================================================================== */
+.elemento--testimonio { cursor: pointer; }
 .elemento-interior {
   transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
 }
@@ -400,13 +403,6 @@ button { font-family: inherit; cursor: pointer; }
    CSS encima de eso volvía a angostar tarjetas que el motor ya había
    dimensionado a propósito. Las fotos/video sin texto variable sí
    conservan un tope razonable, por las dudas. */
-@media (max-width: 1024px) {
-  .elemento--foto .elemento-interior,
-  .elemento--video .elemento-interior {
-    max-width: 220px;
-  }
-}
-
 @media (max-width: 820px) {
   html, body { overflow: auto; }
   .carrusel { flex-direction: column; scroll-snap-type: y mandatory; height: 100vh; }
@@ -487,5 +483,150 @@ button { font-family: inherit; cursor: pointer; }
   }
   .marca-chip {
     padding: 10px 18px 10px 12px;
+  }
+}
+
+/* =============================================================================
+   Lector ampliado — click/tap/Enter sobre una tarjeta de testimonio abre
+   la cita completa en un modal de lectura, sin distracciones del fondo.
+   Fondo SÓLIDO (no el glassmorphism translúcido de las tarjetas de la
+   escena): acá el único objetivo es contraste y legibilidad, no que se
+   vea el paisaje detrás. La tipografía usa clamp() a propósito — este
+   modal no tiene presión de espacio como las tarjetas de la escena, así
+   que puede crecer con el viewport sin pelear contra el motor de
+   distribución.
+   ========================================================================== */
+.lector-superposicion {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 14, 16, 0.78);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+.lector-superposicion--abierta {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lector-tarjeta {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: #14181b;
+  border: 1px solid rgba(245, 243, 238, 0.14);
+  border-radius: 8px;
+  padding: clamp(28px, 4vw, 48px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  transform: scale(0.94) translateY(10px);
+  transition: transform 280ms cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+.lector-superposicion--abierta .lector-tarjeta {
+  transform: scale(1) translateY(0);
+}
+
+.lector-cerrar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(245, 243, 238, 0.08);
+  color: var(--papel);
+  font-size: 1.1rem;
+  display: grid;
+  place-items: center;
+  transition: background 150ms ease;
+}
+.lector-cerrar:hover,
+.lector-cerrar:focus-visible {
+  background: rgba(245, 243, 238, 0.2);
+}
+
+.lector-contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.lector-foto {
+  margin: 0 0 18px;
+}
+.lector-foto img,
+.lector-foto .testimonio-monograma {
+  width: clamp(64px, 9vw, 96px);
+  height: clamp(64px, 9vw, 96px);
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto;
+}
+.lector-foto img {
+  object-fit: cover;
+  border: 2px solid var(--unam-cian);
+}
+.lector-foto .testimonio-monograma {
+  color: var(--papel);
+  font-weight: 700;
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(245, 243, 238, 0.4);
+}
+
+.lector-nombre {
+  margin: 0;
+  font-weight: 700;
+  font-size: clamp(1.15rem, 1.4vw + 0.6rem, 1.5rem);
+  letter-spacing: 0.01em;
+}
+.lector-cargo {
+  margin: 4px 0 0;
+  font-weight: 400;
+  font-size: clamp(0.85rem, 0.5vw + 0.65rem, 1rem);
+  color: var(--unam-verde);
+}
+.lector-institucion {
+  margin: 1px 0 22px;
+  font-weight: 300;
+  font-size: clamp(0.75rem, 0.4vw + 0.6rem, 0.88rem);
+  opacity: 0.78;
+}
+.lector-cita {
+  margin: 0;
+  width: 100%;
+  padding-top: 20px;
+  border-top: 1px solid rgba(245, 243, 238, 0.18);
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(1rem, 0.6vw + 0.85rem, 1.3rem);
+  line-height: 1.65;
+  text-align: left;
+}
+
+body.lector-bloqueando-scroll {
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  .lector-tarjeta {
+    width: 100%;
+    padding: 26px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lector-superposicion,
+  .lector-tarjeta {
+    transition: none !important;
   }
 }
