@@ -235,6 +235,7 @@ button { font-family: inherit; cursor: pointer; }
 .elemento--testimonio .elemento-interior {
   background: var(--niebla);
   border: 1px solid var(--niebla-borde);
+  border-left: 3px solid var(--color-ua, var(--unam-cian));
   backdrop-filter: blur(10px);
   border-radius: 4px;
   padding: 18px 20px;
@@ -245,6 +246,18 @@ button { font-family: inherit; cursor: pointer; }
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+/* Tratamiento diferencial para autoridades de alcance UNaM (Documento
+   Técnico, sección 8.2 — obligatorio): no es un rediseño, es una
+   variación sutil de grosor y tipografía sobre la misma tarjeta, para
+   que su carácter institucional se note sin romper la coherencia visual
+   del resto del mural. */
+.elemento--testimonio-institucional .elemento-interior {
+  border-left-width: 5px;
+}
+.elemento--testimonio-institucional .testimonio-nombre {
+  font-size: 1rem;
+  letter-spacing: 0.01em;
 }
 .elemento--foto .elemento-interior,
 .elemento--video .elemento-interior {
@@ -259,6 +272,104 @@ button { font-family: inherit; cursor: pointer; }
   max-height: 220px;
   object-fit: cover;
   width: 100%;
+}
+
+/* =============================================================================
+   Registro Institucional de Unidad Académica — no representa una persona,
+   por eso no lleva fotografía: esa ausencia es en sí misma la marca que
+   lo distingue del testimonio (Documento Técnico, sección 8.3). Mismo
+   lenguaje visual de niebla/blur que el testimonio —"diferenciación
+   mínima", no un componente nuevo— con la barra de color de la unidad
+   académica como único acento distintivo.
+   ========================================================================== */
+.elemento--registro-ua .elemento-interior {
+  background: var(--niebla);
+  border: 1px solid var(--niebla-borde);
+  border-left: 3px solid var(--color-ua, var(--unam-cian));
+  backdrop-filter: blur(10px);
+  border-radius: 4px;
+  padding: 16px 18px;
+  width: var(--ancho-registro, 270px);
+  max-width: 90vw;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+  text-align: left;
+}
+.registro-ua-badge {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ua, var(--unam-cian));
+  margin-bottom: 8px;
+}
+.registro-titulo {
+  margin: 0 0 8px;
+  font-weight: 700;
+  font-size: 0.96rem;
+  line-height: 1.3;
+}
+.registro-resumen {
+  margin: 0;
+  font-weight: 300;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.88;
+  /* El mural solo muestra el resumen recortado — nunca el cuerpo
+     completo. Tres líneas alcanzan para abrir el interés sin agotar la
+     lectura; el resto vive únicamente en el lector ampliado. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* =============================================================================
+   Registro Conceptual — Nivel 3 de prioridad narrativa (menor protagonismo
+   que autoridades y unidades académicas): tarjeta más chica, fondo más
+   liviano, sin el peso visual de un borde grueso. Cuando el concepto es
+   transversal a la sede (no de una sola unidad académica) no lleva acento
+   de color — es intencional, ya que no "pertenece" a ninguna facultad.
+   ========================================================================== */
+.elemento--registro-conceptual .elemento-interior {
+  background: rgba(20, 24, 27, 0.55);
+  border: 1px solid var(--niebla-borde);
+  border-left: 2px solid var(--color-ua, var(--unam-cian));
+  backdrop-filter: blur(8px);
+  border-radius: 4px;
+  padding: 14px 16px;
+  width: var(--ancho-registro, 220px);
+  max-width: 86vw;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+  text-align: left;
+}
+.registro-conceptual-badge {
+  display: inline-block;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--unam-verde);
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+.registro-conceptual-titulo {
+  margin: 0 0 6px;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 0.88rem;
+  line-height: 1.3;
+}
+.registro-conceptual-resumen {
+  margin: 0;
+  font-weight: 300;
+  font-size: 0.76rem;
+  line-height: 1.48;
+  opacity: 0.8;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .testimonio-foto {
@@ -328,7 +439,9 @@ button { font-family: inherit; cursor: pointer; }
    El cambio de tamaño/sombra vive en .elemento-interior (no en .elemento)
    para no pelear con la posición/rotación que ya tiene el contenedor.
    ========================================================================== */
-.elemento--testimonio { cursor: pointer; }
+.elemento--testimonio,
+.elemento--registro-ua,
+.elemento--registro-conceptual { cursor: pointer; }
 .elemento-interior {
   transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
 }
@@ -445,6 +558,8 @@ button { font-family: inherit; cursor: pointer; }
     transform: none !important;
   }
   .elemento--testimonio .elemento-interior,
+  .elemento--registro-ua .elemento-interior,
+  .elemento--registro-conceptual .elemento-interior,
   .elemento--foto .elemento-interior,
   .elemento--video .elemento-interior {
     max-width: min(340px, 80vw);
@@ -611,6 +726,97 @@ button { font-family: inherit; cursor: pointer; }
   font-size: clamp(1rem, 0.6vw + 0.85rem, 1.3rem);
   line-height: 1.65;
   text-align: left;
+}
+
+/* =============================================================================
+   Lector ampliado — Registro Institucional de Unidad Académica y Registro
+   Conceptual. Mismo modal, contenido alineado a la izquierda (a diferencia
+   del testimonio, centrado): acá hay título + varios párrafos + listas,
+   una alineación centrada se leería peor en bloques largos de texto.
+   ========================================================================== */
+.lector-registro {
+  width: 100%;
+  text-align: left;
+}
+.lector-registro-badge {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ua, var(--unam-cian));
+  border-bottom: 2px solid var(--color-ua, var(--unam-cian));
+  padding-bottom: 2px;
+  margin-bottom: 10px;
+}
+.lector-registro-completa {
+  margin: 0 0 18px;
+  font-weight: 300;
+  font-style: italic;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+.lector-registro-titulo {
+  margin: 0 0 18px;
+  font-weight: 700;
+  font-size: clamp(1.3rem, 1.6vw + 0.7rem, 1.7rem);
+  line-height: 1.25;
+}
+.lector-registro-titulo--conceptual {
+  font-style: italic;
+}
+.lector-registro-cuerpo {
+  font-weight: 300;
+  font-size: clamp(0.92rem, 0.4vw + 0.8rem, 1.05rem);
+  line-height: 1.7;
+}
+.lector-registro-cuerpo p { margin: 0 0 16px; }
+.lector-registro-cuerpo p:last-child { margin-bottom: 0; }
+
+.lector-registro-proyectos {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(245, 243, 238, 0.14);
+}
+.lector-registro-proyectos h3 {
+  margin: 0 0 10px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.lector-registro-proyectos ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lector-registro-proyectos li {
+  padding: 8px 0;
+  border-top: 1px solid rgba(245, 243, 238, 0.08);
+  font-weight: 300;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.lector-registro-proyectos li:first-child { border-top: none; }
+.lector-registro-proyectos li strong { font-weight: 700; }
+
+.lector-registro-cita {
+  margin: 22px 0 0;
+  padding: 16px 0 0 16px;
+  border-top: 1px solid rgba(245, 243, 238, 0.14);
+  border-left: 2px solid var(--color-ua, var(--unam-cian));
+  font-weight: 300;
+  font-style: italic;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.lector-registro-cita cite {
+  display: block;
+  margin-top: 8px;
+  font-style: normal;
+  font-size: 0.78rem;
+  opacity: 0.7;
 }
 
 body.lector-bloqueando-scroll {

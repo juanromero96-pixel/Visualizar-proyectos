@@ -61,7 +61,7 @@
     "profundidad": 5,
     "animacion": "fade",
     "duracion": 750,
-    "ordenNarrativo": 3,
+    "ordenNarrativo": 4,
     "visible": true
   },
   {
@@ -82,7 +82,7 @@
     "profundidad": 2,
     "animacion": "float",
     "duracion": 700,
-    "ordenNarrativo": 4,
+    "ordenNarrativo": 5,
     "visible": true
   },
   {
@@ -103,7 +103,7 @@
     "profundidad": 6,
     "animacion": "zoom",
     "duracion": 800,
-    "ordenNarrativo": 5,
+    "ordenNarrativo": 7,
     "visible": true
   },
   {
@@ -124,7 +124,7 @@
     "profundidad": 3,
     "animacion": "fade",
     "duracion": 700,
-    "ordenNarrativo": 6,
+    "ordenNarrativo": 8,
     "visible": true
   },
   {
@@ -146,7 +146,7 @@
     "profundidad": 4,
     "animacion": "slide",
     "duracion": 700,
-    "ordenNarrativo": 7,
+    "ordenNarrativo": 10,
     "visible": true
   },
   {
@@ -167,7 +167,7 @@
     "profundidad": 2,
     "animacion": "float",
     "duracion": 650,
-    "ordenNarrativo": 8,
+    "ordenNarrativo": 11,
     "visible": true
   },
   {
@@ -188,7 +188,7 @@
     "profundidad": 5,
     "animacion": "fade",
     "duracion": 700,
-    "ordenNarrativo": 9,
+    "ordenNarrativo": 12,
     "visible": true
   },
   {
@@ -253,7 +253,7 @@
     "profundidad": 4,
     "animacion": "zoom",
     "duracion": 800,
-    "ordenNarrativo": 3,
+    "ordenNarrativo": 4,
     "visible": true
   },
   {
@@ -273,7 +273,7 @@
     "profundidad": 2,
     "animacion": "float",
     "duracion": 650,
-    "ordenNarrativo": 4,
+    "ordenNarrativo": 5,
     "visible": true
   },
   {
@@ -295,7 +295,7 @@
     "profundidad": 6,
     "animacion": "fade",
     "duracion": 700,
-    "ordenNarrativo": 5,
+    "ordenNarrativo": 6,
     "visible": true
   },
   {
@@ -316,7 +316,7 @@
     "profundidad": 3,
     "animacion": "slide",
     "duracion": 700,
-    "ordenNarrativo": 6,
+    "ordenNarrativo": 7,
     "visible": true
   },
   {
@@ -337,7 +337,7 @@
     "profundidad": 5,
     "animacion": "float",
     "duracion": 750,
-    "ordenNarrativo": 7,
+    "ordenNarrativo": 9,
     "visible": true
   },
   {
@@ -358,7 +358,7 @@
     "profundidad": 4,
     "animacion": "fade",
     "duracion": 700,
-    "ordenNarrativo": 8,
+    "ordenNarrativo": 10,
     "visible": true
   },
   {

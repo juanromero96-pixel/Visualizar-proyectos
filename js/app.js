@@ -6,11 +6,12 @@
  * tarjeta de testimonio se resuelve acá mismo, al entrar a la sede.
  */
 (async function iniciarSitio() {
-  let sedes, testimonios, multimedia, config;
+  let sedes, testimonios, registros, multimedia, config;
   try {
-    [sedes, testimonios, multimedia, config] = await Promise.all([
+    [sedes, testimonios, registros, multimedia, config] = await Promise.all([
       Almacen.cargar('sedes'),
       Almacen.cargar('testimonios'),
+      Almacen.cargar('registros'),
       Almacen.cargar('multimedia'),
       Almacen.cargar('config'),
     ]);
@@ -22,7 +23,7 @@
   const sedesVisibles = sedes.filter((s) => s.visible).sort((a, b) => a.orden - b.orden);
 
   pintarEncabezado(config);
-  pintarSedes(sedesVisibles, testimonios, multimedia);
+  pintarSedes(sedesVisibles, testimonios, registros, multimedia);
   pintarRuta(sedesVisibles);
 
   const contenedor = document.getElementById('carrusel');
@@ -103,7 +104,7 @@ function pintarEncabezado(config) {
   if (fechasEvento) fechasEvento.textContent = config.evento.fechas;
 }
 
-function pintarSedes(sedesVisibles, testimonios, multimedia) {
+function pintarSedes(sedesVisibles, testimonios, registros, multimedia) {
   const contenedor = document.getElementById('carrusel');
   contenedor.innerHTML = '';
 
@@ -143,6 +144,9 @@ function pintarSedes(sedesVisibles, testimonios, multimedia) {
     const escenario = seccion.querySelector('.escenario');
     const items = [
       ...testimonios.filter((t) => t.sede === sede.id && t.visible).map((t) => ({ ...t, _tipo: 'testimonio' })),
+      ...registros
+        .filter((r) => r.sede === sede.id && r.visible)
+        .map((r) => ({ ...r, _tipo: r.tipo === 'conceptual' ? 'registro-conceptual' : 'registro-ua' })),
       ...multimedia.filter((m) => m.sede === sede.id && m.visible).map((m) => ({ ...m, _tipo: m.tipo })),
     ].sort((a, b) => a.ordenNarrativo - b.ordenNarrativo);
 
@@ -174,6 +178,13 @@ function crearElemento(item) {
 
   if (item._tipo === 'testimonio') {
     crearTarjetaTestimonio(item, interior);
+    // Tratamiento diferencial para autoridades de alcance UNaM (Documento
+    // Técnico, sección 8.2): borde izquierdo más grueso y tipografía del
+    // nombre levemente mayor, para que su carácter institucional no se
+    // confunda con el resto de los testimonios sin romper la coherencia
+    // visual general (es una variación sutil, no un rediseño).
+    if (item.institucion === 'UNaM') el.classList.add('elemento--testimonio-institucional');
+    el.style.setProperty('--color-ua', colorDeUnidadAcademica(item.institucion));
     el.setAttribute('aria-haspopup', 'dialog');
     el.setAttribute('aria-expanded', 'false');
     el.addEventListener('click', () => Lector.abrir(el));
@@ -183,6 +194,30 @@ function crearElemento(item) {
       if (evento.key === 'Enter' || evento.key === ' ') {
         evento.preventDefault();
         Lector.abrir(el);
+      }
+    });
+  } else if (item._tipo === 'registro-ua') {
+    crearTarjetaRegistroUA(item, interior);
+    el.style.setProperty('--color-ua', colorDeUnidadAcademica(item.unidadAcademica));
+    el.setAttribute('aria-haspopup', 'dialog');
+    el.setAttribute('aria-expanded', 'false');
+    el.addEventListener('click', () => Lector.abrir(el, item));
+    el.addEventListener('keydown', (evento) => {
+      if (evento.key === 'Enter' || evento.key === ' ') {
+        evento.preventDefault();
+        Lector.abrir(el, item);
+      }
+    });
+  } else if (item._tipo === 'registro-conceptual') {
+    crearTarjetaRegistroConceptual(item, interior);
+    el.style.setProperty('--color-ua', item.unidadAcademica ? colorDeUnidadAcademica(item.unidadAcademica) : 'var(--unam-cian)');
+    el.setAttribute('aria-haspopup', 'dialog');
+    el.setAttribute('aria-expanded', 'false');
+    el.addEventListener('click', () => Lector.abrir(el, item));
+    el.addEventListener('keydown', (evento) => {
+      if (evento.key === 'Enter' || evento.key === ' ') {
+        evento.preventDefault();
+        Lector.abrir(el, item);
       }
     });
   } else if (item._tipo === 'foto') {
@@ -273,6 +308,77 @@ function anchoSegunLargoDeCita(longitud) {
   if (longitud < 220) return 330;
   if (longitud < 320) return 370;
   return 410;
+}
+
+/**
+ * Paleta de identificación por Unidad Académica (Documento Técnico,
+ * sección 8.4): una barra de color en el borde izquierdo, derivada de
+ * los tres colores institucionales del Manual de Identidad Visual
+ * (cian, verde, marrón) — nunca un color ajeno a la paleta. El cian
+ * queda reservado para las autoridades de alcance UNaM; el resto de
+ * las unidades académicas usa variaciones de luminosidad de verde o
+ * marrón, agrupadas por afinidad disciplinar donde fue razonable
+ * (ciencias exactas y forestales del lado del cian/marrón oscurecidos,
+ * artes y diseño del lado del verde aclarado).
+ */
+const PALETA_UNIDAD_ACADEMICA = {
+  unam: '#00a3e0',
+  fhycs: '#3aaa35',
+  fayd: '#6fd16a',
+  fce: '#7d4e24',
+  fi: '#c47a39',
+  fcf: '#462b14',
+  fceqyn: '#006084',
+  escuelaagrotecnicaeldorado: '#d59f6f',
+};
+
+function colorDeUnidadAcademica(textoLibre = '') {
+  // Las instituciones largas vienen como "Nombre completo (SIGLA)" — se usa
+  // la sigla entre paréntesis cuando existe, y el texto completo cuando no
+  // (los casos "UNaM" y "Escuela Agrotécnica Eldorado", que ya son cortos).
+  // Coincidencia EXACTA tras normalizar, no por substring: "FCE" por
+  // substring calzaría también dentro de "FCEQyN" y los confundiría.
+  const conParentesis = textoLibre.match(/\(([^)]+)\)/);
+  const clave = normalizarClave(conParentesis ? conParentesis[1] : textoLibre);
+  return PALETA_UNIDAD_ACADEMICA[clave] || 'var(--unam-cian)';
+}
+
+/**
+ * Registro Institucional de Unidad Académica (Documento Técnico, tipo B).
+ * No representa una persona: representa la experiencia de una facultad,
+ * escuela o dependencia. Por eso no lleva fotografía — la ausencia de
+ * retrato es en sí misma la marca que distingue este tipo del testimonio
+ * (sección 8.3). En el mural solo se ve título + resumen recortado; el
+ * cuerpo completo, los proyectos y la cita de respaldo aparecen recién
+ * al expandir en el lector (Lector.abrir, definido en lector.js).
+ */
+function crearTarjetaRegistroUA(item, interior) {
+  interior.style.setProperty('--ancho-registro', '270px');
+  interior.innerHTML = `
+    <span class="registro-ua-badge">${escaparHTML(item.unidadAcademica || '')}</span>
+    <h3 class="registro-titulo">${escaparHTML(item.titulo)}</h3>
+    <p class="registro-resumen">${escaparHTML(item.resumen)}</p>
+  `;
+}
+
+/**
+ * Registro Conceptual (Documento Técnico, tipo C). No representa una
+ * persona ni una institución: representa una idea derivada del análisis
+ * de la documentación de la sede. Tratamiento visual más liviano que el
+ * resto (Nivel 3 de prioridad narrativa, sección 9 del prompt de
+ * implementación) — tarjeta más chica, sin badge de unidad académica
+ * cuando el concepto es transversal a toda la sede.
+ */
+function crearTarjetaRegistroConceptual(item, interior) {
+  interior.style.setProperty('--ancho-registro', '220px');
+  const etiqueta = item.unidadAcademica
+    ? escaparHTML(item.unidadAcademica)
+    : `Síntesis · ${escaparHTML(item.sede.charAt(0).toUpperCase() + item.sede.slice(1))}`;
+  interior.innerHTML = `
+    <span class="registro-conceptual-badge">${etiqueta}</span>
+    <h3 class="registro-conceptual-titulo">${escaparHTML(item.titulo)}</h3>
+    <p class="registro-conceptual-resumen">${escaparHTML(item.resumen)}</p>
+  `;
 }
 
 /**

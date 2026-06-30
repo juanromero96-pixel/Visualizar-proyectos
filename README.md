@@ -55,6 +55,7 @@ SemanaRegionalUNaM/
 │   ├── sedes.json        + campo "composicion"
 │   ├── testimonios.json   x/y/escala/rotacion/profundidad/ordenNarrativo/tiempoDesaparicion
 │   ├── multimedia.json     (mismos campos que testimonios.json)
+│   ├── registros.json        NUEVO — Registros de Unidad Académica y Conceptuales
 │   └── config.json          (sin cambios)
 └── assets/
     ├── personas/              NUEVO — fotos reales de los entrevistados
@@ -402,6 +403,39 @@ De paso, separé dos anclas de Eldorado que habían quedado casi idénticas
 (Catogui y Guidec, a 2% de distancia entre sí) — no causaban superposición
 por sí solas, pero competían por el mismo lugar y no ayudaban a la
 dispersión que pedía el reporte anterior.
+
+## Novena vuelta (grande): el modelo de registros documentales
+
+Esta vuelta implementa la especificación del `DTD_Funcional_UNaM_Semana_Regional_Registros.md`: el mural deja de ser solo testimonios y empieza a convivir con registros de otro tipo. Es el cambio más grande del proyecto hasta ahora, así que el detalle de qué se hizo y qué no es más largo de lo habitual.
+
+### Qué se implementó
+
+**`data/registros.json` (nuevo)** — 7 registros, construidos exclusivamente a partir de los 5 documentos fuente reales (FHyCS, FCEQyN, FCE, FAyD, FI):
+
+- **5 Registros Institucionales de Unidad Académica** (tipo B del DTD): uno por cada unidad académica con documentación real disponible. Cada uno tiene un resumen breve (lo único visible en el mural, recortado a 3 líneas) y un cuerpo completo —varios párrafos, una lista de proyectos reales mencionados en la fuente, y una cita de respaldo con atribución— que solo aparece al expandir.
+- **2 Registros Conceptuales** (tipo C): uno por sede (Posadas y Oberá), no uno por unidad académica — ver más abajo por qué. Cada uno entreteje 2-3 citas reales de distintas facultades de la misma sede para mostrar una idea que las atraviesa a todas, no una sola.
+- **0 Registros Audiovisuales.** No hay ningún archivo de foto o video real de proyectos en `assets/photos` o `assets/videos` (solo quedan los `.gitkeep`/`LEEME.txt` de placeholder). La instrucción es explícita: "si no existe material documental, no crear el registro." No inventé ninguno.
+- **0 registros nuevos para Eldorado.** Ninguna de las dos unidades de Eldorado (Escuela Agrotécnica, FCF) tiene documentación propia más allá de las breves intervenciones que ya están como testimonios — exactamente lo que el prompt anticipaba ("Situación particular de Eldorado") y pedía no inventar.
+
+**Por qué un registro conceptual por sede, y no uno por unidad académica.** El plan original era 6 (uno por UA). Antes de escribir contenido, simulé el algoritmo de distribución con el tamaño de tarjeta esperado y 15 elementos en la escena de Posadas, y encontré que la combinación no convergía sin superposición en una ventana angosta y baja (821×600) — el piso de escala configurado no alcanzaba para acomodar tantos elementos. En vez de bajar ese piso (lo que habría hecho ilegibles las tarjetas más chicas), reduje el alcance a un registro conceptual por sede. Esto además resultó en un contenido más fuerte: en vez de una idea por facultad, cada registro conceptual ahora cruza 2-3 facultades de la misma sede en una sola idea transversal —genuinamente más interesante que seis ideas aisladas—, así que la restricción técnica terminó mejorando la decisión editorial.
+
+**Identificación por Unidad Académica (DTD 8.4).** Una barra de color de 3px en el borde izquierdo, aplicada ahora a TODOS los testimonios (antes no la tenían) y a los nuevos registros UA. La paleta de 8 colores —autoridades generales + 7 unidades académicas— se derivó matemáticamente de los 3 colores del Manual de Identidad Visual (cian, verde, marrón) mediante corrimientos de luminosidad, documentados en el propio código (`js/app.js`, `PALETA_UNIDAD_ACADEMICA`), no elegidos a ojo. La función que asigna el color por institución extrae la sigla entre paréntesis cuando existe ("Facultad de Ciencias Económicas (FCE)" → "FCE") y compara por igualdad exacta tras normalizar, no por substring — encontré antes de integrarlo que comparar por substring confundía "FCE" con "FCEQyN" (la cadena larga de FCEQyN contiene literalmente "fce"), y lo corregí antes de que llegara a producción.
+
+**Tratamiento diferencial de testimonios institucionales (DTD 8.2, obligatorio).** Las cinco autoridades de alcance UNaM (Franco, Catogui, Spasiuk, Guidec, Matot) ahora tienen un borde izquierdo más grueso (5px en vez de 3px) y el nombre en tipografía levemente mayor — variación sutil sobre la misma tarjeta, no un componente nuevo, tal como pide el documento.
+
+**El lector ampliado, generalizado.** `Lector.abrir()` ahora acepta un segundo argumento opcional con el registro completo. Sin ese argumento, se comporta exactamente igual que antes (lee la cita actual del DOM del testimonio, porque esa cita puede haber sido sorteada al azar y tiene que coincidir con lo que la persona ya estaba viendo). Con el argumento, construye el contenido completo —cuerpo en párrafos, lista de proyectos, cita de respaldo— directamente desde los datos, porque ahí no hay nada que rote: lo que cambia es que el mural solo muestra el resumen recortado y el cuerpo completo vive únicamente en el dato, nunca en el DOM de la tarjeta.
+
+**Recorte de texto en el mural (punto 7 del prompt).** Los registros nuevos (UA y conceptual) muestran el resumen recortado a 3 líneas vía `-webkit-line-clamp` — nunca el cuerpo completo. Los testimonios, en cambio, siguen mostrando la cita completa sin recortar: esa fue una decisión deliberada de seis vueltas de trabajo anteriores, específicamente para que el ancho de la tarjeta se calculara según el largo real de cada cita y nunca hiciera falta cortarla. Interpreté el punto 7 del prompt ("las notas... el texto deberá quedar recortado") como aplicable a los tipos NUEVOS, que sí tienen cuerpos demasiado largos para cualquier tarjeta flotante (varios párrafos + lista de proyectos), no como una instrucción de deshacer el trabajo ya validado en testimonios — lo dejo explícito acá por si la lectura no es la que se esperaba.
+
+### Verificación
+
+Repetí el mismo proceso de simulación de todas las vueltas anteriores, esta vez con el contenido real ya escrito (no estimado): 18 combinaciones de sede × tamaño de pantalla, comparando contra los datos exactos de `testimonios.json`, `registros.json` y `sedes.json`. Resultado: limpio en las 18 salvo el mismo caso límite ya documentado en una vuelta anterior (821×600, una superposición de 2px verticales — ruido de redondeo, no algo perceptible).
+
+### Lo que NO se tocó en esta vuelta
+
+- **El panel de administración no sabe que `registros.json` existe.** No lo carga, no lo edita, no lo muestra en el editor visual de posiciones. Esto es una limitación real, no un descuido: extender el panel con un formulario propio para registros (cuerpo multi-párrafo, lista de proyectos editable, cita opcional) es un trabajo de un tamaño comparable al de esta misma vuelta, y prefiero entregarlo como una vuelta aparte, bien hecha, antes que apurarlo acá. Mientras tanto, los registros se editan tocando `data/registros.json` directamente.
+- **El motor de distribución (`js/layout.js`) no se tocó.** No hizo falta: ya era genérico (opera sobre cualquier `.elemento` con los atributos `data-ancla*`), así que los registros nuevos se integraron sin cambiar una línea de ese archivo — la separación entre estructura narrativa y motor de layout que describe la sección 9.3 del Documento Técnico se sostuvo en la práctica, no solo en la teoría.
+- **La descripción breve de cada sede no cambió**, tal como pedía explícitamente el punto 1 del prompt.
 
 ## Cuarta vuelta: bugs reales encontrados en capturas de pantalla
 
