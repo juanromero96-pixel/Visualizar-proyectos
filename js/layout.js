@@ -58,7 +58,12 @@ const Distribuidor = (() => {
     // calcular posiciones ahí no tendría efecto visible.
     if (!window.matchMedia('(min-width: 821px)').matches) return;
 
-    const elementos = Array.from(escenario.querySelectorAll('.elemento'));
+    // :not(.elemento--oculto-autoridad) — las autoridades que el sorteo de
+    // app.js dejó afuera de esta visita NO participan del cálculo de
+    // posiciones: si se las incluyera (aunque sea ocultas), el resto de la
+    // escena seguiría "reservándoles" un lugar invisible en vez de usar
+    // ese espacio de verdad. Quedan afuera del layout, no solo invisibles.
+    const elementos = Array.from(escenario.querySelectorAll('.elemento:not(.elemento--oculto-autoridad)'));
     if (!elementos.length) return;
 
     const rectEscenario = escenario.getBoundingClientRect();

@@ -30,6 +30,15 @@
   const secciones = Array.from(contenedor.querySelectorAll('.sede'));
 
   const recalcular = () => secciones.forEach((s) => Distribuidor.distribuir(s));
+
+  // Antes de la primera distribución: se decide qué autoridades de alcance
+  // UNaM se muestran en cada sede (nunca las cinco a la vez — ver
+  // aplicarSubconjuntoDeAutoridades). Esto tiene que pasar ANTES de
+  // recalcular() para que el motor de distribución ya calcule las
+  // posiciones sabiendo cuáles van a estar realmente visibles, en vez de
+  // reservarles a las autoridades descartadas un lugar que después queda
+  // invisible.
+  secciones.forEach((s) => aplicarSubconjuntoDeAutoridades(s, testimonios));
   recalcular();
 
   // Recién ahora se sortea la cita real de cada tarjeta — la medición de
@@ -62,6 +71,12 @@
     secciones,
     onCambio: (indice, seccionNueva) => {
       actualizarRuta(indice);
+      // Se vuelve a sortear el conjunto de autoridades visibles ANTES de
+      // intentar revelar — si es la primera vez que se entra a esta sede,
+      // el Secuenciador necesita encontrar ya decidido quién se muestra;
+      // si ya se había revelado antes, esta misma llamada se encarga de
+      // mostrar/ocultar y reacomodar el resto (ver más abajo).
+      aplicarSubconjuntoDeAutoridades(seccionNueva, testimonios);
       Secuenciador.entrar(seccionNueva); // si ya se reveló antes, esto no hace nada
       refrescarCitas(seccionNueva, testimonios); // esto sí corre siempre, aunque ya se haya visitado
     },
@@ -379,6 +394,96 @@ function crearTarjetaRegistroConceptual(item, interior) {
     <h3 class="registro-conceptual-titulo">${escaparHTML(item.titulo)}</h3>
     <p class="registro-conceptual-resumen">${escaparHTML(item.resumen)}</p>
   `;
+}
+
+/**
+ * Cuántas autoridades de alcance UNaM se muestran a la vez, de las 5
+ * disponibles (Franco, Catogui, Spasiuk, Guidec, Matot) — nunca todas
+ * juntas, para que no dominen el mural por sobre las experiencias de
+ * las Unidades Académicas, que son el eje narrativo principal.
+ */
+const AUTORIDADES_VISIBLES_A_LA_VEZ = 2;
+
+/**
+ * Sortea qué testimonios de alcance UNaM ("autoridades generales",
+ * marcadas con `.elemento--testimonio-institucional`) se muestran en una
+ * sede, y oculta al resto — nunca las cinco a la vez. Se llama al cargar
+ * el sitio y en cada reingreso a una sede, así que el conjunto visible
+ * cambia entre sesiones, entre cambios de sede y al actualizar la
+ * página, tal como se pidió ("el mural deberá sentirse vivo, no
+ * repetitivo, no predecible").
+ *
+ * El conjunto elegido se guarda en sessionStorage por sede, para evitar
+ * repetir EXACTAMENTE la misma combinación dos veces seguidas en la
+ * misma sesión — el mismo patrón que ya usa elegirCita() para las citas
+ * individuales, aplicado acá a qué tarjetas aparecen, no a qué dicen.
+ *
+ * Los testimonios ocultados no solo bajan su opacidad: se excluyen del
+ * cálculo de layout.js por completo (clase `elemento--oculto-autoridad`,
+ * ver layout.js), así que el resto de la escena reclama ese espacio de
+ * verdad en vez de dejarlo reservado e invisible.
+ */
+function aplicarSubconjuntoDeAutoridades(seccion, testimonios) {
+  const candidatos = Array.from(seccion.querySelectorAll('.elemento--testimonio-institucional'));
+  if (candidatos.length <= AUTORIDADES_VISIBLES_A_LA_VEZ) return; // nada que rotar
+
+  const clave = `unam_semana_regional_autoridades_${seccion.dataset.sede}`;
+  const ids = candidatos.map((el) => el.dataset.testimonioId);
+  const ultimoConjunto = leerJSONSeguro(sessionStorage.getItem(clave)) || [];
+
+  let elegidos;
+  let intentos = 0;
+  do {
+    elegidos = mezclarFisherYates([...ids]).slice(0, AUTORIDADES_VISIBLES_A_LA_VEZ);
+    intentos++;
+  } while (mismoConjunto(elegidos, ultimoConjunto) && intentos < 8 && ids.length > AUTORIDADES_VISIBLES_A_LA_VEZ);
+
+  sessionStorage.setItem(clave, JSON.stringify(elegidos));
+
+  let huboCambios = false;
+  candidatos.forEach((el) => {
+    const debeMostrarse = elegidos.includes(el.dataset.testimonioId);
+    const estabaOculto = el.classList.contains('elemento--oculto-autoridad');
+    el.classList.toggle('elemento--oculto-autoridad', !debeMostrarse);
+    el.setAttribute('aria-hidden', debeMostrarse ? 'false' : 'true');
+    el.tabIndex = debeMostrarse ? 0 : -1;
+    // Si estaba oculto y ahora se decide mostrarlo en una sede que YA se
+    // había revelado antes, el Secuenciador no va a tocarlo (solo revela
+    // una vez) — hay que encargarse acá mismo de que aparezca.
+    if (debeMostrarse && estabaOculto) el.classList.add('elemento--visible');
+    if (debeMostrarse === estabaOculto) huboCambios = true;
+  });
+
+  // Solo vale la pena recalcular el layout si el conjunto visible
+  // realmente cambió (la primera vez que se llama, antes de la primera
+  // distribución general, igual conviene dejar que el recalcular() de
+  // iniciarSitio() se encargue una sola vez para las tres sedes juntas).
+  if (huboCambios && seccion.dataset.yaDistribuidoUnaVez === 'true') {
+    Distribuidor.distribuir(seccion);
+  }
+  seccion.dataset.yaDistribuidoUnaVez = 'true';
+}
+
+function mezclarFisherYates(arreglo) {
+  for (let i = arreglo.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arreglo[i], arreglo[j]] = [arreglo[j], arreglo[i]];
+  }
+  return arreglo;
+}
+
+function mismoConjunto(a, b) {
+  if (a.length !== b.length) return false;
+  const setB = new Set(b);
+  return a.every((x) => setB.has(x));
+}
+
+function leerJSONSeguro(texto) {
+  try {
+    return texto ? JSON.parse(texto) : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

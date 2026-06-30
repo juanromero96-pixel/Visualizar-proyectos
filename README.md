@@ -404,6 +404,147 @@ De paso, separé dos anclas de Eldorado que habían quedado casi idénticas
 por sí solas, pero competían por el mismo lugar y no ayudaban a la
 dispersión que pedía el reporte anterior.
 
+## Décima vuelta: menos autoridades a la vez, más voz para las Unidades Académicas
+
+Este pedido reorganiza el equilibrio del mural (menos protagonismo de
+autoridades, más de las experiencias de Unidad Académica) y pide volver a
+revisar toda la documentación en busca de más citas sobre territorio y
+territorialidad. Antes de tocar código, releí los 5 documentos fuente
+completos buscando específicamente menciones de las 5 autoridades de
+alcance UNaM que pudieran no estar ya usadas — y encontré una sección
+entera ("Concepción de la extensión" + un banco de citas con etiqueta
+`Tema:`) dentro del documento de FHyCS que no había explotado del todo en
+rondas anteriores.
+
+### Autoridades visibles: de 5 fijas a 2 al azar (punto 2)
+
+**El problema real, medido:** las 5 autoridades de alcance UNaM (Franco,
+Catogui, Spasiuk, Guidec, Matot) aparecían siempre las cinco, en las tres
+sedes — 15 instancias fijas en total, sin variar nunca entre visitas.
+
+**La solución:** `aplicarSubconjuntoDeAutoridades()`, en `js/app.js`,
+sortea 2 de las 5 cada vez que se entra a una sede — al cargar el sitio,
+al cambiar de sede, y en cada reingreso —, evitando repetir exactamente
+el mismo par que la vez anterior en esa sede (mismo patrón de
+"no-repetir-lo-último" que ya usan las citas individuales). Las 3
+autoridades no elegidas no solo bajan su opacidad: se excluyen por
+completo del cálculo de `layout.js` (un ajuste mínimo y quirúrgico en ese
+archivo, `:not(.elemento--oculto-autoridad)` en la selección de
+elementos), así que el resto de la escena reclama ese espacio de verdad,
+no lo deja reservado e invisible.
+
+**Hallazgo no buscado:** al simular esta vuelta con los datos reales,
+encontré que el límite que había quedado documentado en la vuelta
+anterior (821×600, una superposición de 2px) **desapareció por completo**
+— con menos elementos compitiendo por el mismo espacio, el motor de
+distribución ya no se acerca al límite en ningún tamaño de pantalla
+probado. La reducción de autoridades no fue solo una decisión narrativa:
+terminó siendo, de paso, la solución al único caso límite que quedaba
+pendiente.
+
+### Más citas reales, releyendo la documentación completa (punto 3)
+
+Encontré una sección de "Concepción de la extensión" dentro del documento
+de FHyCS con citas explícitamente etiquetadas por tema, varias sobre
+territorio/territorialidad, que no había usado:
+
+- **Mauricio Franco** — 2 citas nuevas (5 en total): "La extensión nace
+  con ese objetivo: mostrar la capilaridad y la territorialidad..." y una
+  versión más completa de "no es llevar la universidad al medio, sino
+  traer al medio, a la comunidad, a la universidad."
+- **Néida González** — 2 citas nuevas (4 en total), ambas sobre
+  desarrollo territorial y transformación social.
+- **Eva Muguersa** — 1 cita nueva (3 en total), sobre el observatorio
+  como dispositivo "anclado en demandas concretas del territorio".
+
+Antes de incorporarlas, verifiqué programáticamente que ninguna
+duplicara una cita ya usada en su propio registro de Unidad Académica
+(la cita de Muguersa en el registro UA de FHyCS es una frase distinta a
+estas tres) — evitar que la misma frase aparezca dos veces en la misma
+escena, en dos tarjetas distintas.
+
+Re-revisé también FAyD, FI, FCEQyN y FCE buscando más apariciones de las
+5 autoridades: no hay ninguna otra — esas cuatro facultades no las citan,
+solo FHyCS lo hace (además de la transcripción de apertura ya usada en
+rondas anteriores).
+
+### Dos registros conceptuales nuevos, con material que ya estaba documentado pero no usado (punto 8)
+
+Cada uno de los 5 documentos fuente tiene su propia sección analítica
+"Cómo aparece el territorio" — conclusiones ya extraídas en sesiones
+anteriores, pero que hasta ahora solo había usado parcialmente (en el
+registro conceptual de Oberá). Esta vuelta sumé dos más:
+
+- **Posadas — "El territorio no tiene una sola escala"**: la síntesis de
+  FHyCS describe el territorio apareciendo como barrio, como frontera,
+  como provincia entera, como región rural, y como territorio digital,
+  según el proyecto que lo nombre. Es una idea genuinamente distinta de
+  la que ya existía para Posadas ("la extensión como coproducción"), así
+  que no es redundante.
+- **Oberá — "Quienes sostienen la extensión"**: la síntesis de FAyD
+  señala explícitamente el protagonismo del personal no docente como uno
+  de los tres elementos únicos de esa facultad en todo el corpus — un
+  bloque entero del conversatorio se dedicó a esa voz, algo que no
+  aparece en ninguna otra jornada documentada. Se diferencia con
+  claridad del registro conceptual de Oberá ya existente (que habla de
+  fronteras internacionales, no de quién sostiene el trabajo en el
+  tiempo).
+
+Con esto, Posadas y Oberá pasan de 1 a 2 registros conceptuales cada uno
+(4 en total, antes 2) — verificado que la capacidad del motor de layout
+lo sostiene sin problema, justamente porque la reducción de autoridades
+visibles liberó el espacio que esto necesitaba.
+
+### Realce visual leve para los registros de Unidad Académica (punto 11)
+
+Los 5 registros de experiencia institucional subieron su `escala` en
++0.08 (quedando entre 1.0 y 1.08, antes 0.92–1.0) — una variación sutil,
+no un cambio de diseño, para que se lean como las piezas más centrales
+del mural sin desentonar con el resto.
+
+### Multimedia: se vació el contenido de demostración (punto 9 y 17)
+
+`data/multimedia.json` tenía 6 entradas de muy al principio del
+proyecto, antes del giro hacia el modelo de registros documentales,
+apuntando a archivos (`assets/photos/posadas-1.jpg`, etc.) que nunca
+existieron en el repositorio — solo quedan los `LEEME.txt` de
+placeholder en esas carpetas. El brief es explícito y repetido sobre
+este punto ("no crear registros sin respaldo documental"), así que vacié
+el archivo a `[]` en vez de dejarlo con datos de muestra que contradicen
+esa instrucción. Esto de paso resuelve, de raíz, el bug del video vacío
+("Recorrido por proyectos — Posadas") que en una vuelta anterior solo se
+había tapado con manejo de errores — ahora directamente no hay datos
+falsos que generen el problema.
+
+### Descripción lateral, más fluida (punto 12)
+
+El título de la sede ya usaba `clamp()`; el resto del bloque
+(subtítulo, descripción, lista de unidades académicas) usaba tamaños
+fijos en `rem`. Ahora los cinco usan `clamp()`, y el ancho del bloque
+pasó de `min(34vw, 460px)` a `clamp(260px, 30vw, 460px)` — con un piso
+explícito de 260px para que no se angoste de más en ventanas de
+escritorio chicas, antes de llegar al punto de quiebre de 820px que ya
+pasa a flujo vertical.
+
+### Lo que no cambié
+
+- **El equilibrio 25/40/20/15% del brief no se aplicó como fórmula
+  literal** — el propio brief lo autoriza explícitamente ("no utilizar
+  estos porcentajes como valores rígidos"). En cambio, perseguí el
+  objetivo cualitativo: que las autoridades dejen de dominar (logrado,
+  verificado) y que las experiencias de Unidad Académica ganen
+  protagonismo relativo (logrado, vía el realce de escala + la reducción
+  de autoridades simultáneas).
+- **0 registros audiovisuales** — sigue sin haber ningún archivo real de
+  foto/video de proyectos en el repositorio.
+- **0 registros nuevos para Eldorado** — sigue sin haber documentación
+  propia de Ciencias Forestales o la Escuela Agrotécnica más allá de los
+  testimonios breves que ya existen.
+- **El panel de administración sigue sin conocer `registros.json`** ni
+  el nuevo mecanismo de rotación de autoridades — misma limitación
+  documentada en la vuelta anterior, todavía pendiente como trabajo
+  aparte.
+
 ## Novena vuelta (grande): el modelo de registros documentales
 
 Esta vuelta implementa la especificación del `DTD_Funcional_UNaM_Semana_Regional_Registros.md`: el mural deja de ser solo testimonios y empieza a convivir con registros de otro tipo. Es el cambio más grande del proyecto hasta ahora, así que el detalle de qué se hizo y qué no es más largo de lo habitual.

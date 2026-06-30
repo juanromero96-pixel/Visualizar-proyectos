@@ -173,7 +173,11 @@ button { font-family: inherit; cursor: pointer; }
   z-index: 5;
   left: calc(var(--modulo) * 1.2);
   bottom: calc(var(--modulo) * 2.4);
-  max-width: min(34vw, 460px);
+  /* Ancho fluido con piso y techo: en vez de un solo punto de quiebre
+     (34vw cuando hay espacio, 460px como techo), un mínimo explícito de
+     260px evita que se angoste de más en ventanas de escritorio chicas,
+     antes de llegar al breakpoint de 820px que ya pasa a flujo vertical. */
+  width: clamp(260px, 30vw, 460px);
   max-height: calc(100vh - 150px);
   overflow-y: auto;
   scrollbar-width: thin;
@@ -186,12 +190,12 @@ button { font-family: inherit; cursor: pointer; }
 .sede-kicker--visible { opacity: 1; transform: translateY(0); }
 .sede--vertical .sede-kicker { border-left-width: 4px; }
 
-.sede-kicker-num { display: block; font-weight: 300; letter-spacing: 0.22em; font-size: 0.78rem; color: var(--unam-cian); margin-bottom: 10px; }
-.sede-kicker-titulo { margin: 0 0 6px; font-weight: 700; font-size: clamp(2.4rem, 7vw, 4.6rem); line-height: 0.98; letter-spacing: -0.01em; }
-.sede-kicker-subtitulo { margin: 0 0 14px; font-weight: 400; font-style: italic; font-size: 1rem; color: var(--unam-verde); }
-.sede-kicker-descripcion { margin: 0 0 12px; font-weight: 300; font-size: 0.92rem; line-height: 1.55; opacity: 0.92; }
+.sede-kicker-num { display: block; font-weight: 300; letter-spacing: 0.22em; font-size: clamp(0.68rem, 0.3vw + 0.6rem, 0.78rem); color: var(--unam-cian); margin-bottom: 10px; }
+.sede-kicker-titulo { margin: 0 0 6px; font-weight: 700; font-size: clamp(2rem, 6vw, 4.6rem); line-height: 0.98; letter-spacing: -0.01em; }
+.sede-kicker-subtitulo { margin: 0 0 14px; font-weight: 400; font-style: italic; font-size: clamp(0.88rem, 0.3vw + 0.78rem, 1rem); color: var(--unam-verde); }
+.sede-kicker-descripcion { margin: 0 0 12px; font-weight: 300; font-size: clamp(0.82rem, 0.3vw + 0.74rem, 0.92rem); line-height: 1.55; opacity: 0.92; }
 .sede-kicker-descripcion + .sede-kicker-descripcion { margin-top: -4px; }
-.sede-kicker-unidades { list-style: none; margin: 0; padding: 0; font-weight: 400; font-size: 0.78rem; letter-spacing: 0.03em; text-transform: uppercase; opacity: 0.8; }
+.sede-kicker-unidades { list-style: none; margin: 0; padding: 0; font-weight: 400; font-size: clamp(0.7rem, 0.2vw + 0.66rem, 0.78rem); letter-spacing: 0.03em; text-transform: uppercase; opacity: 0.8; }
 .sede-kicker-unidades li { padding: 3px 0; border-top: 1px solid var(--niebla-borde); }
 .sede-kicker-unidades li:first-child { border-top: none; }
 
@@ -225,6 +229,16 @@ button { font-family: inherit; cursor: pointer; }
 .elemento--visible {
   opacity: var(--opacidad-final, 1);
   transform: translate(-50%, -50%) scale(var(--escala)) rotate(var(--rot));
+}
+/* Autoridades de alcance UNaM descartadas por el sorteo de
+   aplicarSubconjuntoDeAutoridades() (js/app.js) — se desvanecen con
+   transición, no desaparecen de golpe; layout.js ya las excluye del
+   cálculo de posiciones por completo (ver el selector en ese archivo),
+   así que el resto de la escena reclama el espacio real, no uno
+   reservado e invisible. */
+.elemento--oculto-autoridad {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .elemento-interior { display: block; }

@@ -9,18 +9,43 @@
     "resumen": "La facultad anfitriona de la apertura general organizó su propia jornada en pleno paro nacional, con observatorios, programas y cátedras libres distribuidos en cuatro mesas temáticas.",
     "cuerpo": "La jornada se desarrolló en un día de paro nacional de docentes y no docentes — una coincidencia que la propia vicedecana, Zulma Cabrera, leyó explícitamente como \"una estrategia de resistencia frente a todo lo que nos está pasando como universidad pública\". Se trabajó con interpretación en Lengua de Señas Argentina durante toda la jornada (equipo \"Yulsa\") y participó personal no docente pese al paro. La estructura fue de cuatro mesas temáticas — Observatorios; Cultura, memoria y comunicación; Educación y trayectoria; Inclusión, derecho y comunidad —, cada una con siete minutos por proyecto y dos preguntas guía: qué actores del territorio están vinculados, y qué aporta el proyecto a la integralidad entre docencia, investigación y extensión.\n\nEntre los proyectos presentados: el Observatorio de Datos Socioeconómicos, que releva comedores y merenderos comunitarios a partir de una demanda concreta de la Red Alimentar; el Observatorio Económico y Social del Deporte, activo desde 2019 ante la ausencia casi total de antecedentes sobre el tema a nivel país; Kakubrá, programa de portugués de frontera; y una biblioteca popular que nació como un proyecto de apoyo escolar y hoy tiene personería jurídica propia.\n\nUn rasgo que la propia facultad señala como distintivo es que varios de estos proyectos derivaron en tesis de grado y posgrado, líneas de investigación acreditadas y publicaciones propias (las revistas Tecoa y Desafío) — evidencia, según los propios oradores, de que la extensión también produce conocimiento académico formal, no solo intervención social.",
     "proyectos": [
-      { "nombre": "Observatorio de Datos Socioeconómicos", "sintesis": "Relevamiento de comedores y merenderos comunitarios, a demanda de la Red Alimentar." },
-      { "nombre": "Observatorio Económico y Social del Deporte", "sintesis": "Desde 2019; encuesta provincial de actividad física e impacto de eventos deportivos universitarios." },
-      { "nombre": "Kakubrá", "sintesis": "Programa de portugués de frontera, dirigido por José Luis Ramírez." },
-      { "nombre": "Postdato", "sintesis": "Proyecto de comunicación sobre desinformación y odio organizado." },
-      { "nombre": "Biblioteca Popular", "sintesis": "Nacida de un proyecto de apoyo escolar; hoy con personería jurídica propia." },
-      { "nombre": "Programa de Lengua de Señas Argentina y Cultura Sorda", "sintesis": "Interpretó toda la jornada (equipo \"Yulsa\") y desarrolla talleres de alfabetización bilingüe." }
+      {
+        "nombre": "Observatorio de Datos Socioeconómicos",
+        "sintesis": "Relevamiento de comedores y merenderos comunitarios, a demanda de la Red Alimentar."
+      },
+      {
+        "nombre": "Observatorio Económico y Social del Deporte",
+        "sintesis": "Desde 2019; encuesta provincial de actividad física e impacto de eventos deportivos universitarios."
+      },
+      {
+        "nombre": "Kakubrá",
+        "sintesis": "Programa de portugués de frontera, dirigido por José Luis Ramírez."
+      },
+      {
+        "nombre": "Postdato",
+        "sintesis": "Proyecto de comunicación sobre desinformación y odio organizado."
+      },
+      {
+        "nombre": "Biblioteca Popular",
+        "sintesis": "Nacida de un proyecto de apoyo escolar; hoy con personería jurídica propia."
+      },
+      {
+        "nombre": "Programa de Lengua de Señas Argentina y Cultura Sorda",
+        "sintesis": "Interpretó toda la jornada (equipo \"Yulsa\") y desarrolla talleres de alfabetización bilingüe."
+      }
     ],
     "cita": "La extensión cocrea conocimiento. Lo hacemos juntos con quienes trabajamos.",
     "citaAutor": "Eva Muguersa",
     "citaCargo": "Secretaria Adjunta de Extensión, FHyCS",
-    "x": 30, "y": 28, "escala": 1.0, "rotacion": 2, "profundidad": 4,
-    "animacion": "fade", "duracion": 700, "ordenNarrativo": 3, "visible": true
+    "x": 30,
+    "y": 28,
+    "escala": 1.08,
+    "rotacion": 2,
+    "profundidad": 4,
+    "animacion": "fade",
+    "duracion": 700,
+    "ordenNarrativo": 3,
+    "visible": true
   },
   {
     "id": "r-fceqyn-ua",
@@ -32,16 +57,35 @@
     "resumen": "Cuatro ejes de debate y una pregunta que atravesó toda la jornada: ¿cuándo una actividad es extensión y cuándo es vinculación tecnológica?",
     "cuerpo": "La jornada de FCEQyN eligió un formato poco frecuente en el corpus: cuatro grupos de trabajo sesionaron dos horas de forma previa, y solo después presentaron sus conclusiones en una plenaria transmitida en vivo. La propia secretaria de extensión, Alis Rambo, explicó que la jornada se pensó como espacio de reflexión institucional, no como vitrina de resultados — y dedicó un bloque específico a distinguir conceptualmente extensión de vinculación tecnológica, dos actividades que conviven en la misma secretaría pero requieren lógicas de gestión distintas.\n\nDos tensiones atravesaron el debate. La primera, los tiempos administrativos: el desfase entre el momento en que un estudiante certifica una actividad de extensión y el momento en que recibe su reconocimiento formal puede demorar casi un año, según se documentó en el pleno. La segunda, el financiamiento: en la convocatoria propia de la facultad (\"cátedra fuera del aula\") se presentaron entre 40 y 50 proyectos, de los cuales solo 14 recibieron financiamiento.\n\nLa Quermés científica fue señalada como el \"mecanismo más grande de llegada\" que tiene actualmente la facultad hacia la comunidad, con una propuesta surgida en el propio conversatorio de replicarla a menor escala en escuelas del interior. REDFI —Red de Formación Integral— aparece como el ejemplo más citado de articulación interfacultad: un proyecto sobre salud integral y diversidad de género que reúne a FCEQyN con Humanidades, Ciencias Económicas y la Escuela Agrotécnica de Eldorado.",
     "proyectos": [
-      { "nombre": "REDFI — Red de Formación Integral", "sintesis": "Articulación con FHyCS, FCE y la Escuela Agrotécnica de Eldorado sobre salud integral y diversidad de género." },
-      { "nombre": "Quermés científica", "sintesis": "Evento de comunicación pública de la ciencia; el mecanismo de mayor llegada a la comunidad de la facultad." },
-      { "nombre": "Cátedra \"Calidad de los Medicamentos\"", "sintesis": "Primera experiencia de extensión incorporada a la currícula, desde 2024." },
-      { "nombre": "Visitas a escuelas del interior", "sintesis": "Itatí, Garupá y otras localidades; valoradas explícitamente por las escuelas receptoras." }
+      {
+        "nombre": "REDFI — Red de Formación Integral",
+        "sintesis": "Articulación con FHyCS, FCE y la Escuela Agrotécnica de Eldorado sobre salud integral y diversidad de género."
+      },
+      {
+        "nombre": "Quermés científica",
+        "sintesis": "Evento de comunicación pública de la ciencia; el mecanismo de mayor llegada a la comunidad de la facultad."
+      },
+      {
+        "nombre": "Cátedra \"Calidad de los Medicamentos\"",
+        "sintesis": "Primera experiencia de extensión incorporada a la currícula, desde 2024."
+      },
+      {
+        "nombre": "Visitas a escuelas del interior",
+        "sintesis": "Itatí, Garupá y otras localidades; valoradas explícitamente por las escuelas receptoras."
+      }
     ],
     "cita": "La vinculación es todo el relacionamiento que se crea desde la universidad con el mecanismo socioproductivo. La extensión es crear esos puentes, esos diálogos, para que la academia llegue a la sociedad.",
     "citaAutor": "Alis Rambo",
     "citaCargo": "Secretaria de Extensión y Vinculación Tecnológica, FCEQyN",
-    "x": 85, "y": 30, "escala": 0.95, "rotacion": -2, "profundidad": 3,
-    "animacion": "slide", "duracion": 700, "ordenNarrativo": 9, "visible": true
+    "x": 85,
+    "y": 30,
+    "escala": 1.03,
+    "rotacion": -2,
+    "profundidad": 3,
+    "animacion": "slide",
+    "duracion": 700,
+    "ordenNarrativo": 9,
+    "visible": true
   },
   {
     "id": "r-fce-ua",
@@ -53,15 +97,31 @@
     "resumen": "Conversatorio en grupos sobre tres ejes —qué es la extensión, su curricularización y sus desafíos— con un proyecto de nueve años como caso testigo.",
     "cuerpo": "La jornada de FCE se anunció primero por radio, días antes de realizarse: un conversatorio dinámico el viernes a las 9 de la mañana, gratuito y con certificado, transmitido en vivo para el resto de las regionales. El formato combinó trabajo en grupos —docentes, no docentes, estudiantes y graduados— en torno a tres ejes (qué actividades de extensión se conocen y su relación con los Objetivos de Desarrollo Sostenible; la curricularización a través de prácticas sociales educativas; los desafíos de financiamiento a mediano plazo), con presentación de conclusiones en plenario. Según el propio secretario de extensión, Mariano Rofé, la jornada cumple una doble función: reflexión institucional, pero también enseñanza para estudiantes que en los primeros años de su carrera todavía no conocen qué es la extensión.\n\nEl Proyecto de Inclusión Financiera —educación financiera para estudiantes de colegios secundarios— lleva nueve años de continuidad ininterrumpida, sostenido, en palabras de Rofé, \"mucho por la voluntad que tienen los equipos extensionistas\". Los colegios visitados envían notas de agradecimiento directamente al decano.\n\nEl Proyecto de Asesores ofrece consultoría empresarial uno a uno a cargo de estudiantes avanzados y graduados jóvenes, que al completarlo reciben una certificación específica —\"asesor junior\" o \"asesor senior\"— pensada explícitamente como diferencial al momento de buscar empleo. El día previo a esta entrevista, la facultad había aprobado en sesión un programa de incentivos propio para financiar a los equipos extensionistas.",
     "proyectos": [
-      { "nombre": "Inclusión Financiera", "sintesis": "Nueve años de continuidad; educación financiera para estudiantes secundarios." },
-      { "nombre": "Proyecto de Asesores", "sintesis": "Consultoría empresarial uno a uno; certificación de asesor junior o senior al egresar." },
-      { "nombre": "Boletín \"Conecta FC\"", "sintesis": "Publicación propia de la facultad para difundir extensión, investigación y transferencia." }
+      {
+        "nombre": "Inclusión Financiera",
+        "sintesis": "Nueve años de continuidad; educación financiera para estudiantes secundarios."
+      },
+      {
+        "nombre": "Proyecto de Asesores",
+        "sintesis": "Consultoría empresarial uno a uno; certificación de asesor junior o senior al egresar."
+      },
+      {
+        "nombre": "Boletín \"Conecta FC\"",
+        "sintesis": "Publicación propia de la facultad para difundir extensión, investigación y transferencia."
+      }
     ],
     "cita": "La extensión, así como la investigación, son actividades esenciales que tienen que ir desarrollando y conociendo los estudiantes a lo largo de su trayecto académico en cada carrera.",
     "citaAutor": "Mariano Rofé",
     "citaCargo": "Secretario de Extensión, FCE",
-    "x": 38, "y": 60, "escala": 0.95, "rotacion": 3, "profundidad": 3,
-    "animacion": "float", "duracion": 700, "ordenNarrativo": 6, "visible": true
+    "x": 38,
+    "y": 60,
+    "escala": 1.03,
+    "rotacion": 3,
+    "profundidad": 3,
+    "animacion": "float",
+    "duracion": 700,
+    "ordenNarrativo": 6,
+    "visible": true
   },
   {
     "id": "r-fayd-ua",
@@ -73,17 +133,39 @@
     "resumen": "En lugar de presentar proyectos en formato póster, la facultad invitó a docentes y no docentes a conversar sobre su propia experiencia extensionista.",
     "cuerpo": "El conversatorio de FAyD se realizó en el Museo de la Facultad, un espacio propio con más de diez años de existencia que fue resignificado como set de transmisión para la ocasión. A diferencia del resto del corpus, esta jornada no presentó proyectos en formato póster ni informe de resultados: organizó cuatro bloques de diálogo —Aprender con otros; Territorio y ambiente; Producción y difusión; Participación no docente y museo— con docentes y no docentes reflexionando sobre su propia práctica extensionista, con referencias explícitas a Paulo Freire y a la idea de la extensión como proceso de humanización.\n\nYivirá es el proyecto más singular del corpus: un workshop interfacultad e internacional con la Facultad de Arquitectura, Diseño y Arte de la Universidad Nacional de Asunción (Paraguay). El primer encuentro produjo dispositivos en madera que hoy siguen en uso cotidiano en el campus de Oberá; de ahí se derivó un proyecto de extensión orientado a que estudiantes de arquitectura conozcan la complejidad territorial fronteriza de Misiones.\n\nLos proyectos de Muralidad e Historieta trabajan la producción artística como construcción colectiva, con participación de estudiantes de distintas carreras. Los talleres permanentes para niños y comunidad llevan ya varias generaciones: la propia facultad señala que algunos de quienes pasaron por esos talleres hoy son docentes en la misma institución. Un rasgo único de esta jornada es el protagonismo explícito del personal no docente, descripto por una de sus integrantes como \"conectores\" entre la academia, el área administrativa y el territorio.",
     "proyectos": [
-      { "nombre": "Yivirá", "sintesis": "Workshop interfacultad e internacional con la Universidad Nacional de Asunción (Paraguay)." },
-      { "nombre": "Proyecto de Muralidad", "sintesis": "Producción artística colectiva en espacio público, incluido el mural de los 40 años." },
-      { "nombre": "Proyecto de Historieta", "sintesis": "Producción gráfica colectiva con estudiantes de distintas carreras." },
-      { "nombre": "Formación docente en contextos comunitarios", "sintesis": "Visitas a merenderos y hogares de la zona, desde 2022." },
-      { "nombre": "Misiones Diseña", "sintesis": "Articulación con el Ministerio de Industria provincial y la empresa Sillones Arcoiris." }
+      {
+        "nombre": "Yivirá",
+        "sintesis": "Workshop interfacultad e internacional con la Universidad Nacional de Asunción (Paraguay)."
+      },
+      {
+        "nombre": "Proyecto de Muralidad",
+        "sintesis": "Producción artística colectiva en espacio público, incluido el mural de los 40 años."
+      },
+      {
+        "nombre": "Proyecto de Historieta",
+        "sintesis": "Producción gráfica colectiva con estudiantes de distintas carreras."
+      },
+      {
+        "nombre": "Formación docente en contextos comunitarios",
+        "sintesis": "Visitas a merenderos y hogares de la zona, desde 2022."
+      },
+      {
+        "nombre": "Misiones Diseña",
+        "sintesis": "Articulación con el Ministerio de Industria provincial y la empresa Sillones Arcoiris."
+      }
     ],
     "cita": "El museo entendido como un espacio vivo, porque constantemente se transforma a partir de las demandas de la comunidad académica y de la comunidad. El espacio del museo posibilita el acceso a la cultura, al arte, a la educación, al diseño.",
     "citaAutor": "Ariana Cazabone",
     "citaCargo": "Secretaria de Extensión, FAyD",
-    "x": 25, "y": 30, "escala": 1.0, "rotacion": -2, "profundidad": 4,
-    "animacion": "fade", "duracion": 700, "ordenNarrativo": 3, "visible": true
+    "x": 25,
+    "y": 30,
+    "escala": 1.08,
+    "rotacion": -2,
+    "profundidad": 4,
+    "animacion": "fade",
+    "duracion": 700,
+    "ordenNarrativo": 3,
+    "visible": true
   },
   {
     "id": "r-fi-ua",
@@ -95,15 +177,31 @@
     "resumen": "Una entrevista radial que repasa convenios con universidades brasileñas y un proyecto técnico con una escuela agrotécnica a veinte kilómetros de la facultad.",
     "cuerpo": "A diferencia de otras unidades del corpus, la participación de Ingeniería en esta cobertura no tomó la forma de una jornada propia sino de una entrevista radial centrada en la vinculación internacional de la facultad, particularmente con la Universidad Tecnológica Federal do Paraná (UTFPR, Brasil). El eje es explícito: la facultad utiliza sus propios proyectos de extensión y prácticas sociales educativas para dialogar con una exigencia normativa de la contraparte brasileña, que obliga a sus estudiantes a cumplir una carga de prácticas sociales similar.\n\nEl proyecto \"Transmisión de potencia con órgano flexible\", de la cátedra de Mecanismos y Elementos de Máquina, trabajó con aproximadamente 24 estudiantes de cuarto año que prepararon material didáctico y capacitaciones presenciales para cerca de cien estudiantes secundarios de la Escuela EFA \"Cristo Rey\", en Losecho, a veinte kilómetros de Oberá. El tema —selección y mantenimiento de correas y cadenas de transmisión— respondía a un problema técnico concreto que la escuela ya tenía con sus propias máquinas.\n\nLa facultad mantiene un convenio de doble titulación en Ingeniería Mecatrónica con la sede Guarapuava de la UTFPR, firmado el año anterior a esta entrevista, con negociaciones en curso para extenderlo a Electrónica y Computación. El argumento institucional es explícito: frente a un presupuesto escaso, articular con universidades vecinas geográficamente resulta más viable que con universidades nacionales más lejanas.",
     "proyectos": [
-      { "nombre": "Transmisión de potencia con órgano flexible", "sintesis": "Capacitación técnica a ~100 estudiantes de la Escuela EFA Cristo Rey, Losecho." },
-      { "nombre": "Doble titulación con la UTFPR (Mecatrónica)", "sintesis": "Convenio firmado; en negociación su extensión a Electrónica y Computación." },
-      { "nombre": "Proyecto de investigación en alta tensión", "sintesis": "En articulación con la UTFPR, sede Pato Branco." }
+      {
+        "nombre": "Transmisión de potencia con órgano flexible",
+        "sintesis": "Capacitación técnica a ~100 estudiantes de la Escuela EFA Cristo Rey, Losecho."
+      },
+      {
+        "nombre": "Doble titulación con la UTFPR (Mecatrónica)",
+        "sintesis": "Convenio firmado; en negociación su extensión a Electrónica y Computación."
+      },
+      {
+        "nombre": "Proyecto de investigación en alta tensión",
+        "sintesis": "En articulación con la UTFPR, sede Pato Branco."
+      }
     ],
     "cita": "Esa extensión y lo que representa en la universidad y en nuestros estudiantes hace una diferencia y permite llegar a estas escuelas en lugares alejados de los grandes centros urbanos.",
     "citaAutor": "Ing. Alejandro Kerkov",
     "citaCargo": "Secretario de Ciencia y Técnica, Facultad de Ingeniería",
-    "x": 88, "y": 35, "escala": 0.92, "rotacion": 2, "profundidad": 3,
-    "animacion": "slide", "duracion": 700, "ordenNarrativo": 8, "visible": true
+    "x": 88,
+    "y": 35,
+    "escala": 1.0,
+    "rotacion": 2,
+    "profundidad": 3,
+    "animacion": "slide",
+    "duracion": 700,
+    "ordenNarrativo": 8,
+    "visible": true
   },
   {
     "id": "r-conceptual-posadas",
@@ -113,8 +211,33 @@
     "titulo": "La extensión como coproducción, no transferencia",
     "resumen": "Tres facultades de Posadas coinciden, con palabras distintas, en una misma idea: la extensión no baja conocimiento, lo construye junto a otros.",
     "cuerpo": "En FHyCS, Eva Muguersa lo llama cocrear: \"la extensión cocrea conocimiento... lo hacemos juntos con quienes trabajamos.\" En FCE, Mariano Rofé lo describe evitando una imagen muy concreta, la del \"enlatado\": no pensar la extensión desde la universidad hacia la sociedad, sino detectar primero la demanda real y generar la oferta a partir de ella. En FCEQyN, Alis Rambo lo plantea casi como una advertencia ética: \"tenemos que evitar el hecho de objetivizar a ese elemento que estamos llevando a la sociedad.\"\n\nTres facultades, tres lenguajes distintos —pedagógico, de gestión, ético— para una misma idea que atraviesa la sede: el conocimiento no se transfiere, se construye con otros.",
-    "x": 92, "y": 64, "escala": 0.85, "rotacion": -1, "profundidad": 2,
-    "animacion": "zoom", "duracion": 750, "ordenNarrativo": 13, "visible": true
+    "x": 92,
+    "y": 64,
+    "escala": 0.85,
+    "rotacion": -1,
+    "profundidad": 2,
+    "animacion": "zoom",
+    "duracion": 750,
+    "ordenNarrativo": 13,
+    "visible": true
+  },
+  {
+    "id": "r-conceptual-posadas-territorio",
+    "tipo": "conceptual",
+    "sede": "posadas",
+    "unidadAcademica": null,
+    "titulo": "El territorio no tiene una sola escala",
+    "resumen": "En los proyectos de Posadas, \"territorio\" no significa siempre lo mismo: cambia de tamaño según qué proyecto lo nombre.",
+    "cuerpo": "Un mismo concepto —territorio— aparece con escalas radicalmente distintas según el proyecto que lo invoque. A veces es un barrio puntual: el asentamiento Manantiales, el barrio Tajamar. A veces es una frontera: el programa de portugués Kakubrá, o un observatorio de trabajo decente enfocado en la Triple Frontera. A veces es la provincia entera, como en los observatorios de deporte y de cultura, que relevan datos a escala de Misiones. A veces es una región rural específica, con sus propios conflictos de tenencia de la tierra, como el Alto Uruguay. Y a veces deja de ser un lugar físico: Postdato y el programa de radio sobre Derecho a la Educación hablan explícitamente de \"territorialidades digitales\".\n\nNinguna de estas definiciones le gana a la otra. Conviven en la misma facultad, a veces en el mismo cuatrimestre — evidencia de que la extensión no aplica un concepto fijo de territorio sobre la realidad, sino que cada proyecto lo construye a la medida de su propio objeto de trabajo.",
+    "x": 14,
+    "y": 50,
+    "escala": 0.85,
+    "rotacion": 1,
+    "profundidad": 2,
+    "animacion": "slide",
+    "duracion": 750,
+    "ordenNarrativo": 14,
+    "visible": true
   },
   {
     "id": "r-conceptual-obera",
@@ -124,7 +247,32 @@
     "titulo": "El territorio que cruza la frontera",
     "resumen": "Las dos facultades de Oberá miran, cada una a su modo, hacia un país vecino: Arte y Diseño hacia Paraguay, Ingeniería hacia Brasil.",
     "cuerpo": "En FAyD, el proyecto Yivirá articula a la facultad con la Universidad Nacional de Asunción: \"compartimos con Paraguay una historia común de colonización, desarrollo productivo, tradiciones\", señala la Dra. Mariana Ollen, para quien \"los territorios se conocen en el diálogo, en la construcción colectiva.\" En Ingeniería, la vinculación mira hacia Brasil: un convenio de doble titulación con la UTFPR y la posibilidad de proyectos de extensión financiados con fondos brasileños. El Ing. Alejandro Kerkov lo resume en términos de cercanía antes que de identidad compartida: \"articular con universidades que están mucho más cerca... no es menor esta vinculación que podemos desarrollar con países vecinos.\"\n\nDos facultades, dos razones distintas —el vínculo histórico y la estrategia frente a la escasez de presupuesto— para una misma decisión: mirar más allá de la frontera provincial.",
-    "x": 45, "y": 72, "escala": 0.85, "rotacion": 2, "profundidad": 2,
-    "animacion": "fade", "duracion": 750, "ordenNarrativo": 11, "visible": true
+    "x": 45,
+    "y": 72,
+    "escala": 0.85,
+    "rotacion": 2,
+    "profundidad": 2,
+    "animacion": "fade",
+    "duracion": 750,
+    "ordenNarrativo": 11,
+    "visible": true
+  },
+  {
+    "id": "r-conceptual-obera-nodocentes",
+    "tipo": "conceptual",
+    "sede": "obera",
+    "unidadAcademica": null,
+    "titulo": "Quienes sostienen la extensión",
+    "resumen": "En FAyD, una voz poco habitual en este corpus toma protagonismo: la del personal no docente, descripto como \"memoria viva\" de los proyectos.",
+    "cuerpo": "La mayoría de las voces que documentan la Semana Regional son docentes o autoridades. En el conversatorio de FAyD aparece una excepción explícita: un bloque entero dedicado a la \"participación no docente\", con personal administrativo hablando en primera persona sobre su rol en la extensión.\n\n\"Como no docentes somos conectores de las áreas académicas, la administrativa y el territorio\", dice Nerea Rodríguez. \"Y también a lo que se sostiene: nosotros nos quedamos, muchas veces somos trabajadores que quedamos y sostenemos en el tiempo esos proyectos que ya se ejecutaron, como una memoria viva.\" Es una idea distinta a la de la autoría de un proyecto: no quién lo diseña, sino quién permanece cuando el proyecto ya terminó y sigue dando continuidad institucional a lo que los equipos extensionistas, que rotan, dejan atrás.",
+    "x": 65,
+    "y": 86,
+    "escala": 0.82,
+    "rotacion": -2,
+    "profundidad": 2,
+    "animacion": "float",
+    "duracion": 700,
+    "ordenNarrativo": 12,
+    "visible": true
   }
 ]
