@@ -113,7 +113,7 @@
   {
     "id": "t-rambo-posadas",
     "sede": "posadas",
-    "nombreCompleto": "Mg. Alice Rambo",
+    "nombreCompleto": "Alis Rambo",
     "cargo": "Secretaria de Extensión y Vinculación Tecnológica",
     "institucion": "Facultad de Ciencias Exactas, Químicas y Naturales (FCEQyN)",
     "foto": "assets/personas/alice-rambo.jpg",
@@ -221,8 +221,8 @@
   {
     "id": "t-casabone-obera",
     "sede": "obera",
-    "nombreCompleto": "Adrián/Ariana Casabone",
-    "cargo": "Representante de extensión",
+    "nombreCompleto": "Ariana Cazabone",
+    "cargo": "Secretaria de Extensión",
     "institucion": "Facultad de Arte y Diseño (FAyD)",
     "foto": null,
     "citas": [

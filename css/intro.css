@@ -1,0 +1,769 @@
+/* =============================================================================
+   intro.css — Introducción institucional y menú/cajero del Compendio Digital
+   -----------------------------------------------------------------------------
+   Esta hoja de estilos es completamente independiente de styles.css. Hereda
+   las custom properties de :root (colores, fuente, módulo) definidas ahí, pero
+   no modifica ni duplica ninguna regla existente.
+
+   Z-index usados en este archivo:
+     300 — intro overlay (por encima del lector ampliado, z=200)
+     280 — cajero lateral
+     270 — telón del cajero
+     250 — botón hamburguesa (por encima del mural)
+   ========================================================================== */
+
+/* =============================================================================
+   1. INTRO OVERLAY — pantalla inmersiva de bienvenida
+   ========================================================================== */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  /* Entrada: fade-in suave al cargar */
+  animation: intro--entrada 800ms ease both;
+}
+
+@keyframes intro--entrada {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* --- Fondo fotográfico con movimiento lento (Ken Burns) --- */
+.intro-fondo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.intro-fondo-imagen {
+  position: absolute;
+  inset: -6%;           /* margen para que el zoom no revele bordes */
+  background-image: url('../assets/backgrounds/posadas.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: blur(1.5px);  /* desenfoque muy sutil: transmite profundidad sin perder el lugar */
+  animation: intro-kb 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes intro-kb {
+  0%   { transform: scale(1.04) translate(0, 0); }
+  33%  { transform: scale(1.07) translate(-1.2%, 0.6%); }
+  66%  { transform: scale(1.05) translate(0.8%, -0.8%); }
+  100% { transform: scale(1.04) translate(-0.4%, 0.4%); }
+}
+
+/* Velo: degradado oscuro que garantiza contraste sobre cualquier fotografía */
+.intro-velo {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    160deg,
+    rgba(10, 14, 16, 0.72) 0%,
+    rgba(10, 14, 16, 0.60) 50%,
+    rgba(10, 14, 16, 0.78) 100%
+  );
+}
+
+/* --- Tarjeta editorial central --- */
+.intro-tarjeta {
+  position: relative;    /* sobre el fondo y el velo */
+  z-index: 1;
+  width: min(560px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  background: rgba(10, 14, 16, 0.82);
+  border: 1px solid rgba(245, 243, 238, 0.14);
+  border-top: 2px solid var(--unam-cian);
+  border-radius: 6px;
+  padding: clamp(28px, 4vw, 48px);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(0, 163, 224, 0.1);
+  /* La tarjeta se centrará exactamente para que la JS de salida pueda
+     calcular su posición relativa al botón hamburguesa */
+  transform-origin: center center;
+}
+
+/* Cabecera de la tarjeta: logo + nombre institución */
+.intro-tarjeta-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.intro-logo {
+  height: 36px;
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.intro-institucion {
+  font-size: clamp(0.72rem, 0.4vw + 0.62rem, 0.82rem);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+/* Línea de separación con acento de color */
+.intro-acento {
+  width: 40px;
+  height: 2px;
+  background: var(--unam-cian);
+  margin-bottom: 20px;
+  border: none;
+}
+
+.intro-titulo {
+  margin: 0 0 8px;
+  font-weight: 700;
+  font-size: clamp(1.5rem, 2vw + 0.8rem, 2.2rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.intro-subtitulo {
+  margin: 0 0 6px;
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(0.9rem, 0.4vw + 0.78rem, 1.05rem);
+  color: var(--unam-cian);
+  letter-spacing: 0.01em;
+}
+
+.intro-edicion {
+  margin: 0 0 24px;
+  font-weight: 300;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.intro-descripcion {
+  margin: 0 0 24px;
+  font-weight: 300;
+  font-size: clamp(0.88rem, 0.3vw + 0.8rem, 0.98rem);
+  line-height: 1.65;
+  opacity: 0.88;
+}
+
+/* --- Guía expandible ("Conocer la experiencia") --- */
+.intro-guia {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  transition: max-height 400ms cubic-bezier(0.16, 0.84, 0.44, 1),
+              opacity 300ms ease,
+              margin-bottom 300ms ease;
+}
+
+.intro-guia--visible {
+  max-height: 320px;
+  opacity: 1;
+  margin-bottom: 20px;
+}
+
+.intro-guia-titulo {
+  margin: 0 0 10px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--unam-cian);
+}
+
+.intro-guia-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 2px solid rgba(0, 163, 224, 0.3);
+  padding-left: 14px;
+}
+
+.intro-guia-lista li {
+  padding: 6px 0;
+  font-size: clamp(0.8rem, 0.3vw + 0.72rem, 0.9rem);
+  font-weight: 300;
+  line-height: 1.5;
+  opacity: 0.88;
+}
+
+.intro-guia-lista li strong {
+  font-weight: 700;
+  color: var(--papel);
+}
+
+/* --- Botones de acción --- */
+.intro-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.intro-btn {
+  border: none;
+  border-radius: 3px;
+  padding: 13px 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background 180ms ease, color 180ms ease, opacity 180ms ease;
+}
+
+.intro-btn--principal {
+  background: var(--unam-cian);
+  color: #fff;
+}
+
+.intro-btn--principal:hover,
+.intro-btn--principal:focus-visible {
+  background: #0091c8;
+}
+
+.intro-btn--secundario {
+  background: transparent;
+  color: var(--papel);
+  border: 1px solid rgba(245, 243, 238, 0.3);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.intro-btn--secundario:hover,
+.intro-btn--secundario:focus-visible {
+  border-color: rgba(245, 243, 238, 0.6);
+  background: rgba(245, 243, 238, 0.06);
+}
+
+/* --- Animación de salida cuando el usuario ingresa --- */
+/* Las propiedades de transición se setean desde JS en el momento exacto
+   del click (con las coordenadas calculadas del menú), por eso sólo
+   definimos aquí el estado final como guía: */
+.intro--saliendo {
+  pointer-events: none;
+}
+
+.intro--saliendo .intro-velo,
+.intro--saliendo .intro-fondo {
+  opacity: 0;
+  transition: opacity 500ms ease 100ms;
+}
+
+/* =============================================================================
+   2. BOTÓN HAMBURGUESA — acceso permanente al cajero institucional
+   ========================================================================== */
+
+.menu-inst-btn {
+  position: fixed;
+  top: calc(var(--modulo) * 1.2);
+  left: calc(var(--modulo) * 1.2);
+  z-index: 250;
+
+  /* Tamaño y forma */
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(10, 14, 16, 0.78);
+  border: 1px solid rgba(245, 243, 238, 0.18);
+  backdrop-filter: blur(8px);
+
+  /* Empieza invisible: aparece cuando la intro termina */
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.7);
+  transition: opacity 350ms ease, transform 350ms cubic-bezier(0.16, 0.84, 0.44, 1),
+              background 150ms ease;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.menu-inst-btn--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.menu-inst-btn:hover,
+.menu-inst-btn:focus-visible {
+  background: rgba(0, 163, 224, 0.18);
+  border-color: rgba(0, 163, 224, 0.5);
+}
+
+/* Las tres líneas del hamburguesa */
+.menu-inst-linea {
+  display: block;
+  width: 18px;
+  height: 1.5px;
+  background: var(--papel);
+  border-radius: 2px;
+  transform-origin: center;
+  transition: transform 250ms ease, opacity 200ms ease, width 200ms ease;
+}
+
+/* Cruz al abrirse */
+.menu-inst-btn--abierto .menu-inst-linea:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+}
+.menu-inst-btn--abierto .menu-inst-linea:nth-child(2) {
+  opacity: 0;
+  width: 0;
+}
+.menu-inst-btn--abierto .menu-inst-linea:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+/* En escritorio, el botón no compite con el marca-chip que también está
+   en la esquina superior izquierda — se desplaza ligeramente a la derecha
+   del chip o se integra con él. En ≥821px el chip es un elemento visual
+   propio; en móvil el chip se reduce. Controlamos la colocación así: */
+@media (min-width: 821px) {
+  .menu-inst-btn {
+    /* El marca-chip tiene left=modulo*1.2 y ancho ~130px aprox.
+       Colocamos el hamburguesa a la derecha del chip. */
+    left: calc(var(--modulo) * 1.2 + 150px);
+    top: calc(var(--modulo) * 1.2 - 2px);
+    width: 40px;
+    height: 40px;
+    /* En desktop queda más integrado con el área de encabezado */
+    background: rgba(10, 14, 16, 0.65);
+  }
+}
+
+/* =============================================================================
+   3. CAJERO INSTITUCIONAL — panel lateral de contenido
+   ========================================================================== */
+
+/* Telón semitransparente detrás del cajero */
+.cajero-telon {
+  position: fixed;
+  inset: 0;
+  z-index: 270;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.cajero-telon--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* El cajero en sí */
+.cajero {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 280;
+  width: min(460px, 100vw);
+  height: 100vh;
+  background: rgba(10, 14, 16, 0.96);
+  border-right: 1px solid rgba(245, 243, 238, 0.12);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 360ms cubic-bezier(0.16, 0.84, 0.44, 1);
+  backdrop-filter: blur(20px);
+}
+
+.cajero--abierto {
+  transform: translateX(0);
+  box-shadow: 12px 0 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Cabecera del cajero */
+.cajero-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
+  flex-shrink: 0;
+}
+
+.cajero-logo {
+  height: 28px;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.cajero-cabecera-titulo {
+  flex: 1;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--unam-cian);
+}
+
+.cajero-cerrar-btn {
+  border: none;
+  background: rgba(245, 243, 238, 0.08);
+  color: var(--papel);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  transition: background 150ms ease;
+  flex-shrink: 0;
+}
+
+.cajero-cerrar-btn:hover,
+.cajero-cerrar-btn:focus-visible {
+  background: rgba(245, 243, 238, 0.18);
+}
+
+/* Navegación por pestañas del cajero */
+.cajero-nav {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  gap: 2px;
+  padding: 12px 16px 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
+}
+
+.cajero-nav::-webkit-scrollbar { display: none; }
+
+.cajero-tab {
+  border: none;
+  background: transparent;
+  color: var(--papel);
+  padding: 10px 14px;
+  font-size: 0.76rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  opacity: 0.55;
+  border-bottom: 2px solid transparent;
+  transition: opacity 180ms ease, border-color 180ms ease;
+  margin-bottom: -1px;
+}
+
+.cajero-tab:hover,
+.cajero-tab:focus-visible {
+  opacity: 0.88;
+}
+
+.cajero-tab--activa {
+  opacity: 1;
+  font-weight: 700;
+  border-bottom-color: var(--unam-cian);
+}
+
+/* Cuerpo del cajero: área de scroll de los paneles */
+.cajero-cuerpo {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 243, 238, 0.2) transparent;
+}
+
+.cajero-panel {
+  padding: 28px 24px 40px;
+}
+
+.cajero-panel--activa {
+  display: block;
+}
+
+/* =============================================================================
+   4. CONTENIDO DE LOS PANELES DEL CAJERO
+   ========================================================================== */
+
+/* --- Tipografía interior del cajero --- */
+.cajero-seccion-titulo {
+  margin: 0 0 6px;
+  font-weight: 700;
+  font-size: clamp(1.4rem, 2vw + 0.6rem, 1.8rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.cajero-seccion-subtitulo {
+  margin: 0 0 20px;
+  font-weight: 300;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--unam-cian);
+}
+
+.cajero-acento {
+  width: 32px;
+  height: 2px;
+  background: var(--unam-cian);
+  border: none;
+  margin-bottom: 20px;
+}
+
+.cajero-seccion-texto {
+  font-size: 0.9rem;
+  font-weight: 300;
+  line-height: 1.65;
+  opacity: 0.88;
+}
+
+.cajero-seccion-texto p { margin: 0 0 14px; }
+.cajero-seccion-texto p:last-child { margin-bottom: 0; }
+
+/* Subtítulos internos de cada sección */
+.cajero-sub {
+  margin: 24px 0 8px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--unam-cian);
+  opacity: 0.9;
+}
+
+/* Lista de sedes en "La Semana Regional" */
+.cajero-sedes-lista {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+}
+
+.cajero-sedes-lista li {
+  padding: 10px 0;
+  border-top: 1px solid rgba(245, 243, 238, 0.1);
+  font-size: 0.88rem;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.cajero-sedes-lista li:last-child {
+  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
+}
+
+.cajero-sede-nombre {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.cajero-sede-unidades {
+  opacity: 0.7;
+  font-size: 0.82rem;
+}
+
+/* Información "por completar" — placeholders editoriales */
+.cajero-por-completar {
+  display: inline-block;
+  background: rgba(0, 163, 224, 0.1);
+  border: 1px dashed rgba(0, 163, 224, 0.35);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--unam-cian);
+  opacity: 0.7;
+}
+
+/* --- Panel Bienvenida: mini-tarjeta introductoria --- */
+.cajero-bienvenida-tarjeta {
+  background: rgba(245, 243, 238, 0.04);
+  border: 1px solid rgba(245, 243, 238, 0.12);
+  border-top: 2px solid var(--unam-cian);
+  border-radius: 4px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.cajero-bienvenida-titulo {
+  margin: 0 0 6px;
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.cajero-bienvenida-subtitulo {
+  margin: 0 0 16px;
+  font-weight: 300;
+  font-size: 0.82rem;
+  color: var(--unam-cian);
+}
+
+.cajero-bienvenida-descripcion {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 300;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+.cajero-btn-recorrer {
+  width: 100%;
+  border: none;
+  background: var(--unam-cian);
+  color: #fff;
+  padding: 13px;
+  border-radius: 3px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  transition: background 180ms ease;
+}
+
+.cajero-btn-recorrer:hover,
+.cajero-btn-recorrer:focus-visible {
+  background: #0091c8;
+}
+
+.cajero-btn-reabrir {
+  width: 100%;
+  border: 1px solid rgba(245, 243, 238, 0.22);
+  background: transparent;
+  color: var(--papel);
+  padding: 11px;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.cajero-btn-reabrir:hover,
+.cajero-btn-reabrir:focus-visible {
+  border-color: rgba(245, 243, 238, 0.5);
+  background: rgba(245, 243, 238, 0.06);
+}
+
+/* --- Panel Créditos --- */
+.cajero-creditos {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cajero-credito-bloque {
+  border-left: 2px solid var(--unam-cian);
+  padding-left: 14px;
+}
+
+.cajero-credito-area {
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--unam-cian);
+  margin-bottom: 8px;
+}
+
+.cajero-credito-entradas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cajero-credito-entrada {
+  font-size: 0.85rem;
+  font-weight: 300;
+  line-height: 1.4;
+}
+
+.cajero-credito-rol {
+  font-size: 0.72rem;
+  opacity: 0.6;
+  letter-spacing: 0.02em;
+  display: block;
+}
+
+.cajero-credito-nombre {
+  font-weight: 400;
+}
+
+/* =============================================================================
+   5. RESPONSIVE
+   ========================================================================== */
+
+/* Tablet — el cajero ocupa más del 75% del ancho */
+@media (max-width: 820px) {
+  .cajero { width: min(420px, 90vw); }
+
+  .intro-tarjeta {
+    padding: 24px 20px;
+  }
+}
+
+/* Móvil — el cajero ocupa toda la pantalla */
+@media (max-width: 540px) {
+  .cajero {
+    width: 100vw;
+    border-right: none;
+  }
+
+  .intro {
+    padding: 16px;
+    align-items: flex-end;  /* en móvil la tarjeta flota desde abajo */
+  }
+
+  .intro-tarjeta {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 12px 12px 4px 4px;
+    padding: 22px 18px;
+  }
+
+  .intro-titulo {
+    font-size: 1.6rem;
+  }
+
+  .menu-inst-btn {
+    /* En móvil no hay marca-chip visible al costado, así que el botón
+       vuelve a la esquina exacta del módulo */
+    left: calc(var(--modulo) * 1.2);
+  }
+}
+
+/* =============================================================================
+   6. ACCESIBILIDAD
+   ========================================================================== */
+
+/* Focus visible uniforme para todos los elementos interactivos del intro */
+.intro-btn:focus-visible,
+.menu-inst-btn:focus-visible,
+.cajero-tab:focus-visible,
+.cajero-cerrar-btn:focus-visible,
+.cajero-btn-recorrer:focus-visible,
+.cajero-btn-reabrir:focus-visible {
+  outline: 2px solid var(--unam-cian);
+  outline-offset: 3px;
+}
+
+/* Respeta prefers-reduced-motion: sin animaciones de fondo ni transiciones
+   de posición largas; solo fade discreto */
+@media (prefers-reduced-motion: reduce) {
+  .intro-fondo-imagen { animation: none; }
+  .intro             { animation: none; }
+  .cajero            { transition: none; }
+  .cajero-telon      { transition: none; }
+  .intro-guia        { transition: none; }
+  .menu-inst-btn     { transition: opacity 150ms ease; }
+  .intro-tarjeta     { transition: none !important; }
+}
