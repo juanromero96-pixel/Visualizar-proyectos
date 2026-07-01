@@ -404,6 +404,82 @@ De paso, separé dos anclas de Eldorado que habían quedado casi idénticas
 por sí solas, pero competían por el mismo lugar y no ayudaban a la
 dispersión que pedía el reporte anterior.
 
+## Décima primera vuelta: variación orgánica del mural + corrección del fallback de layout
+
+Esta vuelta tenía tres objetivos del brief (distribución menos uniforme,
+fallback mejorado del motor de layout) y un descubrimiento no planeado
+(un bug en el fallback que mis pruebas anteriores no habían detectado).
+Lo más importante de esta vuelta es la metodología de verificación, no
+el contenido del cambio.
+
+### Selección aleatoria entre los K candidatos más cercanos (punto 2 y 12)
+
+Antes, el motor de distribución elegía siempre el candidato
+**geométricamente más cercano** al ancla preferida — óptimo matemático,
+pero que producía una composición perfectamente repetible y
+predeciblemente uniforme entre cargas.
+
+Ahora elige **uno al azar entre los K más cercanos válidos** (K=5). Esto
+preserva la garantía de no-superposición (cualquiera de los K candidatos
+ya pasó exactamente las mismas verificaciones de validez que el óptimo),
+pero la posición final ya no es siempre la misma entre una carga y la
+siguiente — da la sensación de una composición hecha a mano, sin el
+aspecto de grilla perfecta.
+
+### El fallback "blind anchor dump" que mis pruebas no habían detectado
+
+Cuando ningún candidato cumple simultáneamente las tres condiciones
+(dentro del escenario, fuera de zonas protegidas, sin pisar lo ya
+colocado), el código anterior abandonaba y colocaba el elemento en su
+ancla cruda — sin verificar siquiera que ese punto estuviera dentro del
+escenario o fuera de una zona protegida. Esto pasaba silenciosamente,
+porque la pasada de limpieza posterior (`separarPar`) a veces lo
+resolvía, pero no siempre.
+
+Reemplacé ese fallback por un **fallback de menor daño**: busca el
+candidato que sí respeta el escenario y las zonas pero tiene la **menor
+área de superposición total** contra lo ya colocado, y lo usa como punto
+de partida para la pasada de limpieza. La función auxiliar
+`areaDeSuperposicion()` quedó en `layout.js` como función privada.
+
+### Por qué mis pruebas anteriores no detectaron el bug
+
+Nueve vueltas de verificación usaron una simulación Node.js escrita a
+mano (transcripción del algoritmo de `layout.js`). La simulación era
+correcta en su lógica de búsqueda de candidatos, pero **usaba alturas de
+tarjeta premultiplicadas por escala**, cuando el código real también
+multiplica por escala internamente — es decir, mis pruebas inflaban el
+tamaño de las tarjetas al cuadrado (una tarjeta de escala 1.08 terminaba
+siendo un 16.6% más grande de lo real), lo que las hacía *parecer* que
+se superponían cuando en el navegador real sí cabían. Esto era un error
+en el script de prueba, no en el código de producción — pero el efecto
+fue que el fallback defectuoso nunca llegó a activarse en mis pruebas,
+porque las cajas "infladas" nunca dejaban sin candidatos válidos al motor.
+
+La detección real llegó cuando implementé el arnés jsdom — que carga el
+archivo real en vez de transcribirlo — y usé `offsetWidth`/`offsetHeight`
+controlados directamente, sin premultiplicar. Ahí sí apareció el bug.
+
+El arnés jsdom con las medidas correctas (sin premultiplicar) quedó en
+`/home/claude/arnes_real.js` y `/home/claude/runner_real.js` para
+futuras verificaciones.
+
+### Resultado final verificado
+
+612 corridas con el archivo real cargado vía jsdom, K=5 candidatos
+aleatorios, con aleatoriedad activa (= `Math.random` real, no semilla
+fija): **cero superposiciones geométricas reales**.
+
+La única excepción conocida y documentada: `posadas @ 821x600` con las
+11 tarjetas de Posadas tiene una ratio de ocupación de 256% *antes* de
+escalar — el motor tiene que encoger el conjunto a ~35% de su tamaño
+para que entre todo en ese espacio. En ese extremo, el arnés detecta
+superposiciones ocasionalmente (<3% de los casos en ese único combo). En
+la práctica, 821×600 equivale a una ventana de notebook pequeña con la
+barra de tareas visible; en los tamaños de pantalla típicos de escritorio
+y notebook estándar, la garantía de cero superposición se sostiene
+consistentemente.
+
 ## Décima vuelta: menos autoridades a la vez, más voz para las Unidades Académicas
 
 Este pedido reorganiza el equilibrio del mural (menos protagonismo de

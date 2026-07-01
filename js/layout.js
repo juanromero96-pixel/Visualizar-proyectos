@@ -49,6 +49,7 @@ const Distribuidor = (() => {
   const INTENTOS_ESCALA = 14;
   const ITERACIONES_LIMPIEZA_FINAL = 50;
   const EPSILON = 0.5;
+  const CANDIDATOS_CERCANOS = 5; // ver intentarConFactor: variación orgánica, no el óptimo exacto siempre
 
   function distribuir(seccion) {
     const escenario = seccion.querySelector('.escenario');
@@ -175,24 +176,65 @@ const Distribuidor = (() => {
       const anclaXpx = (nodo.anclaX / 100) * ancho;
       const anclaYpx = (nodo.anclaY / 100) * alto;
 
-      let elegido = null;
-      let mejorDistancia = Infinity;
+      // Se juntan los candidatos VÁLIDOS más cercanos al ancla (no solo
+      // el más cercano) y se elige uno al azar entre ellos. La validez
+      // (dentro del escenario, sin pisar una zona protegida, sin tocar
+      // algo ya colocado) es exactamente la misma de antes — lo único
+      // que cambia es CUÁL de los candidatos ya válidos se usa. Por eso
+      // esto no afecta la garantía de cero superposición: cualquiera de
+      // los elegibles ya pasó las mismas verificaciones. Lo que sí
+      // cambia es que la posición final ya no es siempre el óptimo
+      // matemático exacto más cercano al ancla — se parece más a una
+      // composición hecha a mano, con margen para el azar, que a un
+      // resultado perfectamente uniforme y repetible entre cargas.
+      const validos = [];
       for (const candidato of candidatosBase) {
         if (candidato.x - w / 2 < 0 || candidato.x + w / 2 > ancho) continue;
         if (candidato.y - h / 2 < 0 || candidato.y + h / 2 > alto) continue;
-        const distancia = (candidato.x - anclaXpx) ** 2 + (candidato.y - anclaYpx) ** 2;
-        if (distancia >= mejorDistancia) continue;
         if (zonas.some((z) => cajaSuperponeZona(candidato.x, candidato.y, w, h, z))) continue;
         if (colocados.some((c) => cajaSuperponeCaja(candidato.x, candidato.y, w, h, c))) continue;
-        elegido = candidato;
-        mejorDistancia = distancia;
+        const distancia = (candidato.x - anclaXpx) ** 2 + (candidato.y - anclaYpx) ** 2;
+        validos.push({ candidato, distancia });
+      }
+
+      let elegido = null;
+      if (validos.length) {
+        validos.sort((a, b) => a.distancia - b.distancia);
+        const masCercanos = validos.slice(0, Math.min(CANDIDATOS_CERCANOS, validos.length));
+        elegido = masCercanos[Math.floor(Math.random() * masCercanos.length)].candidato;
       }
 
       if (elegido) {
         colocados.push({ nodo, x: elegido.x, y: elegido.y, w, h });
       } else {
+        // No hay ningún candidato que cumpla las tres condiciones a la
+        // vez (dentro del escenario, fuera de zonas, sin tocar lo ya
+        // colocado) — pasa sobre todo con factores grandes y poco
+        // margen real. En vez de resignarse y tirar el elemento en su
+        // ancla cruda (que puede caer encima de cualquier cosa, sin
+        // respetar ni el borde del escenario ni una zona protegida), se
+        // busca el candidato que SÍ respeta escenario y zonas, con la
+        // MENOR superposición total contra lo ya colocado — un "menor
+        // daño" en vez de un abandono. Esto le da a la pasada de
+        // limpieza final (separarPar, fuera de esta función) un punto
+        // de partida real para corregir, en vez de un punto arbitrario
+        // que a veces quedaba sin corregirse a tiempo.
+        let mejorDanio = Infinity;
+        let mejorCandidato = null;
+        for (const candidato of candidatosBase) {
+          if (candidato.x - w / 2 < 0 || candidato.x + w / 2 > ancho) continue;
+          if (candidato.y - h / 2 < 0 || candidato.y + h / 2 > alto) continue;
+          if (zonas.some((z) => cajaSuperponeZona(candidato.x, candidato.y, w, h, z))) continue;
+          const danio = colocados.reduce((acc, c) => acc + areaDeSuperposicion(candidato.x, candidato.y, w, h, c), 0);
+          if (danio < mejorDanio) {
+            mejorDanio = danio;
+            mejorCandidato = candidato;
+            if (danio === 0) break; // ya no se puede mejorar más que "sin superposición"
+          }
+        }
+        const destino = mejorCandidato || { x: anclaXpx, y: anclaYpx }; // último recurso si ni respetando zonas hay lugar
         todosEntraron = false;
-        colocados.push({ nodo, x: anclaXpx, y: anclaYpx, w, h });
+        colocados.push({ nodo, x: destino.x, y: destino.y, w, h });
       }
     });
 
@@ -209,6 +251,18 @@ const Distribuidor = (() => {
 
   function cajaSuperponeCaja(x, y, w, h, otra) {
     return Math.abs(x - otra.x) < (w + otra.w) / 2 + SEPARACION_MINIMA && Math.abs(y - otra.y) < (h + otra.h) / 2 + SEPARACION_MINIMA;
+  }
+
+  /**
+   * Área de superposición geométrica (en px²) entre la caja candidata y
+   * otra caja ya colocada. Solo mide el solapamiento real — no incluye la
+   * separación mínima — porque acá la usamos para comparar "menor daño",
+   * no para validar colisiones (eso lo hace cajaSuperponeCaja).
+   */
+  function areaDeSuperposicion(x, y, w, h, otra) {
+    const solaX = Math.max(0, Math.min(x + w / 2, otra.x + otra.w / 2) - Math.max(x - w / 2, otra.x - otra.w / 2));
+    const solaY = Math.max(0, Math.min(y + h / 2, otra.y + otra.h / 2) - Math.max(y - h / 2, otra.y - otra.h / 2));
+    return solaX * solaY;
   }
 
   function separarPar(a, b) {
