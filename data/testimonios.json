@@ -13,7 +13,7 @@
       "La extensión nace con ese objetivo: mostrar la capilaridad y la territorialidad que tiene la extensión dentro de Misiones, de la región.",
       "La extensión no es solamente un cúmulo de actividades que llevamos adelante con acciones concretas. La extensión es pensar la universidad de una manera. Y en ese sentido es que nosotros entendemos que la extensión no es llevar la universidad al medio, sino que es traer al medio, a la comunidad, a la universidad."
     ],
-    "x": 56,
+    "x": 44,
     "y": 16,
     "escala": 0.96,
     "rotacion": -3,
@@ -26,7 +26,7 @@
   {
     "id": "t-gonzalez-posadas",
     "sede": "posadas",
-    "nombreCompleto": "Néida González",
+    "nombreCompleto": "Nélida González",
     "cargo": "Secretaria de Extensión",
     "institucion": "Facultad de Humanidades y Ciencias Sociales (FHyCS)",
     "foto": null,
@@ -36,7 +36,7 @@
       "Entendemos que la universidad tiene que ser parte de la forma de pensar el desarrollo socioeconómico territorial del lugar donde estamos.",
       "Generar herramientas desde la extensión que garanticen concretamente mejores condiciones de vida, transformación social, y que se concreten acciones de justicia social."
     ],
-    "x": 84,
+    "x": 18,
     "y": 22,
     "escala": 0.75,
     "rotacion": 4,
@@ -58,8 +58,8 @@
       "Expresar la satisfacción con la gran cantidad de docentes, no docentes y estudiantes que están comprometidos en esta actividad de extensión, que nos vincula con el medio y también nos trae una reflexión acerca de nuestras actividades.",
       "Estas actividades generan mucha empatía en la comunidad. Tiene que ver con la territorialidad: un proyecto de extensión se vincula con la gente, está al lado de la gente, es un concepto de cercanía."
     ],
-    "x": 68,
-    "y": 32,
+    "x": 56,
+    "y": 30,
     "escala": 0.91,
     "rotacion": -2,
     "profundidad": 5,
@@ -79,8 +79,8 @@
       "Estamos convencidos de que la extensión es una herramienta fundamental de la universidad y que nosotros tenemos que generar ese impacto positivo en la sociedad a través de la extensión universitaria. Una función esencial.",
       "La extensión involucra a todos los actores: docentes, no docentes, estudiantes y graduados. Es importante que nosotros desde el inicio empecemos con actividades para sensibilizar a toda la comunidad académica y a la sociedad de qué es la extensión, porque por ahí falta romper esa primera barrera todavía."
     ],
-    "x": 48,
-    "y": 40,
+    "x": 66,
+    "y": 56,
     "escala": 0.83,
     "rotacion": 5,
     "profundidad": 2,
@@ -100,7 +100,7 @@
       "Estamos mostrando que formar profesionales no es exclusivamente la currícula, sino que es también esa serie de actividades. El estudiante se presenta con un analítico donde, de modo integral, mostramos cómo ha priorizado esa formación, que no es solo de profesional, sino también de ciudadano.",
       "Es una gran deuda que tiene el sistema universitario argentino: poner en valor dentro de los currículum y las trayectorias docentes el amplio, arduo y profundo trabajo, con mucho compromiso, que llevamos adelante los docentes como integrantes o coordinadores de proyectos de extensión."
     ],
-    "x": 90,
+    "x": 88,
     "y": 46,
     "escala": 0.96,
     "rotacion": -4,
@@ -113,7 +113,7 @@
   {
     "id": "t-rambo-posadas",
     "sede": "posadas",
-    "nombreCompleto": "Alis Rambo",
+    "nombreCompleto": "Alice Rambo",
     "cargo": "Secretaria de Extensión y Vinculación Tecnológica",
     "institucion": "Facultad de Ciencias Exactas, Químicas y Naturales (FCEQyN)",
     "foto": "assets/personas/alice-rambo.jpg",
@@ -121,8 +121,8 @@
       "Nos da la oportunidad de hacer estos intercambios de saberes y formar a nuestros estudiantes en conocimientos que van más allá del aula y la academia, que tienen que ver con la sensibilidad, la responsabilidad social y la comprensión de las problemáticas existentes.",
       "Siempre tratamos de llegar a la comunidad con la articulación de los saberes adaptados a cada una de las circunstancias."
     ],
-    "x": 62,
-    "y": 56,
+    "x": 78,
+    "y": 20,
     "escala": 0.78,
     "rotacion": 3,
     "profundidad": 3,
@@ -143,8 +143,8 @@
       "Una experiencia de pasantía se puede reconocer a partir de la reforma de planes de estudio como parte de la formación. A lo que queremos tender es a ir reconociendo esas experiencias, las pasantías, entre otras experiencias de extensión, dentro de la propia currícula.",
       "La universidad ha jerarquizado y profesionalizado la extensión para los docentes, en los desafíos de la carrera docente, y sobre todo en el plus que tiene para la formación de nuestros estudiantes en todos los niveles."
     ],
-    "x": 78,
-    "y": 66,
+    "x": 48,
+    "y": 78,
     "escala": 0.91,
     "rotacion": -3,
     "profundidad": 4,
@@ -156,8 +156,8 @@
   {
     "id": "t-muguersa-posadas",
     "sede": "posadas",
-    "nombreCompleto": "Eva Muguersa",
-    "cargo": "Secretaria Adjunta de Extensión",
+    "nombreCompleto": "Eva Muguerza",
+    "cargo": "Secretaria Adjunta de Extensión y Vinculación Tecnológica",
     "institucion": "Facultad de Humanidades y Ciencias Sociales (FHyCS)",
     "foto": null,
     "citas": [
@@ -165,8 +165,8 @@
       "Lo que tiene la extensión es esa flexibilidad y esa posibilidad de adaptarse, esa dinámica para abordar los problemas que tenemos hoy, que cambian a cada rato.",
       "Un dispositivo extensionista distintivo de la facultad es un espacio de producción de datos de calidad accionables, anclados en demandas concretas del territorio y articulados con organismos públicos, organizaciones sociales y actores sectoriales."
     ],
-    "x": 50,
-    "y": 74,
+    "x": 16,
+    "y": 62,
     "escala": 0.73,
     "rotacion": 4,
     "profundidad": 2,
@@ -186,8 +186,8 @@
       "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
       "Tratamos de hacer cursos interdisciplinarios que abarquen a varias carreras, para que también haya interacción entre graduados de diferentes unidades académicas. Lo que intentamos hacer es relacionar todas las profesiones, porque hay núcleos en común e intereses en común con los graduados."
     ],
-    "x": 70,
-    "y": 84,
+    "x": 34,
+    "y": 80,
     "escala": 0.87,
     "rotacion": -2,
     "profundidad": 5,
@@ -208,8 +208,8 @@
       "Expresar la satisfacción con la gran cantidad de docentes, no docentes y estudiantes que están comprometidos en esta actividad de extensión, que nos vincula con el medio y también nos trae una reflexión acerca de nuestras actividades.",
       "Estas actividades generan mucha empatía en la comunidad. Tiene que ver con la territorialidad: un proyecto de extensión se vincula con la gente, está al lado de la gente, es un concepto de cercanía."
     ],
-    "x": 20,
-    "y": 16,
+    "x": 40,
+    "y": 18,
     "escala": 0.91,
     "rotacion": -4,
     "profundidad": 5,
@@ -229,8 +229,8 @@
       "Mañana estaremos realizando un conversatorio que va a convocar a docentes y no docentes que vienen trabajando en la extensión, para generar estos espacios de intercambio y reflexión sobre nuestros modos de hacer extensión y construir conocimiento colectivo con la comunidad.",
       "Nos posibilita pensarnos, reflexionando sobre nuestros modos de hacer extensión, de cómo construimos conocimiento con la comunidad, y de cómo vamos trabajando en estos espacios que vinculan tanto los saberes académicos como la extensión y la investigación, fortaleciendo las trayectorias formativas de nuestros estudiantes."
     ],
-    "x": 38,
-    "y": 24,
+    "x": 16,
+    "y": 22,
     "escala": 0.77,
     "rotacion": 5,
     "profundidad": 3,
@@ -254,7 +254,7 @@
       "La extensión no es solamente un cúmulo de actividades que llevamos adelante con acciones concretas. La extensión es pensar la universidad de una manera. Y en ese sentido es que nosotros entendemos que la extensión no es llevar la universidad al medio, sino que es traer al medio, a la comunidad, a la universidad."
     ],
     "x": 56,
-    "y": 18,
+    "y": 16,
     "escala": 0.96,
     "rotacion": -3,
     "profundidad": 4,
@@ -273,8 +273,8 @@
     "citas": [
       "Estamos muy contentos de poder compartir las experiencias que se vienen desarrollando y todo el trabajo que se viene desarrollando en todas las unidades académicas. La extensión es uno de los pilares más importantes que tiene la universidad, y esta posibilidad de fortalecer el diálogo y poder trabajar desde el territorio, detectando problemas y encontrando alternativas para poder interactuar con la sociedad."
     ],
-    "x": 76,
-    "y": 28,
+    "x": 12,
+    "y": 60,
     "escala": 0.7,
     "rotacion": 4,
     "profundidad": 2,
@@ -295,8 +295,8 @@
       "Una experiencia de pasantía se puede reconocer a partir de la reforma de planes de estudio como parte de la formación. A lo que queremos tender es a ir reconociendo esas experiencias, las pasantías, entre otras experiencias de extensión, dentro de la propia currícula.",
       "La universidad ha jerarquizado y profesionalizado la extensión para los docentes, en los desafíos de la carrera docente, y sobre todo en el plus que tiene para la formación de nuestros estudiantes en todos los niveles."
     ],
-    "x": 30,
-    "y": 46,
+    "x": 36,
+    "y": 50,
     "escala": 0.91,
     "rotacion": -5,
     "profundidad": 6,
@@ -316,8 +316,8 @@
       "Creo, personalmente e institucionalmente, que sostener y fortalecer la extensión también es una forma de defender el rol social de la universidad y su compromiso con la sociedad.",
       "Si estamos hablando de 16 proyectos en estos últimos 4 años, son actividades que enmarcan a equipos completos de docentes, estudiantes y graduados, que tienen un gran trabajo, pero también un compromiso y una construcción colectiva que se da."
     ],
-    "x": 78,
-    "y": 52,
+    "x": 76,
+    "y": 22,
     "escala": 0.78,
     "rotacion": 3,
     "profundidad": 3,
@@ -338,7 +338,7 @@
       "Es una gran deuda que tiene el sistema universitario argentino: poner en valor dentro de los currículum y las trayectorias docentes el amplio, arduo y profundo trabajo, con mucho compromiso, que llevamos adelante los docentes como integrantes o coordinadores de proyectos de extensión."
     ],
     "x": 52,
-    "y": 64,
+    "y": 78,
     "escala": 0.96,
     "rotacion": -2,
     "profundidad": 5,
@@ -358,8 +358,8 @@
       "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
       "Tratamos de hacer cursos interdisciplinarios que abarquen a varias carreras, para que también haya interacción entre graduados de diferentes unidades académicas. Lo que intentamos hacer es relacionar todas las profesiones, porque hay núcleos en común e intereses en común con los graduados."
     ],
-    "x": 86,
-    "y": 78,
+    "x": 80,
+    "y": 76,
     "escala": 0.85,
     "rotacion": 4,
     "profundidad": 4,
@@ -379,8 +379,8 @@
       "Estamos mostrando que formar profesionales no es exclusivamente la currícula, sino que es también esa serie de actividades. El estudiante se presenta con un analítico donde, de modo integral, mostramos cómo ha priorizado esa formación, que no es solo de profesional, sino también de ciudadano.",
       "Es una gran deuda que tiene el sistema universitario argentino: poner en valor dentro de los currículum y las trayectorias docentes el amplio, arduo y profundo trabajo, con mucho compromiso, que llevamos adelante los docentes como integrantes o coordinadores de proyectos de extensión."
     ],
-    "x": 20,
-    "y": 26,
+    "x": 52,
+    "y": 22,
     "escala": 0.96,
     "rotacion": -3,
     "profundidad": 5,
@@ -400,8 +400,8 @@
       "También el valor que tiene, en nuestro caso, que trabajamos con estudiantes secundarios que están en plena formación profesional, académica y también como personas: el poder vincularse con la comunidad, no solamente desde las unidades académicas sembrar comunidad, sino también lo que ese vínculo siembra en cada uno de nuestros estudiantes.",
       "Esta semana en la escuela tuvimos el regreso de más de 20 estudiantes que estuvieron haciendo un intercambio en Brasil, también haciendo extensión."
     ],
-    "x": 40,
-    "y": 30,
+    "x": 22,
+    "y": 44,
     "escala": 0.77,
     "rotacion": 4,
     "profundidad": 3,
@@ -424,8 +424,8 @@
       "La extensión nace con ese objetivo: mostrar la capilaridad y la territorialidad que tiene la extensión dentro de Misiones, de la región.",
       "La extensión no es solamente un cúmulo de actividades que llevamos adelante con acciones concretas. La extensión es pensar la universidad de una manera. Y en ese sentido es que nosotros entendemos que la extensión no es llevar la universidad al medio, sino que es traer al medio, a la comunidad, a la universidad."
     ],
-    "x": 62,
-    "y": 26,
+    "x": 68,
+    "y": 30,
     "escala": 0.96,
     "rotacion": -4,
     "profundidad": 4,
@@ -445,8 +445,8 @@
       "Las acciones que ellos fueron haciendo en su carrera las pueden ver plasmadas después en su analítico.",
       "Queríamos felicitar a todo el equipo de los secretarios de extensión, al secretario general que han organizado esta actividad coordinada entre las diferentes unidades académicas, y felicitar a todos los docentes y estudiantes que han presentado trabajos en esta convocatoria, que son proyectos de extensión del año 2022 al 2024."
     ],
-    "x": 82,
-    "y": 30,
+    "x": 34,
+    "y": 60,
     "escala": 0.75,
     "rotacion": 3,
     "profundidad": 2,
@@ -467,8 +467,8 @@
       "Expresar la satisfacción con la gran cantidad de docentes, no docentes y estudiantes que están comprometidos en esta actividad de extensión, que nos vincula con el medio y también nos trae una reflexión acerca de nuestras actividades.",
       "Estas actividades generan mucha empatía en la comunidad. Tiene que ver con la territorialidad: un proyecto de extensión se vincula con la gente, está al lado de la gente, es un concepto de cercanía."
     ],
-    "x": 28,
-    "y": 62,
+    "x": 40,
+    "y": 28,
     "escala": 0.91,
     "rotacion": -2,
     "profundidad": 6,
@@ -489,8 +489,8 @@
       "Una experiencia de pasantía se puede reconocer a partir de la reforma de planes de estudio como parte de la formación. A lo que queremos tender es a ir reconociendo esas experiencias, las pasantías, entre otras experiencias de extensión, dentro de la propia currícula.",
       "La universidad ha jerarquizado y profesionalizado la extensión para los docentes, en los desafíos de la carrera docente, y sobre todo en el plus que tiene para la formación de nuestros estudiantes en todos los niveles."
     ],
-    "x": 40,
-    "y": 72,
+    "x": 74,
+    "y": 60,
     "escala": 0.91,
     "rotacion": 4,
     "profundidad": 4,
@@ -510,8 +510,8 @@
       "Muchas veces se gradúan y pierden el contacto con la universidad. Dentro de la extensión, creo que es importante esta vinculación con los graduados.",
       "Tratamos de hacer cursos interdisciplinarios que abarquen a varias carreras, para que también haya interacción entre graduados de diferentes unidades académicas. Lo que intentamos hacer es relacionar todas las profesiones, porque hay núcleos en común e intereses en común con los graduados."
     ],
-    "x": 80,
-    "y": 80,
+    "x": 58,
+    "y": 74,
     "escala": 0.85,
     "rotacion": -3,
     "profundidad": 5,

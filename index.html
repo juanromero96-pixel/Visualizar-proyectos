@@ -16,10 +16,13 @@
 </head>
 <body>
 
-  <!-- ── Chip de marca (isologotipo fijo) ─────────────────────────────── -->
+  <!-- ── Chip de marca con logotipo oficial UNaM ──────────────────── -->
   <div class="marca-chip" aria-hidden="false">
-    <img class="marca-chip-logo" src="assets/logos/unam-badge.svg" alt="" />
-    <span class="marca-chip-texto">UNaM extensión</span>
+    <img
+      class="marca-chip-logo"
+      src="assets/logos/unam-logo-oficial.png"
+      alt="Universidad Nacional de Misiones"
+    />
   </div>
 
   <!-- ── El .encabezado-evento fue eliminado: su información vive en el
@@ -44,6 +47,8 @@
        z-index: 290, siempre encima del modal (280) y del telón (270).
        Se hace visible mediante .menu-inst-btn--visible al terminar la intro.
        ═══════════════════════════════════════════════════════════════════ -->
+  <!-- Botón hamburguesa a la derecha del chip — con el logo horizontal
+       el chip es más ancho (~200px). El hamburguesa se separa más. -->
   <button
     class="menu-inst-btn"
     id="menu-inst-btn"
@@ -233,8 +238,8 @@
         <div class="cajero-acento"></div>
 
         <div class="cajero-seccion-texto">
-          <p>La Universidad Nacional de Misiones fue creada el 16 de abril de 1973 mediante la Ley Nacional N.° 20.286. Cuenta con más de 29.000 estudiantes, 2.521 docentes y 751 trabajadores no docentes, distribuidos en tres regionales: Posadas, Oberá y Eldorado. El 61,5 % del estudiantado está conformado por mujeres.</p>
-          <p>El Compendio Digital de la Semana Regional de la Extensión es una iniciativa de la Secretaría General de Extensión Universitaria del Rectorado, elaborado con el objetivo de preservar y difundir la memoria extensionista de la universidad a través de un archivo documental digital de carácter permanente.</p>
+          <p>La Universidad Nacional de Misiones fue creada el 16 de abril de 1973 mediante la Ley Nacional N.° 20.286. Cuenta con más de 29.000 estudiantes, 2.521 docentes y 751 trabajadores no docentes, distribuidos en tres regionales: Posadas, Oberá y Eldorado.</p>
+          <p>El Compendio Digital de la Semana Regional de la Extensión es una iniciativa de la Secretaría General de Extensión Universitaria del Rectorado, elaborado para preservar y difundir la memoria extensionista de la universidad a través de un archivo documental digital de carácter permanente.</p>
         </div>
 
         <p class="cajero-sub">Autoridades · período 2022–2026</p>
@@ -245,11 +250,11 @@
             <ul class="cajero-credito-entradas">
               <li class="cajero-credito-entrada">
                 <span class="cajero-credito-rol">Rectora</span>
-                <span class="cajero-credito-nombre">Mg. Alicia Violeta Bohren</span>
+                <span class="cajero-credito-nombre">Alicia Bohren</span>
               </li>
               <li class="cajero-credito-entrada">
                 <span class="cajero-credito-rol">Vicerrector</span>
-                <span class="cajero-credito-nombre">Ing. Sergio Edgardo Katogui</span>
+                <span class="cajero-credito-nombre">Sergio Katogui</span>
               </li>
             </ul>
           </div>
@@ -261,10 +266,6 @@
                 <span class="cajero-credito-rol">Secretario General</span>
                 <span class="cajero-credito-nombre">Mauricio Franco</span>
               </li>
-              <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Equipo</span>
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
-              </li>
             </ul>
           </div>
 
@@ -272,7 +273,31 @@
             <p class="cajero-credito-area">Secretaría General Académica</p>
             <ul class="cajero-credito-entradas">
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-nombre">Mgter. Gisela Spasiuk</span>
+                <span class="cajero-credito-nombre">Gisela Spasiuk</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="cajero-credito-bloque">
+            <p class="cajero-credito-area">Dirección de Comunicación</p>
+            <ul class="cajero-credito-entradas">
+              <li class="cajero-credito-entrada">
+                <span class="cajero-credito-nombre">Julio Bobadilla</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="cajero-credito-bloque">
+            <p class="cajero-credito-area">Equipo de Vinculación Territorial</p>
+            <ul class="cajero-credito-entradas">
+              <li class="cajero-credito-entrada">
+                <span class="cajero-credito-nombre">Juan Lascheuski</span>
+              </li>
+              <li class="cajero-credito-entrada">
+                <span class="cajero-credito-nombre">Guillermo Calvo</span>
+              </li>
+              <li class="cajero-credito-entrada">
+                <span class="cajero-credito-nombre">Juan Romero</span>
               </li>
             </ul>
           </div>
@@ -282,19 +307,19 @@
             <ul class="cajero-credito-entradas">
               <li class="cajero-credito-entrada">
                 <span class="cajero-credito-rol">Dirección</span>
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
+                <span class="cajero-credito-nombre">Mauricio Franco</span>
               </li>
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Desarrollo y diseño</span>
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
+                <span class="cajero-credito-rol">Desarrollo y Diseño</span>
+                <span class="cajero-credito-nombre">Juan Romero</span>
               </li>
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Sistematización documental</span>
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
+                <span class="cajero-credito-rol">Sistematización Documental</span>
+                <span class="cajero-credito-nombre">Lucas Benítez</span>
               </li>
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Producción audiovisual</span>
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
+                <span class="cajero-credito-rol">Producción Audiovisual</span>
+                <span class="cajero-credito-nombre">Andrés Vigo</span>
               </li>
             </ul>
           </div>

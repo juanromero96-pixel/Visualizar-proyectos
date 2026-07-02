@@ -65,8 +65,8 @@ const Lector = (() => {
 
   /**
    * Abre el lector. Sin segundo argumento: comportamiento de testimonio
-   * (lee el DOM). Con segundo argumento: un registro de unidad académica
-   * o conceptual, construido directamente desde sus datos completos.
+   * (lee el DOM). Con segundo argumento: un registro de unidad académica,
+   * conceptual, o video — construido directamente desde sus datos completos.
    */
   function abrir(elementoOrigen, registro = null) {
     elementoActivador = elementoOrigen;
@@ -78,12 +78,17 @@ const Lector = (() => {
       contenido.appendChild(construirContenidoRegistroUA(registro, elementoOrigen));
     } else if (registro._tipo === 'registro-conceptual') {
       contenido.appendChild(construirContenidoRegistroConceptual(registro, elementoOrigen));
+    } else if (registro._tipo === 'video' || registro.tipo === 'video') {
+      // Los videos de multimedia.json llegan con _tipo derivado de tipo.
+      // El lector los renderiza como un documento audiovisual: reproductor
+      // embebido en la parte superior, metadatos institucionales debajo.
+      contenido.appendChild(construirContenidoVideo(registro, elementoOrigen));
     }
 
     elementoOrigen.setAttribute('aria-expanded', 'true');
     document.body.classList.add('lector-bloqueando-scroll');
     superposicion.classList.add('lector-superposicion--abierta');
-    window.setTimeout(() => botonCerrar.focus(), 60); // tras la transición de entrada
+    window.setTimeout(() => botonCerrar.focus(), 60);
   }
 
   function construirContenidoTestimonio(elementoOrigen) {
@@ -194,7 +199,58 @@ const Lector = (() => {
     return String(texto).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  /**
+   * Documento audiovisual: reproductor YouTube embebido (sin cookies, sin
+   * sugerencias de YT) en la parte superior, metadatos institucionales
+   * debajo. Se integra al mismo sistema de lectura que el resto del archivo.
+   *
+   * Seguridad: el iframe usa youtube-nocookie.com y sandbox restrictivo.
+   * Autoplay: activa sólo el autoplay, sin autoplay en YT propiamente.
+   */
+  function construirContenidoVideo(registro, elementoOrigen) {
+    const colorUA = obtenerColorUADe(elementoOrigen);
+    const envoltorio = document.createElement('div');
+    envoltorio.className = 'lector-video';
+
+    const esTesti = registro.subtipo === 'testimonio_audiovisual';
+    const tipoLabel = esTesti ? 'Testimonio audiovisual' : 'Video institucional';
+    const autorHTML = registro.autor
+      ? `<p class="lector-video-autor"><strong>Participante:</strong> ${escaparHTMLLector(registro.autor)}</p>`
+      : '';
+
+    // El iframe se crea como elemento DOM para poder anularlo on cerrar
+    // (setear src = '' detiene la reproducción sin necesidad de YT API).
+    envoltorio.innerHTML = `
+      <div class="lector-video-reproductor">
+        <div class="lector-video-ratio">
+          <iframe
+            class="lector-video-iframe"
+            src="https://www.youtube-nocookie.com/embed/${escaparHTMLLector(registro.youtubeId)}?rel=0&modestbranding=1&autoplay=1"
+            title="${escaparHTMLLector(registro.titulo)}"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+          ></iframe>
+        </div>
+      </div>
+      <div class="lector-video-metadatos">
+        <span class="lector-registro-badge" style="--color-ua:${colorUA}">${escaparHTMLLector(registro.unidadAcademica || '')}</span>
+        <p class="lector-video-tipo">${escaparHTMLLector(tipoLabel)} · ${escaparHTMLLector(registro.fecha || 'Mayo 2026')}</p>
+        <h2 class="lector-registro-titulo">${escaparHTMLLector(registro.titulo)}</h2>
+        ${autorHTML}
+        <p class="lector-video-ua-completa">${escaparHTMLLector(registro.unidadAcademicaCompleta || '')}</p>
+        <p class="lector-video-descripcion">${escaparHTMLLector(registro.resumen || '')}</p>
+      </div>
+    `;
+    return envoltorio;
+  }
+
   function cerrar() {
+    // Detener el video antes de cerrar el lector: setear src='' en el iframe
+    // es equivalente a pausar sin necesitar la YT IFrame API.
+    const iframe = superposicion.querySelector('.lector-video-iframe');
+    if (iframe) iframe.src = '';
+
     superposicion.classList.remove('lector-superposicion--abierta');
     document.body.classList.remove('lector-bloqueando-scroll');
     elementoActivador?.setAttribute('aria-expanded', 'false');

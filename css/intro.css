@@ -251,8 +251,10 @@
 .menu-inst-btn {
   position: fixed;
   top: calc(var(--modulo) * 1.2);
-  left: calc(var(--modulo) * 1.2 + 148px);   /* justo a la derecha del chip */
-  z-index: 290;                               /* sobre el modal (280) */
+  /* El chip con el logo horizontal oficial es más ancho que el badge SVG
+     anterior (~200px vs ~130px). Se ajusta la separación en consecuencia. */
+  left: calc(var(--modulo) * 1.2 + 210px);
+  z-index: 290;
 
   width: 42px;
   height: 42px;
@@ -309,7 +311,7 @@
    se separa un poco menos */
 @media (max-width: 820px) {
   .menu-inst-btn {
-    left: calc(var(--modulo) * 1.2 + 126px);
+    left: calc(var(--modulo) * 1.2 + 170px);
   }
 }
 
@@ -732,7 +734,9 @@
     padding: 22px 18px;
   }
   .menu-inst-btn {
-    left: calc(var(--modulo) * 1.2 + 120px);
+    /* En móvil con el logo horizontal, el chip es ~170px; el hamburguesa
+       queda a su derecha con un pequeño margen */
+    left: calc(var(--modulo) * 1.2 + 176px);
   }
 }
 

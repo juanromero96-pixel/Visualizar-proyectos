@@ -53,7 +53,12 @@
   // las tarjetas, las medidas usadas para distribuir no coinciden con el
   // tamaño real una vez que Roboto termina de cargar — se recalcula una
   // vez más cuando eso pasa, además de en cada cambio de tamaño de ventana.
-  if (document.fonts?.ready) document.fonts.ready.then(recalcular);
+  if (document.fonts?.ready) document.fonts.ready.then(() => {
+    recalcular();
+    // Una vez que las fuentes cargaron y el layout quedó calculado con
+    // el tamaño tipográfico real, arrancar la rotación para la sede inicial.
+    if (secciones[0]) Rotacion.iniciar(secciones[0]);
+  });
 
   let pendienteResize = null;
   window.addEventListener('resize', () => {
@@ -79,6 +84,10 @@
       aplicarSubconjuntoDeAutoridades(seccionNueva, testimonios);
       Secuenciador.entrar(seccionNueva); // si ya se reveló antes, esto no hace nada
       refrescarCitas(seccionNueva, testimonios); // esto sí corre siempre, aunque ya se haya visitado
+      // Reiniciar la rotación para la nueva sede — cancela el timer de la
+      // sede anterior y comienza el ciclo de la nueva con un delay para
+      // esperar a que el reveal termine.
+      Rotacion.iniciar(seccionNueva);
     },
   });
 
@@ -211,6 +220,10 @@ function crearElemento(item) {
     });
   } else if (item._tipo === 'registro-ua') {
     crearTarjetaRegistroUA(item, interior);
+    // Los registros de Unidad Académica son el centro narrativo del mural:
+    // nunca rotan, nunca desaparecen — son el nodo permanente de cada
+    // constelación documental (punto 5 del brief de rotación).
+    el.dataset.permanente = 'true';
     el.style.setProperty('--color-ua', colorDeUnidadAcademica(item.unidadAcademica));
     el.setAttribute('aria-haspopup', 'dialog');
     el.setAttribute('aria-expanded', 'false');
@@ -240,18 +253,33 @@ function crearElemento(item) {
     `;
     interior.querySelector('img').addEventListener('error', () => el.classList.add('elemento--sin-imagen'));
   } else if (item._tipo === 'video') {
-    interior.innerHTML = `
-      <video poster="${item.poster || ''}" controls preload="none"><source src="${item.src}"></video>
-      ${item.caption ? `<p class="elemento-caption">${escaparHTML(item.caption)}</p>` : ''}
-    `;
-    // <video> no falla tan prolijo como <img>: si el archivo no existe,
-    // el reproductor nativo queda visible vacío en vez de desaparecer.
-    // Acá se oculta toda la tarjeta apenas falla la carga, igual que con
-    // las fotos — antes esto no estaba y un video sin archivo real
-    // quedaba como ruido visual permanente en la escena.
-    const video = interior.querySelector('video');
-    video.addEventListener('error', () => el.classList.add('elemento--sin-imagen'), true);
-    video.querySelector('source').addEventListener('error', () => el.classList.add('elemento--sin-imagen'));
+    if (item.youtubeId) {
+      // Vídeo de YouTube: se integra como registro documental del mural,
+      // no como enlace externo. Miniatura oficial de YouTube + metadatos
+      // + indicador de reproducción. Al hacer click abre el lector con
+      // iframe embed — nunca redirige a YouTube.
+      crearTarjetaYoutubeVideo(item, interior);
+      el.classList.add('elemento--video');
+      el.style.setProperty('--color-ua', colorDeUnidadAcademica(item.unidadAcademica));
+      el.setAttribute('aria-haspopup', 'dialog');
+      el.setAttribute('aria-expanded', 'false');
+      el.addEventListener('click', () => Lector.abrir(el, item));
+      el.addEventListener('keydown', (evento) => {
+        if (evento.key === 'Enter' || evento.key === ' ') {
+          evento.preventDefault();
+          Lector.abrir(el, item);
+        }
+      });
+    } else if (item.src) {
+      // Vídeo local (fallback — no hay archivos reales en este proyecto)
+      interior.innerHTML = `
+        <video poster="${item.poster || ''}" controls preload="none"><source src="${item.src}"></video>
+        ${item.caption ? `<p class="elemento-caption">${escaparHTML(item.caption)}</p>` : ''}
+      `;
+      const video = interior.querySelector('video');
+      video.addEventListener('error', () => el.classList.add('elemento--sin-imagen'), true);
+      video.querySelector('source').addEventListener('error', () => el.classList.add('elemento--sin-imagen'));
+    }
   }
 
   el.appendChild(interior);
@@ -290,6 +318,7 @@ function crearTarjetaTestimonio(item, interior) {
     <p class="testimonio-cargo">${escaparHTML(item.cargo)}</p>
     <p class="testimonio-institucion">${escaparHTML(item.institucion)}</p>
     <blockquote class="testimonio-cita">${escaparHTML(citas.reduce((mas, c) => (c.length > mas.length ? c : mas), ''))}</blockquote>
+    <span class="testimonio-expandir" aria-hidden="true">Ver relato ↗</span>
   `;
   // Arranca mostrando la cita MÁS LARGA disponible — no vacía, no la que
   // termine eligiéndose al azar — para que la primera medición de alto
@@ -366,11 +395,12 @@ function colorDeUnidadAcademica(textoLibre = '') {
  * al expandir en el lector (Lector.abrir, definido en lector.js).
  */
 function crearTarjetaRegistroUA(item, interior) {
-  interior.style.setProperty('--ancho-registro', '270px');
+  interior.style.setProperty('--ancho-registro', '290px');  // +20px vs anterior, refuerza jerarquía Nivel 1
   interior.innerHTML = `
     <span class="registro-ua-badge">${escaparHTML(item.unidadAcademica || '')}</span>
     <h3 class="registro-titulo">${escaparHTML(item.titulo)}</h3>
     <p class="registro-resumen">${escaparHTML(item.resumen)}</p>
+    <span class="registro-expandir" aria-hidden="true">Ver experiencia ↗</span>
   `;
 }
 
@@ -391,7 +421,46 @@ function crearTarjetaRegistroConceptual(item, interior) {
     <span class="registro-conceptual-badge">${etiqueta}</span>
     <h3 class="registro-conceptual-titulo">${escaparHTML(item.titulo)}</h3>
     <p class="registro-conceptual-resumen">${escaparHTML(item.resumen)}</p>
+    <span class="registro-conceptual-expandir" aria-hidden="true">Leer registro ↗</span>
   `;
+}
+
+/**
+ * Tarjeta de video YouTube — se integra al mural como una anotación
+ * documental más, no como un elemento multimedia separado.
+ *
+ * Estructura: miniatura (16:9, con play overlay) + metadatos
+ * (badge UA, título, descripción truncada, indicador "▶ Ver video →").
+ * La miniatura se carga desde la CDN pública de YouTube (mqdefault = 320×180).
+ * Al hacer click abre el lector con iframe embed, nunca redirige.
+ */
+function crearTarjetaYoutubeVideo(item, interior) {
+  const thumbUrl = `https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg`;
+  const esTesti = item.subtipo === 'testimonio_audiovisual';
+  const tipoLabel = esTesti ? 'Testimonio audiovisual' : 'Video institucional';
+  const autorLabel = item.autor ? ` · ${escaparHTML(item.autor)}` : '';
+
+  interior.innerHTML = `
+    <div class="video-miniatura-envoltorio" aria-hidden="true">
+      <img class="video-miniatura" src="${thumbUrl}" alt=""
+           loading="lazy" width="320" height="180">
+      <div class="video-overlay">
+        <span class="video-play-btn" aria-hidden="true">▶</span>
+      </div>
+    </div>
+    <div class="video-meta">
+      <span class="video-badge">${escaparHTML(item.unidadAcademica || '')}${autorLabel}</span>
+      <h3 class="video-titulo">${escaparHTML(item.titulo)}</h3>
+      <p class="video-resumen">${escaparHTML(item.resumen)}</p>
+      <span class="video-expandir" aria-hidden="true">▶ Ver video →</span>
+    </div>
+  `;
+
+  // Ocultar la tarjeta entera si la miniatura no carga (YouTube CDN
+  // podría no estar disponible, o el ID podría no existir todavía).
+  interior.querySelector('.video-miniatura').addEventListener('error', () => {
+    interior.closest('.elemento')?.classList.add('elemento--sin-imagen');
+  });
 }
 
 /**
@@ -621,3 +690,156 @@ function escaparHTML(texto = '') {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[caracter]));
 }
+
+// =============================================================================
+// SISTEMA DE ROTACIÓN DOCUMENTAL
+// =============================================================================
+//
+// El mural no muestra todas las tarjetas simultáneamente. La capacidad
+// visible depende del tamaño de pantalla — en resoluciones pequeñas se
+// muestran menos elementos. Los que no caben se ocultan en una "cola de
+// espera" y se intercambian gradualmente con los visibles, generando la
+// sensación de un archivo vivo.
+//
+// Regla de permanencia: los registros de Unidad Académica (marcados con
+// data-permanente="true") NUNCA rotan — son el nodo central narrativo de
+// cada constelación documental.
+//
+// Rendimiento: la rotación NUNCA recalcula posiciones (no hay reflow del
+// mural). Solo cambia la opacidad de elementos que ya tienen su lugar
+// asignado. Las posiciones quedan fijas; solo cambia quién es visible.
+
+const Rotacion = (() => {
+  const INTERVALO_MS   = 9000;  // tiempo entre rotaciones
+  const FADE_SALIDA_MS = 580;   // duración del fade-out
+  const FADE_ENTRADA_MS = 700;  // duración del fade-in
+  const INICIO_DELAY_MS = 3000; // espera antes del primer ciclo
+
+  let intervalId  = null;
+  let timeoutId   = null;
+  let poolActivo  = []; // elementos actualmente visibles (no permanentes)
+  let poolEspera  = []; // elementos ocultos esperando turno
+
+  /**
+   * Cuántos elementos pueden mostrarse cómodamente en pantalla.
+   * Fórmula empírica: área / 120000 px² por elemento.
+   * Ej: 1920×1080 ≈ 17 · 1366×768 ≈ 9 · 1280×720 ≈ 8 · UltraWide ≈ 23.
+   * Se clampea entre 8 (mínimo legible) y 22 (máximo documental).
+   */
+  function calcularCapacidad() {
+    return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
+  }
+
+  /**
+   * Oculta un elemento con fade suave.
+   * Guarda la transición anterior para no interferir con otras animaciones.
+   */
+  function ocultarConFade(el) {
+    el.style.transition = `opacity ${FADE_SALIDA_MS}ms ease`;
+    el.classList.add('elemento--rotacion-espera');
+  }
+
+  /**
+   * Muestra un elemento desde el estado oculto con fade suave.
+   */
+  function mostrarConFade(el) {
+    // Eliminar "espera" para que la opacidad vuelva a su valor original
+    el.style.transition = `opacity ${FADE_ENTRADA_MS}ms ease`;
+    el.classList.remove('elemento--rotacion-espera');
+  }
+
+  /**
+   * Configura los pools de rotación para una sede.
+   * Llama a esto DESPUÉS del reveal inicial, no antes.
+   */
+  function configurar(seccion) {
+    if (!seccion) return;
+    const escenario = seccion.querySelector('.escenario');
+    if (!escenario) return;
+
+    // Solo trabajar con elementos visibles y no ocultos por el sistema
+    // de autoridades (que maneja su propia rotación independiente)
+    const candidatos = Array.from(
+      escenario.querySelectorAll('.elemento--visible:not(.elemento--oculto-autoridad)')
+    );
+
+    const permanentes = candidatos.filter((el) => el.dataset.permanente === 'true');
+    const rotativos = candidatos.filter((el) => el.dataset.permanente !== 'true');
+
+    const capacidad = calcularCapacidad();
+    const slotsDisponibles = Math.max(0, capacidad - permanentes.length);
+
+    // Barajar para variedad en cada visita
+    mezclarFisherYates([...rotativos]); // mezclarFisherYates ya existe en app.js
+
+    poolActivo = rotativos.slice(0, slotsDisponibles);
+    poolEspera = rotativos.slice(slotsDisponibles);
+
+    // Asegurarse de que todos los activos estén visibles
+    poolActivo.forEach((el) => {
+      el.style.transition = '';
+      el.classList.remove('elemento--rotacion-espera');
+    });
+
+    // Ocultar gradualmente los que están en espera (escalonado)
+    poolEspera.forEach((el, i) => {
+      window.setTimeout(() => ocultarConFade(el), i * 120 + 400);
+    });
+  }
+
+  /**
+   * Intercambia un elemento visible por uno de la cola de espera.
+   */
+  function rotarUno() {
+    if (!poolActivo.length || !poolEspera.length) return;
+
+    // Elegir el saliente y el entrante al azar
+    const iSaliente = Math.floor(Math.random() * poolActivo.length);
+    const iEntrante = Math.floor(Math.random() * poolEspera.length);
+    const saliente  = poolActivo[iSaliente];
+    const entrante  = poolEspera[iEntrante];
+
+    // Fade-out del saliente
+    ocultarConFade(saliente);
+
+    // Después del fade-out, traer al entrante
+    window.setTimeout(() => {
+      // Actualizar pools
+      poolActivo.splice(iSaliente, 1);
+      poolEspera.splice(iEntrante, 1);
+      poolActivo.push(entrante);
+      poolEspera.push(saliente);
+
+      // Fade-in del entrante
+      mostrarConFade(entrante);
+    }, FADE_SALIDA_MS + 80);
+  }
+
+  /**
+   * Inicia la rotación para una sede específica.
+   * Detiene cualquier rotación anterior antes de comenzar.
+   */
+  function iniciar(seccion) {
+    detener(); // cancelar ciclo anterior si existe
+    if (!seccion) return;
+
+    // Esperar a que el reveal termine antes de organizar el pool
+    timeoutId = window.setTimeout(() => {
+      configurar(seccion);
+      // Iniciar el ciclo solo si hay elementos en espera
+      if (poolEspera.length > 0) {
+        intervalId = window.setInterval(rotarUno, INTERVALO_MS);
+      }
+    }, INICIO_DELAY_MS);
+  }
+
+  /** Detiene la rotación y cancela timers. */
+  function detener() {
+    if (intervalId) { window.clearInterval(intervalId); intervalId = null; }
+    if (timeoutId)  { window.clearTimeout(timeoutId);   timeoutId  = null; }
+    poolActivo = [];
+    poolEspera = [];
+  }
+
+  return { iniciar, detener };
+})();
