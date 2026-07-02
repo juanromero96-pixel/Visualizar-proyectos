@@ -68,17 +68,17 @@ button { font-family: inherit; cursor: pointer; }
 .marca-chip-texto { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.02em; white-space: nowrap; }
 
 .encabezado-evento {
-  position: fixed;
-  top: calc(var(--modulo) * 1.2);
-  right: calc(var(--modulo) * 1.2);
-  z-index: 80;
-  text-align: right;
-  max-width: min(46vw, 420px);
+  /* Eliminado: el bloque superior derecho (título, bajada y fechas del evento)
+     fue removido del HTML en esta versión. Esa información vive ahora dentro
+     del panel "El Compendio Digital" del modal institucional, evitando la
+     redundancia visual. Esta regla se deja vacía para no romper ninguna
+     referencia que pudiera existir en otros archivos. */
+  display: none;
 }
-.encabezado-evento-titulo { margin: 0; font-weight: 700; font-size: clamp(0.85rem, 1.4vw, 1rem); letter-spacing: 0.01em; }
-.encabezado-evento-bajada { margin: 4px 0 0; font-weight: 300; font-size: 0.72rem; opacity: 0.75; display: none; }
-.encabezado-evento-fechas { margin: 2px 0 0; font-weight: 300; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--unam-cian); }
-@media (min-width: 821px) { .encabezado-evento-bajada { display: block; } }
+.encabezado-evento-titulo,
+.encabezado-evento-bajada,
+.encabezado-evento-fechas { display: none; }
+
 
 /* =============================================================================
    Carrusel — scroll nativo con snap. Sigue igual que en v1: no se tocó.
@@ -457,21 +457,38 @@ button { font-family: inherit; cursor: pointer; }
 .elemento--registro-ua,
 .elemento--registro-conceptual { cursor: pointer; }
 .elemento-interior {
-  transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
+  transition: transform 220ms ease, box-shadow 220ms ease, opacity 220ms ease, filter 220ms ease;
 }
-.elemento--enfocado .elemento-interior {
+/* Testimonios: escala más modesta, sombra más suave — nivel 4 de jerarquía */
+.elemento--testimonio.elemento--enfocado .elemento-interior,
+.elemento--testimonio-institucional.elemento--enfocado .elemento-interior {
+  transform: scale(1.06);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(245, 243, 238, 0.1);
+  filter: brightness(1.06);
+}
+/* Registros UA: escala mayor, sombra más dramática — nivel 1 de jerarquía */
+.elemento--registro-ua.elemento--enfocado .elemento-interior {
+  transform: scale(1.1);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 163, 224, 0.22);
+  filter: brightness(1.08);
+}
+/* Registros conceptuales: intermedio — nivel 2 */
+.elemento--registro-conceptual.elemento--enfocado .elemento-interior {
   transform: scale(1.08);
-  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 163, 224, 0.14);
+  filter: brightness(1.06);
 }
+/* Los no enfocados se atenúan (el efecto "la linterna apunta a uno") */
 .escenario--enfocando .elemento--visible:not(.elemento--enfocado) .elemento-interior {
-  opacity: 0.55;
+  opacity: 0.48;
+  filter: brightness(0.85);
 }
 .elemento:focus-visible {
-  outline: none; /* el propio agrandado ya señala el foco; un outline duro sobre una tarjeta rotada se ve mal */
+  outline: none;
 }
 .elemento--enfocado {
-  outline: 2px solid var(--unam-cian);
-  outline-offset: 4px;
+  outline: 2px solid rgba(0, 163, 224, 0.7);
+  outline-offset: 5px;
   border-radius: 6px;
 }
 

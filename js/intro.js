@@ -186,19 +186,16 @@ const Intro = (() => {
   return { iniciar, ingresar, mostrar };
 })();
 
-// ─── Módulo Cajero ───────────────────────────────────────────────────────────
+// ─── Módulo Cajero — modal institucional centrado ────────────────────────────
 
 const Cajero = (() => {
-  // ── Estado ────────────────────────────────────────────────────────────────
-  let abierto       = false;
-  let panelActual   = 'bienvenida';
+  let abierto     = false;
+  let panelActual = 'bienvenida';
 
-  // ── Helpers de DOM ───────────────────────────────────────────────────────
-  function cajeroEl()  { return document.getElementById('cajero-institucional'); }
-  function telonEl()   { return document.getElementById('cajero-telon'); }
-  function menuBtn()   { return document.getElementById('menu-inst-btn'); }
+  function cajeroEl() { return document.getElementById('cajero-institucional'); }
+  function telonEl()  { return document.getElementById('cajero-telon'); }
+  function menuBtn()  { return document.getElementById('menu-inst-btn'); }
 
-  // ── Apertura ─────────────────────────────────────────────────────────────
   function abrir(panelId) {
     const cajero = cajeroEl();
     const telon  = telonEl();
@@ -209,18 +206,17 @@ const Cajero = (() => {
     telon.classList.add('cajero-telon--visible');
     btn.setAttribute('aria-expanded', 'true');
     btn.classList.add('menu-inst-btn--abierto');
-    document.body.classList.add('lector-bloqueando-scroll'); // reutiliza la clase existente
+
+    // Bloquea el scroll del body mientras el modal está abierto
+    document.body.classList.add('lector-bloqueando-scroll');
     abierto = true;
 
     if (panelId) cambiarPanel(panelId);
 
-    // Focus al botón de cierre tras la transición
-    window.setTimeout(() => {
-      cajero.querySelector('.cajero-cerrar-btn')?.focus();
-    }, 380);
+    // Focus al botón de cierre tras la transición de entrada
+    window.setTimeout(() => cajero.querySelector('.cajero-cerrar-btn')?.focus(), 380);
   }
 
-  // ── Cierre ───────────────────────────────────────────────────────────────
   function cerrar() {
     const cajero = cajeroEl();
     const telon  = telonEl();
@@ -234,15 +230,12 @@ const Cajero = (() => {
     document.body.classList.remove('lector-bloqueando-scroll');
     abierto = false;
 
-    // Devolver foco al botón que abrió el cajero
     window.setTimeout(() => btn.focus(), 50);
   }
 
-  // ── Cambio de panel ───────────────────────────────────────────────────────
   function cambiarPanel(panelId) {
     panelActual = panelId;
 
-    // Ocultar todos los paneles y desactivar todas las pestañas
     document.querySelectorAll('.cajero-panel').forEach(p => {
       p.hidden = true;
       p.classList.remove('cajero-panel--activa');
@@ -252,36 +245,21 @@ const Cajero = (() => {
       t.setAttribute('aria-selected', 'false');
     });
 
-    // Mostrar el panel pedido
     const panel = document.getElementById(`panel-${panelId}`);
     const tab   = document.getElementById(`tab-${panelId}`);
-    if (panel) {
-      panel.hidden = false;
-      panel.classList.add('cajero-panel--activa');
-    }
-    if (tab) {
-      tab.classList.add('cajero-tab--activa');
-      tab.setAttribute('aria-selected', 'true');
-    }
+    if (panel) { panel.hidden = false; panel.classList.add('cajero-panel--activa'); }
+    if (tab)   { tab.classList.add('cajero-tab--activa'); tab.setAttribute('aria-selected', 'true'); }
   }
 
-  // ── Trampa de foco (accesibilidad) ────────────────────────────────────────
   function configurarTrampaDeFoco(cajero) {
     cajero.addEventListener('keydown', (e) => {
       if (!abierto || e.key !== 'Tab') return;
       const focusables = Array.from(
-        cajero.querySelectorAll([
-          'button:not([disabled])',
-          '[href]',
-          'input:not([disabled])',
-          '[tabindex]:not([tabindex="-1"])',
-        ].join(', '))
+        cajero.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])')
       ).filter(el => !el.closest('[hidden]'));
-
       if (!focusables.length) return;
       const primero = focusables[0];
       const ultimo  = focusables[focusables.length - 1];
-
       if (e.shiftKey) {
         if (document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
       } else {
@@ -290,40 +268,36 @@ const Cajero = (() => {
     });
   }
 
-  // ── Inicialización ────────────────────────────────────────────────────────
   function iniciar() {
     const cajero = cajeroEl();
     const telon  = telonEl();
 
-    // Botón hamburguesa
+    // El botón hamburguesa abre/cierra el modal
     menuBtn().addEventListener('click', () => { abierto ? cerrar() : abrir(); });
 
-    // Botón cerrar dentro del cajero
+    // Botón X dentro del modal
     document.getElementById('cajero-cerrar')?.addEventListener('click', cerrar);
 
-    // Clic en el telón (fuera del cajero)
+    // Clic en el telón (fuera del modal) cierra
     telon.addEventListener('click', cerrar);
 
-    // Escape cierra el cajero
+    // Escape cierra
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && abierto) cerrar();
     });
 
-    // Pestañas del cajero
+    // Pestañas
     document.querySelectorAll('.cajero-tab').forEach(tab => {
       tab.addEventListener('click', () => cambiarPanel(tab.dataset.panel));
     });
 
-    // Botón "Comenzar el recorrido" dentro del panel Bienvenida
+    // Botones de acción en panel Bienvenida
     document.getElementById('cajero-btn-recorrer')?.addEventListener('click', cerrar);
-
-    // Botón "Ver introducción nuevamente" dentro del panel Bienvenida
     document.getElementById('cajero-btn-reabrir')?.addEventListener('click', () => {
       cerrar();
-      window.setTimeout(() => Intro.mostrar(), 380); // esperar que el cajero cierre
+      window.setTimeout(() => Intro.mostrar(), 380);
     });
 
-    // Trampa de foco
     configurarTrampaDeFoco(cajero);
   }
 

@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Semana Regional de la Extensión UNaM</title>
-  <meta name="description" content="Recorrido digital por las tres sedes de la Universidad Nacional de Misiones durante la Semana Regional de la Extensión." />
+  <meta name="description" content="Compendio digital de la Primera Semana Regional de la Extensión Universitaria de la Universidad Nacional de Misiones. Posadas · Oberá · Eldorado, mayo 2026." />
 
-  <!-- Roboto es la tipografía institucional única (Manual de Identidad UNaM, sección 06).
-       Si no hay conexión a internet, cae al stack de system fonts definido en styles.css. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet" />
@@ -18,30 +16,34 @@
 </head>
 <body>
 
+  <!-- ── Chip de marca (isologotipo fijo) ─────────────────────────────── -->
   <div class="marca-chip" aria-hidden="false">
     <img class="marca-chip-logo" src="assets/logos/unam-badge.svg" alt="" />
     <span class="marca-chip-texto">UNaM extensión</span>
   </div>
 
-  <header class="encabezado-evento">
-    <p class="encabezado-evento-titulo"></p>
-    <p class="encabezado-evento-bajada"></p>
-    <p class="encabezado-evento-fechas"></p>
-  </header>
+  <!-- ── El .encabezado-evento fue eliminado: su información vive en el
+           panel "El Compendio Digital" del modal institucional. La
+           eliminación libera el cuadrante superior derecho de la pantalla
+           para que el mural documental pueda expandirse hasta ese espacio. ── -->
 
+  <!-- ── Carrusel principal (no modificar) ───────────────────────────── -->
   <main id="carrusel" class="carrusel" aria-label="Recorrido por las sedes de la Semana Regional de la Extensión">
-    <!-- app.js construye acá una <section class="sede"> por cada sede visible -->
+    <!-- app.js construye acá una <section class="sede"> por cada sede -->
   </main>
 
+  <!-- ── Navegación entre sedes (no modificar) ────────────────────────── -->
   <nav class="ruta" aria-label="Navegación entre sedes">
     <button class="ruta-flecha ruta-flecha--anterior" aria-label="Sede anterior">‹</button>
     <ol class="ruta-nodos"><!-- app.js completa los nodos --></ol>
     <button class="ruta-flecha ruta-flecha--siguiente" aria-label="Sede siguiente">›</button>
   </nav>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════
-       BOTÓN HAMBURGUESA — permanente, se vuelve visible al terminar la intro
-       ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════════════════════
+       BOTÓN HAMBURGUESA — abre el modal institucional
+       z-index: 290, siempre encima del modal (280) y del telón (270).
+       Se hace visible mediante .menu-inst-btn--visible al terminar la intro.
+       ═══════════════════════════════════════════════════════════════════ -->
   <button
     class="menu-inst-btn"
     id="menu-inst-btn"
@@ -55,28 +57,32 @@
     <span class="menu-inst-linea" aria-hidden="true"></span>
   </button>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════
-       TELÓN DEL CAJERO — fondo semitransparente que aparece al abrir el panel
-       ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════════════════════
+       TELÓN — fondo oscuro detrás del modal
+       ═══════════════════════════════════════════════════════════════════ -->
   <div class="cajero-telon" id="cajero-telon" aria-hidden="true"></div>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════
-       CAJERO INSTITUCIONAL — panel lateral de contenido del compendio
-       ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════════════════════
+       MODAL INSTITUCIONAL — 60-75 % del ancho, 80 % de la altura
+       Cuatro pestañas: Bienvenida · La Extensión · El Compendio · Acerca de
+       ═══════════════════════════════════════════════════════════════════ -->
   <aside
     class="cajero"
     id="cajero-institucional"
+    role="dialog"
+    aria-modal="true"
     aria-label="Panel institucional del Compendio Digital"
     aria-hidden="true"
   >
-    <!-- Cabecera del cajero -->
+
+    <!-- Cabecera del modal -->
     <div class="cajero-cabecera">
       <img src="assets/logos/unam-badge.svg" alt="UNaM" class="cajero-logo" width="28" height="28" />
-      <span class="cajero-cabecera-titulo">Compendio Digital</span>
+      <span class="cajero-cabecera-titulo">Compendio Digital · Semana Regional de la Extensión</span>
       <button class="cajero-cerrar-btn" id="cajero-cerrar" aria-label="Cerrar panel institucional">✕</button>
     </div>
 
-    <!-- Pestañas de navegación -->
+    <!-- Pestañas de navegación — 4 pestañas, sin "La Semana Regional" -->
     <nav class="cajero-nav" role="tablist" aria-label="Secciones del compendio">
       <button
         class="cajero-tab cajero-tab--activa"
@@ -90,20 +96,11 @@
       <button
         class="cajero-tab"
         role="tab"
-        id="tab-semana"
-        data-panel="semana"
-        aria-selected="false"
-        aria-controls="panel-semana"
-      >La Semana Regional</button>
-
-      <button
-        class="cajero-tab"
-        role="tab"
         id="tab-extension"
         data-panel="extension"
         aria-selected="false"
         aria-controls="panel-extension"
-      >La Extensión</button>
+      >La Extensión Universitaria</button>
 
       <button
         class="cajero-tab"
@@ -112,138 +109,135 @@
         data-panel="compendio"
         aria-selected="false"
         aria-controls="panel-compendio"
-      >Este Compendio</button>
+      >El Compendio Digital</button>
 
       <button
         class="cajero-tab"
         role="tab"
-        id="tab-creditos"
-        data-panel="creditos"
+        id="tab-acerca"
+        data-panel="acerca"
         aria-selected="false"
-        aria-controls="panel-creditos"
-      >Créditos</button>
+        aria-controls="panel-acerca"
+      >Acerca de</button>
     </nav>
 
-    <!-- Cuerpo del cajero: paneles de contenido -->
+    <!-- Cuerpo con los paneles -->
     <div class="cajero-cuerpo">
 
-      <!-- ── Panel 1: Bienvenida ───────────────────────────────────────── -->
+      <!-- ── Panel 1: Bienvenida ────────────────────────────────────── -->
       <section class="cajero-panel cajero-panel--activa" id="panel-bienvenida" role="tabpanel" aria-labelledby="tab-bienvenida">
 
-        <!-- Mini-tarjeta que replica la intro institucional -->
         <div class="cajero-bienvenida-tarjeta">
           <h2 class="cajero-bienvenida-titulo">Semana Regional de la Extensión Universitaria</h2>
-          <p class="cajero-bienvenida-subtitulo">Compendio Digital · Primera Edición, 2026</p>
+          <p class="cajero-bienvenida-subtitulo">Compendio Digital · Primera Edición, 26–29 de mayo de 2026</p>
           <p class="cajero-bienvenida-descripcion">
-            Durante cinco días de mayo de 2026, las tres sedes de la Universidad Nacional de Misiones abrieron su trabajo extensionista a la región. Este compendio digital preserva lo que ocurrió: testimonios institucionales, experiencias de cada facultad, registros conceptuales y evidencias documentales.
+            Durante cinco días, las tres sedes de la Universidad Nacional de Misiones abrieron su trabajo extensionista a la región. Este compendio preserva lo que ocurrió: testimonios de autoridades y equipos, experiencias institucionales de cada facultad, registros conceptuales y evidencias documentales que conforman un mural documental interactivo de la memoria extensionista de la UNaM.
           </p>
         </div>
 
-        <button class="cajero-btn-recorrer" id="cajero-btn-recorrer">
-          Explorar el compendio
-        </button>
-
-        <button class="cajero-btn-reabrir" id="cajero-btn-reabrir">
-          Ver introducción nuevamente
-        </button>
-
-      </section>
-
-      <!-- ── Panel 2: La Semana Regional ──────────────────────────────── -->
-      <section class="cajero-panel" id="panel-semana" role="tabpanel" aria-labelledby="tab-semana" hidden>
-
-        <h2 class="cajero-seccion-titulo">La Semana Regional de la Extensión</h2>
-        <p class="cajero-seccion-subtitulo">Primera edición — 26 al 29 de mayo de 2026</p>
-        <div class="cajero-acento"></div>
-
-        <div class="cajero-seccion-texto">
-          <p>La Semana Regional de la Extensión UNaM fue una instancia de visibilización y celebración del trabajo extensionista que las distintas unidades académicas llevan adelante de forma permanente en el territorio.</p>
-          <p>Durante cuatro días, cada sede organizó su propia jornada para mostrar proyectos, testimonios y experiencias de extensión acreditados entre 2022 y 2024. El evento se transmitió en vivo a través de los canales digitales de la UNaM.</p>
-        </div>
-
-        <p class="cajero-sub">Las tres sedes</p>
-        <ul class="cajero-sedes-lista" aria-label="Sedes participantes">
-          <li>
-            <span class="cajero-sede-nombre">Posadas — Rectorado y sede central</span>
-            <span class="cajero-sede-unidades">FHyCS · FCE · FCEQyN</span>
-          </li>
-          <li>
-            <span class="cajero-sede-nombre">Oberá — Regional Oberá</span>
-            <span class="cajero-sede-unidades">FAyD · FI</span>
-          </li>
-          <li>
-            <span class="cajero-sede-nombre">Eldorado — Regional Eldorado</span>
-            <span class="cajero-sede-unidades">FCF · Escuela Agrotécnica de Eldorado</span>
-          </li>
-        </ul>
-
-        <p class="cajero-sub">Significado institucional</p>
-        <div class="cajero-seccion-texto">
-          <p>La Semana Regional nació de un trabajo conjunto entre los secretarios de extensión de todas las unidades académicas, con el objetivo de visibilizar la extensión universitaria como actividad sustantiva y de construir una memoria institucional compartida de lo que la UNaM hace en territorio.</p>
-          <p><span class="cajero-por-completar">Texto oficial por completar</span></p>
+        <div class="cajero-acciones-bienvenida">
+          <button class="cajero-btn-recorrer" id="cajero-btn-recorrer">
+            Explorar el compendio
+          </button>
+          <button class="cajero-btn-reabrir" id="cajero-btn-reabrir">
+            Ver presentación nuevamente
+          </button>
         </div>
 
       </section>
 
-      <!-- ── Panel 3: La Extensión Universitaria ───────────────────────── -->
+      <!-- ── Panel 2: La Extensión Universitaria ──────────────────── -->
       <section class="cajero-panel" id="panel-extension" role="tabpanel" aria-labelledby="tab-extension" hidden>
 
         <h2 class="cajero-seccion-titulo">La Extensión Universitaria</h2>
-        <p class="cajero-seccion-subtitulo">Una función sustantiva de la universidad pública</p>
+        <p class="cajero-seccion-subtitulo">Una función sustantiva de la universidad pública argentina</p>
         <div class="cajero-acento"></div>
 
         <div class="cajero-seccion-texto">
           <p>La extensión universitaria es una de las tres funciones sustantivas de la Universidad Nacional de Misiones, junto con la docencia y la investigación. Representa el vínculo activo entre la institución académica y la sociedad en la que está inserta.</p>
-          <p>No es una transferencia unidireccional de conocimiento desde la universidad hacia la comunidad. Es un proceso de construcción colectiva, donde la universidad aprende del territorio tanto como aporta a él.</p>
+          <p>No es una transferencia unidireccional de conocimiento. Es un proceso de construcción colectiva donde la universidad aprende del territorio tanto como aporta a él. Los proyectos extensionistas integran docencia, investigación y comunidad en un mismo proceso.</p>
+          <p>En la UNaM, las actividades de extensión implican la transferencia científico-tecnológica, la educación permanente, la difusión de las producciones de la universidad, el desarrollo de las expresiones culturales y la vinculación institucional. En la Secretaría General de Extensión funcionan diez programas permanentes, además de oficinas y departamentos.</p>
+          <p>La UNaM realiza jornadas especializadas en extensión desde 2008, con el objetivo de promover y difundir propuestas transformadoras de la realidad social, económica y productiva de la región.</p>
         </div>
 
-        <p class="cajero-sub">La extensión en el territorio</p>
+        <p class="cajero-sub">La extensión en el territorio misionero</p>
         <div class="cajero-seccion-texto">
-          <p>La extensión de la UNaM opera en tres escalas simultáneas: local (barrios y comunidades específicas), regional (la provincia de Misiones y el NEA) y transfronteriza (articulaciones con Paraguay y Brasil que atraviesan la historia y la geografía de la región).</p>
-        </div>
-
-        <p class="cajero-sub">Articulación con docencia e investigación</p>
-        <div class="cajero-seccion-texto">
-          <p>Los proyectos de extensión se articulan formalmente con la enseñanza a través de las Prácticas Sociales Educativas (PSE), que permiten a los estudiantes integrar actividades extensionistas en su trayecto curricular y recibirlas como antecedente en su suplemento al título.</p>
-          <p><span class="cajero-por-completar">Sección en elaboración</span></p>
+          <p>La extensión de la UNaM opera en múltiples escalas simultáneas: local (barrios y comunidades específicas), regional (la provincia de Misiones y el NEA) y transfronteriza (articulaciones con Paraguay y Brasil que atraviesan la historia y la geografía de la región).</p>
+          <p>Los proyectos extensionistas se articulan formalmente con la enseñanza a través de las Prácticas Sociales Educativas (PSE), que permiten a los estudiantes integrar actividades extensionistas en su trayecto curricular y recibirlas como antecedente en su suplemento al título.</p>
         </div>
 
       </section>
 
-      <!-- ── Panel 4: Sobre este Compendio ─────────────────────────────── -->
+      <!-- ── Panel 3: El Compendio Digital ────────────────────────── -->
       <section class="cajero-panel" id="panel-compendio" role="tabpanel" aria-labelledby="tab-compendio" hidden>
 
-        <h2 class="cajero-seccion-titulo">Sobre este Compendio</h2>
-        <p class="cajero-seccion-subtitulo">Un archivo vivo de la memoria extensionista</p>
+        <h2 class="cajero-seccion-titulo">El Compendio Digital</h2>
+        <p class="cajero-seccion-subtitulo">Un archivo vivo de la memoria extensionista · Primera Edición 2026</p>
         <div class="cajero-acento"></div>
 
         <div class="cajero-seccion-texto">
-          <p>Este compendio digital es una memoria interactiva de la primera Semana Regional de la Extensión de la UNaM. No es un portal de noticias ni una galería de fotos: es un <strong>mural documental</strong> donde conviven distintas formas de evidencia institucional.</p>
+          <p>Del 26 al 29 de mayo de 2026, las tres sedes de la UNaM organizaron la Primera Semana Regional de la Extensión Universitaria con el objetivo de visibilizar, sistematizar y difundir los proyectos de extensión acreditados entre 2022 y 2024.</p>
+          <p>Este compendio digital es una memoria interactiva de ese acontecimiento. No es un portal de noticias ni una galería de documentos: es un <strong>mural documental</strong> donde conviven distintas formas de evidencia institucional. Cada sede funciona como una sala de exposición con sus propias voces y registros.</p>
         </div>
 
-        <p class="cajero-sub">Cómo recorrerlo</p>
-        <div class="cajero-seccion-texto">
-          <p><strong>Moverse entre sedes</strong> — las flechas laterales o el indicador de sedes en la parte inferior permiten desplazarse entre Posadas, Oberá y Eldorado.</p>
-          <p><strong>Explorar el mural</strong> — cada tarjeta flotante puede expandirse con un click o un tap. Al expandirla, se accede al contenido completo: texto, contexto e información adicional.</p>
-          <p><strong>Descubrir el cambio</strong> — el mural no es estático. Cada visita presenta distintas combinaciones de voces e ideas: las autoridades institucionales se muestran en rotación aleatoria.</p>
-        </div>
+        <p class="cajero-sub">Las tres sedes</p>
+        <ul class="cajero-sedes-lista" aria-label="Sedes de la Semana Regional">
+          <li>
+            <span class="cajero-sede-nombre">Posadas — Sede central</span>
+            <span class="cajero-sede-unidades">Facultad de Humanidades y Ciencias Sociales · Facultad de Ciencias Económicas · Facultad de Ciencias Exactas, Químicas y Naturales</span>
+          </li>
+          <li>
+            <span class="cajero-sede-nombre">Oberá — Regional Oberá</span>
+            <span class="cajero-sede-unidades">Facultad de Arte y Diseño · Facultad de Ingeniería</span>
+          </li>
+          <li>
+            <span class="cajero-sede-nombre">Eldorado — Regional Eldorado</span>
+            <span class="cajero-sede-unidades">Facultad de Ciencias Forestales · Escuela Agrotécnica de Eldorado</span>
+          </li>
+        </ul>
 
-        <p class="cajero-sub">Los tipos de registros</p>
+        <p class="cajero-sub">Tipos de registro en el mural</p>
+        <ul class="cajero-tipos-lista" aria-label="Tipos de registro del compendio">
+          <li class="cajero-tipo-item">
+            <span class="cajero-tipo-nombre">Experiencias de Unidad Académica</span>
+            <span class="cajero-tipo-desc">Síntesis narrativa de cómo vivió cada facultad la Semana Regional: qué proyectos presentó, qué extensión hace, qué identidad extensionista transmite. Es el eje central del mural.</span>
+          </li>
+          <li class="cajero-tipo-item">
+            <span class="cajero-tipo-nombre">Registros conceptuales</span>
+            <span class="cajero-tipo-desc">Ideas transversales surgidas del análisis documental. Conceptos sobre extensión, territorio y territorialidad que atraviesan varias unidades académicas.</span>
+          </li>
+          <li class="cajero-tipo-item">
+            <span class="cajero-tipo-nombre">Testimonios institucionales</span>
+            <span class="cajero-tipo-desc">Voces de autoridades y secretarios de extensión de la UNaM y sus unidades académicas. Rotan entre sí para que el mural no sea siempre el mismo.</span>
+          </li>
+          <li class="cajero-tipo-item">
+            <span class="cajero-tipo-nombre">Registros audiovisuales</span>
+            <span class="cajero-tipo-desc">Material audiovisual asociado a los proyectos o jornadas. Se integran al mural como evidencia documental, no como galería separada.</span>
+          </li>
+        </ul>
+
+        <p class="cajero-sub">Cómo recorrer este compendio</p>
         <div class="cajero-seccion-texto">
-          <p><strong>Testimonios institucionales</strong> — voces de autoridades y secretarios de extensión de la UNaM y sus unidades académicas.</p>
-          <p><strong>Registros de Unidad Académica</strong> — síntesis narrativa de la experiencia de cada facultad durante la Semana Regional: cómo vivió la extensión, qué proyectos presentó, qué identidad extensionista transmite.</p>
-          <p><strong>Registros conceptuales</strong> — ideas transversales surgidas del análisis documental: conceptos sobre extensión, territorio y territorialidad que atraviesan a varias unidades académicas a la vez.</p>
+          <p><strong>Moverse entre sedes</strong> — las flechas laterales o el indicador inferior permiten desplazarse entre Posadas, Oberá y Eldorado.</p>
+          <p><strong>Explorar el mural</strong> — cualquier tarjeta puede expandirse con un click o tap para leer su contenido completo: texto, contexto, proyectos mencionados.</p>
+          <p><strong>Descubrir el cambio</strong> — el mural no es estático. Cada visita presenta distintas combinaciones de voces. Las autoridades institucionales se muestran en rotación aleatoria para que el compendio se sienta vivo y no predecible.</p>
         </div>
 
       </section>
 
-      <!-- ── Panel 5: Créditos ─────────────────────────────────────────── -->
-      <section class="cajero-panel" id="panel-creditos" role="tabpanel" aria-labelledby="tab-creditos" hidden>
+      <!-- ── Panel 4: Acerca de ─────────────────────────────────────── -->
+      <section class="cajero-panel" id="panel-acerca" role="tabpanel" aria-labelledby="tab-acerca" hidden>
 
-        <h2 class="cajero-seccion-titulo">Créditos</h2>
+        <h2 class="cajero-seccion-titulo">Acerca de este proyecto</h2>
         <p class="cajero-seccion-subtitulo">Universidad Nacional de Misiones · 2026</p>
         <div class="cajero-acento"></div>
 
+        <div class="cajero-seccion-texto">
+          <p>La Universidad Nacional de Misiones fue creada el 16 de abril de 1973 mediante la Ley Nacional N.° 20.286. Cuenta con más de 29.000 estudiantes, 2.521 docentes y 751 trabajadores no docentes, distribuidos en tres regionales: Posadas, Oberá y Eldorado. El 61,5 % del estudiantado está conformado por mujeres.</p>
+          <p>El Compendio Digital de la Semana Regional de la Extensión es una iniciativa de la Secretaría General de Extensión Universitaria del Rectorado, elaborado con el objetivo de preservar y difundir la memoria extensionista de la universidad a través de un archivo documental digital de carácter permanente.</p>
+        </div>
+
+        <p class="cajero-sub">Autoridades · período 2022–2026</p>
         <div class="cajero-creditos">
 
           <div class="cajero-credito-bloque">
@@ -261,73 +255,45 @@
           </div>
 
           <div class="cajero-credito-bloque">
-            <p class="cajero-credito-area">Secretaría General de Extensión Universitaria</p>
+            <p class="cajero-credito-area">Secretaría General de Extensión</p>
             <ul class="cajero-credito-entradas">
               <li class="cajero-credito-entrada">
                 <span class="cajero-credito-rol">Secretario General</span>
                 <span class="cajero-credito-nombre">Mauricio Franco</span>
               </li>
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Equipo técnico</span>
+                <span class="cajero-credito-rol">Equipo</span>
                 <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
               </li>
             </ul>
           </div>
 
           <div class="cajero-credito-bloque">
-            <p class="cajero-credito-area">Secretaría General de Comunicación Institucional</p>
+            <p class="cajero-credito-area">Secretaría General Académica</p>
             <ul class="cajero-credito-entradas">
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
+                <span class="cajero-credito-nombre">Mgter. Gisela Spasiuk</span>
               </li>
             </ul>
           </div>
 
           <div class="cajero-credito-bloque">
-            <p class="cajero-credito-area">Compendio Digital — Equipo de desarrollo</p>
+            <p class="cajero-credito-area">Compendio Digital</p>
             <ul class="cajero-credito-entradas">
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Dirección del proyecto</span>
+                <span class="cajero-credito-rol">Dirección</span>
                 <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
               </li>
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Coordinación general</span>
+                <span class="cajero-credito-rol">Desarrollo y diseño</span>
                 <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
               </li>
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Diseño y desarrollo</span>
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="cajero-credito-bloque">
-            <p class="cajero-credito-area">Sistematización documental</p>
-            <ul class="cajero-credito-entradas">
-              <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Contenidos y archivo</span>
+                <span class="cajero-credito-rol">Sistematización documental</span>
                 <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
               </li>
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-rol">Corrección y normalización de entidades</span>
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="cajero-credito-bloque">
-            <p class="cajero-credito-area">Producción audiovisual</p>
-            <ul class="cajero-credito-entradas">
-              <li class="cajero-credito-entrada">
-                <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
-              </li>
-            </ul>
-          </div>
-
-          <div class="cajero-credito-bloque">
-            <p class="cajero-credito-area">Vinculación Territorial</p>
-            <ul class="cajero-credito-entradas">
-              <li class="cajero-credito-entrada">
+                <span class="cajero-credito-rol">Producción audiovisual</span>
                 <span class="cajero-credito-nombre cajero-por-completar">por completar</span>
               </li>
             </ul>
@@ -340,56 +306,45 @@
     </div><!-- /.cajero-cuerpo -->
   </aside><!-- /#cajero-institucional -->
 
-  <!-- ═══════════════════════════════════════════════════════════════════════
-       INTRO OVERLAY — aparece solo en la primera visita
-       ══════════════════════════════════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════════════════════
+       INTRO OVERLAY — aparece únicamente en la primera visita
+       ═══════════════════════════════════════════════════════════════════ -->
   <div
     class="intro"
     id="intro-overlay"
     aria-hidden="true"
   >
-    <!-- Fondo fotográfico animado -->
     <div class="intro-fondo" aria-hidden="true">
       <div class="intro-fondo-imagen"></div>
     </div>
-
-    <!-- Velo oscuro sobre la fotografía -->
     <div class="intro-velo" aria-hidden="true"></div>
 
-    <!-- Tarjeta editorial central -->
     <div class="intro-tarjeta" id="intro-tarjeta">
-
-      <!-- Cabecera de la tarjeta -->
       <div class="intro-tarjeta-cabecera">
         <img src="assets/logos/unam-badge.svg" alt="Universidad Nacional de Misiones" class="intro-logo" width="36" height="36" />
         <span class="intro-institucion">Universidad Nacional de Misiones</span>
       </div>
 
-      <!-- Acento de color -->
       <div class="intro-acento" role="presentation"></div>
 
-      <!-- Título y subtítulos -->
       <h1 class="intro-titulo">Semana Regional de la Extensión Universitaria</h1>
       <p class="intro-subtitulo">Compendio Digital</p>
       <p class="intro-edicion">Primera Edición · Mayo 2026</p>
 
-      <!-- Descripción introductoria -->
       <p class="intro-descripcion">
         Durante cinco días de mayo de 2026, las tres sedes de la UNaM —Posadas, Oberá y Eldorado— abrieron su trabajo extensionista a la región. Este compendio digital preserva lo que ocurrió: testimonios institucionales, experiencias de cada facultad, registros conceptuales y evidencias documentales. No es una página web: es un mural interactivo de la memoria extensionista.
       </p>
 
-      <!-- Guía expandible -->
-      <div class="intro-guia" id="intro-guia" aria-live="polite" role="region" aria-label="Guía de navegación del compendio">
+      <div class="intro-guia" id="intro-guia" role="region" aria-live="polite" aria-label="Guía de navegación">
         <p class="intro-guia-titulo">Cómo recorrer este compendio</p>
         <ul class="intro-guia-lista">
-          <li><strong>Navegar entre sedes</strong> — usá las flechas o el indicador inferior para moverte entre Posadas, Oberá y Eldorado.</li>
-          <li><strong>Explorar el mural</strong> — cada tarjeta puede expandirse con un click o tap para leer su contenido completo.</li>
-          <li><strong>Descubrir la variedad</strong> — cada visita presenta distintas combinaciones de voces e ideas: el mural cambia.</li>
-          <li><strong>Volver a este menú</strong> — el ícono <span aria-label="hamburguesa">☰</span> en la esquina superior izquierda abre este panel en cualquier momento.</li>
+          <li><strong>Navegar</strong> — usá las flechas o el indicador inferior para moverte entre Posadas, Oberá y Eldorado.</li>
+          <li><strong>Explorar</strong> — cada tarjeta puede expandirse con un click o tap para leer su contenido completo.</li>
+          <li><strong>Descubrir</strong> — cada visita presenta distintas combinaciones de voces e ideas: el mural cambia.</li>
+          <li><strong>Este menú</strong> — el ícono <span aria-label="menú">☰</span> en la parte superior abre este panel en cualquier momento.</li>
         </ul>
       </div>
 
-      <!-- Botones de acción -->
       <div class="intro-acciones" role="group" aria-label="Acciones de ingreso">
         <button class="intro-btn intro-btn--principal" id="intro-btn-ingresar">
           Ingresar al recorrido
@@ -403,7 +358,6 @@
           Conocer la experiencia ↓
         </button>
       </div>
-
     </div><!-- /.intro-tarjeta -->
   </div><!-- /#intro-overlay -->
 

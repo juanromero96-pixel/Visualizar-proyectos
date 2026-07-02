@@ -315,8 +315,12 @@ const Distribuidor = (() => {
 
   function obtenerZonasProtegidas(seccion, rectEscenario) {
     const zonas = [];
+    // El chip de marca (esquina superior izquierda) y el botón hamburguesa
+    // son los únicos elementos fijos del encabezado que deben quedar libres.
+    // El bloque .encabezado-evento fue eliminado del HTML en esta versión:
+    // ya no ocupa el cuadrante superior derecho, que queda libre para el mural.
     agregarZonaDeElemento(zonas, document.querySelector('.marca-chip'), rectEscenario);
-    agregarZonaDeElemento(zonas, document.querySelector('.encabezado-evento'), rectEscenario);
+    agregarZonaDeElemento(zonas, document.querySelector('.menu-inst-btn'), rectEscenario);
     agregarZonaDeElemento(zonas, document.querySelector('.ruta'), rectEscenario);
     agregarZonaDeElemento(zonas, seccion.querySelector('.sede-kicker'), rectEscenario);
 

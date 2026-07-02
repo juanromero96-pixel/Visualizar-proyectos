@@ -104,6 +104,10 @@ function mostrarErrorCarga(error) {
 }
 
 function pintarEncabezado(config) {
+  // Actualiza el título de la pestaña del navegador.
+  // El bloque visual .encabezado-evento fue eliminado del HTML (redundante
+  // con el panel del cajero institucional) — esta función ya no necesita
+  // actualizar esos tres nodos DOM.
   document.title = config.evento.nombre;
   const chip = document.querySelector('.marca-chip');
   if (chip) {
@@ -111,12 +115,6 @@ function pintarEncabezado(config) {
     const logo = chip.querySelector('.marca-chip-logo');
     if (logo) logo.src = config.marca.logoPath;
   }
-  const tituloEvento = document.querySelector('.encabezado-evento-titulo');
-  if (tituloEvento) tituloEvento.textContent = config.evento.nombre;
-  const bajadaEvento = document.querySelector('.encabezado-evento-bajada');
-  if (bajadaEvento) bajadaEvento.textContent = config.evento.bajada;
-  const fechasEvento = document.querySelector('.encabezado-evento-fechas');
-  if (fechasEvento) fechasEvento.textContent = config.evento.fechas;
 }
 
 function pintarSedes(sedesVisibles, testimonios, registros, multimedia) {
