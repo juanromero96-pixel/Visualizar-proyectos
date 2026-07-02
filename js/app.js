@@ -114,15 +114,19 @@ function mostrarErrorCarga(error) {
 
 function pintarEncabezado(config) {
   // Actualiza el título de la pestaña del navegador.
-  // El bloque visual .encabezado-evento fue eliminado del HTML (redundante
-  // con el panel del cajero institucional) — esta función ya no necesita
-  // actualizar esos tres nodos DOM.
+  // El bloque .encabezado-evento fue eliminado del HTML (información
+  // duplicada respecto al panel del cajero institucional).
+  // El span .marca-chip-texto también fue eliminado al reemplazar el SVG
+  // badge por el logotipo PNG oficial, que ya contiene el nombre institucional.
+  // Se usa guard (if textoEl) para no lanzar TypeError si el elemento
+  // no existe — la ausencia del span es intencional, no un bug.
   document.title = config.evento.nombre;
   const chip = document.querySelector('.marca-chip');
   if (chip) {
-    chip.querySelector('.marca-chip-texto').textContent = config.marca.badge;
+    const textoEl = chip.querySelector('.marca-chip-texto');
+    if (textoEl) textoEl.textContent = config.marca.badge;  // ← null-check
     const logo = chip.querySelector('.marca-chip-logo');
-    if (logo) logo.src = config.marca.logoPath;
+    if (logo && config.marca.logoPath) logo.src = config.marca.logoPath;
   }
 }
 
