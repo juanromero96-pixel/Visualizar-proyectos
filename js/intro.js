@@ -5,7 +5,7 @@
  * desarrollo) y un inicializador que los conecta al DOM.
  *
  * Intro   — gestiona la pantalla introductoria de primera visita:
- *             - detecta si ya se visitó el sitio (localStorage)
+ *             - detecta si ya se visitó el sitio (sessionStorage)
  *             - muestra / oculta el overlay
  *             - ejecuta la transición de salida (la tarjeta viaja hacia el
  *               icono hamburguesa, la pantalla se desvanece)
@@ -21,7 +21,10 @@
 'use strict';
 
 // ─── Clave de persistencia ───────────────────────────────────────────────────
-
+// sessionStorage en vez de localStorage: la intro se muestra al abrir cada
+// nueva pestaña o sesión de navegador (comportamiento de exposición — cada
+// visitante recibe la bienvenida), pero no en cada recarga de la misma
+// pestaña, lo que evita interrumpir al usuario que está explorando el mural.
 const INTRO_KEY = 'unam_semana_regional_intro_vista';
 
 // ─── Módulo Intro ────────────────────────────────────────────────────────────
@@ -43,8 +46,8 @@ const Intro = (() => {
   let guiaVisible = false;
 
   // ── Persistencia ─────────────────────────────────────────────────────────
-  function yaVista()   { return !!localStorage.getItem(INTRO_KEY); }
-  function marcarVista()  { localStorage.setItem(INTRO_KEY, '1'); }
+  function yaVista()     { return !!sessionStorage.getItem(INTRO_KEY); }
+  function marcarVista() { sessionStorage.setItem(INTRO_KEY, '1'); }
 
   // ── Guía expandible ───────────────────────────────────────────────────────
   function toggleGuia() {
@@ -114,7 +117,7 @@ const Intro = (() => {
 
   // ── API pública ───────────────────────────────────────────────────────────
 
-  /** Ingresa al compendio (guarda en localStorage + ejecuta la transición) */
+  /** Ingresa al compendio (guarda en sessionStorage + ejecuta la transición) */
   function ingresar() {
     marcarVista();
     ejecutarTransicion();

@@ -141,11 +141,14 @@
 }
 
 .intro-descripcion {
-  margin: 0 0 24px;
+  margin: 0 0 12px;
   font-weight: 300;
   font-size: clamp(0.86rem, 0.3vw + 0.8rem, 0.97rem);
   line-height: 1.68;
   opacity: 0.88;
+}
+.intro-descripcion:last-of-type {
+  margin-bottom: 22px;
 }
 
 /* Guía expandible */

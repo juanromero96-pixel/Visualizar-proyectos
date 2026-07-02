@@ -113,20 +113,20 @@ function mostrarErrorCarga(error) {
 }
 
 function pintarEncabezado(config) {
-  // Actualiza el título de la pestaña del navegador.
-  // El bloque .encabezado-evento fue eliminado del HTML (información
-  // duplicada respecto al panel del cajero institucional).
-  // El span .marca-chip-texto también fue eliminado al reemplazar el SVG
-  // badge por el logotipo PNG oficial, que ya contiene el nombre institucional.
-  // Se usa guard (if textoEl) para no lanzar TypeError si el elemento
-  // no existe — la ausencia del span es intencional, no un bug.
+  // Actualiza el título de la pestaña del navegador y el texto del badge.
+  //
+  // NOTA CRÍTICA: NO actualizamos logo.src desde aquí.
+  // El HTML ya establece src="assets/logos/unam-logo-oficial.png" y tiene
+  // un onerror fallback al texto. Si sobreescribiéramos src desde JS usando
+  // config.marca.logoPath, el logo se reemplazaría por el SVG badge
+  // (que es lo que tenía logoPath hasta la corrección de config.json).
+  // Cualquier futuro cambio de logo se hace únicamente en el HTML, no aquí.
   document.title = config.evento.nombre;
   const chip = document.querySelector('.marca-chip');
   if (chip) {
     const textoEl = chip.querySelector('.marca-chip-texto');
-    if (textoEl) textoEl.textContent = config.marca.badge;  // ← null-check
-    const logo = chip.querySelector('.marca-chip-logo');
-    if (logo && config.marca.logoPath) logo.src = config.marca.logoPath;
+    if (textoEl) textoEl.textContent = config.marca.badge;
+    // ← logo.src NO se toca desde JS
   }
 }
 
@@ -803,9 +803,16 @@ const Rotacion = (() => {
 
   let intervalId    = null;
   let timeoutId     = null;
-  let poolActivo    = [];   // [{el, ua, tipoNum}] — elementos visibles no-permanentes
-  let poolEspera    = [];   // misma estructura — elementos ocultos en cola
-  let cursorEspera  = 0;    // cursor que recorre el poolEspera en orden editorial
+  let poolActivo    = [];
+  let poolEspera    = [];
+  let cursorEspera  = 0;
+  // Contador de generación: se incrementa cada vez que detener() es llamado.
+  // rotarUno() captura el valor en el momento de la llamada y lo compara
+  // dentro del setTimeout — si difiere, la sede cambió mientras el fade
+  // estaba en curso y el callback debe ser ignorado completamente.
+  // Esto previene que el setTimeout de una sede anterior afecte a los pools
+  // de la nueva sede.
+  let generacion    = 0;
 
   function calcularCapacidad() {
     return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
@@ -828,9 +835,12 @@ const Rotacion = (() => {
   /**
    * Configura el estado inicial del mural para una sede:
    *   1. Todos los permanentes (UA registros) siempre visibles.
-   *   2. Para cada UA con permanente: los 2 mejores satélites (video > testi > conceptual).
-   *   3. UNaM autoridades (gestionadas por el sistema K=2): visibles si están reveladas.
-   *   4. Todo lo demás: oculto con fade escalonado → poolEspera.
+   *   2. Para cada UA con permanente: los mejores satélites (video > testi > conceptual).
+   *   3. UNaM autoridades (gestionadas por el sistema K=2): siempre en satélites.
+   *   4. Relleno por capacidad: si la pantalla puede mostrar más elementos de los
+   *      que cubrieron los pasos 1-3, agregarlos al conjunto visible (evita que
+   *      sedes con pocos contenidos —como Eldorado— oculten elementos innecesariamente).
+   *   5. Todo lo que no entró: poolEspera, oculto con fade escalonado.
    */
   function configurar(seccion) {
     if (!seccion) return;
@@ -843,9 +853,12 @@ const Rotacion = (() => {
 
     const permanentes  = candidatos.filter((el) => el.dataset.permanente === 'true');
     const uasConNarradores = [...new Set(permanentes.map((el) => el.dataset.ua))];
+    const capacidad = calcularCapacidad();
 
     // Para cada UA con un narrador, seleccionar sus mejores satélites
-    const SLOTS_POR_UA  = Math.max(1, Math.min(3, Math.floor((calcularCapacidad() - permanentes.length) / Math.max(1, uasConNarradores.length))));
+    const SLOTS_POR_UA = Math.max(1, Math.min(3,
+      Math.floor((capacidad - permanentes.length) / Math.max(1, uasConNarradores.length))
+    ));
     const satelitesIniciales = new Set();
 
     uasConNarradores.forEach((ua) => {
@@ -855,13 +868,34 @@ const Rotacion = (() => {
       candidatosUA.slice(0, SLOTS_POR_UA).forEach((el) => satelitesIniciales.add(el));
     });
 
-    // Autoridades UNaM visibles van al pool activo (el sistema K=2 ya las gestionó)
+    // Autoridades UNaM visibles (el sistema K=2 ya eligió cuáles mostrar)
     const autUNaM = candidatos.filter(
       (el) => el.dataset.ua === 'unam' && el.dataset.permanente !== 'true'
     );
     autUNaM.forEach((el) => satelitesIniciales.add(el));
 
+    // RELLENO POR CAPACIDAD: si quedan slots libres en la pantalla
+    // (calculado como capacidad - permanentes - satélites ya elegidos),
+    // agregar los elementos sobrantes en orden editorial hasta completar.
+    // Esto es fundamental para Eldorado (sin UA narrador permanente): los
+    // testimonios de Berger y de Lima son los documentos más importantes
+    // de esa sede y no deben quedar ocultos cuando la pantalla los puede
+    // mostrar sin saturación.
     const rotativos = candidatos.filter((el) => el.dataset.permanente !== 'true');
+    const slotsLibres = Math.max(0, capacidad - permanentes.length - satelitesIniciales.size);
+    if (slotsLibres > 0) {
+      rotativos
+        .filter((el) => !satelitesIniciales.has(el))
+        .sort((a, b) => {
+          const uaA = ORDEN_UA.indexOf(a.dataset.ua);
+          const uaB = ORDEN_UA.indexOf(b.dataset.ua);
+          if (uaA !== uaB) return (uaA < 0 ? 99 : uaA) - (uaB < 0 ? 99 : uaB);
+          return tipoPrioridad(a) - tipoPrioridad(b);
+        })
+        .slice(0, slotsLibres)
+        .forEach((el) => satelitesIniciales.add(el));
+    }
+
     poolActivo = rotativos.filter((el) => satelitesIniciales.has(el));
     poolEspera = rotativos.filter((el) => !satelitesIniciales.has(el));
 
@@ -891,34 +925,57 @@ const Rotacion = (() => {
    * cursor (que avanza en orden UA → tipo) y reemplaza el satélite más
    * antiguo de esa misma UA en poolActivo. Si no hay coincidencia de UA,
    * reemplaza cualquier elemento rotativo.
+   *
+   * BUG FIX CRÍTICO (Bug 03):
+   * ─ Se captura el contador de generación al inicio. Si cuando el
+   *   setTimeout se ejecuta la generación cambió (detener fue llamado),
+   *   se ignora el callback completamente — esto evita que elementos de
+   *   la sede anterior queden atrapados en el estado oculto sin recuperarse.
+   * ─ Se usa indexOf() en vez de índices cacheados dentro del setTimeout:
+   *   si otro ciclo modifica el array entre la llamada y el callback,
+   *   los índices podrían apuntar a elementos incorrectos.
    */
   function rotarUno() {
     if (!poolActivo.length || !poolEspera.length) return;
 
-    // Elemento entrante: siguiente en la cola editorial
+    const genEsteCallback = generacion; // captura antes del setTimeout
+
     const iEntrante = cursorEspera % poolEspera.length;
     cursorEspera++;
     const entrante = poolEspera[iEntrante];
     const uaEntrante = entrante.dataset.ua;
 
-    // Elemento saliente: el satélite activo de la misma UA (si existe)
     let iSaliente = poolActivo.findIndex((el) => el.dataset.ua === uaEntrante && el.dataset.permanente !== 'true');
     if (iSaliente < 0) {
-      // No hay match de UA: reemplazar cualquier satélite rotativo
       iSaliente = poolActivo.findIndex((el) => el.dataset.ua !== 'unam' && el.dataset.permanente !== 'true');
     }
-    if (iSaliente < 0) iSaliente = 0; // fallback
+    if (iSaliente < 0) iSaliente = 0;
 
     const saliente = poolActivo[iSaliente];
     ocultarConFade(saliente);
 
     window.setTimeout(() => {
-      poolActivo.splice(iSaliente, 1);
-      poolEspera.splice(iEntrante, 1);
-      if (cursorEspera > poolEspera.length) cursorEspera = 0;
+      // Si la generación cambió, detener() fue llamado mientras el fade
+      // estaba en curso. Restaurar visibilidad del saliente que quedó oculto
+      // y no hacer ningún cambio en los pools (ya fueron vaciados).
+      if (generacion !== genEsteCallback) {
+        mostrarConFade(saliente); // por si quedó con la clase tras el detener()
+        return;
+      }
+
+      // Usar indexOf() para localizar elementos por referencia (no por índice
+      // cacheado) — previene eliminar el elemento incorrecto si los arrays
+      // cambiaron entre la llamada original y este callback.
+      const realISaliente = poolActivo.indexOf(saliente);
+      const realIEntrante = poolEspera.indexOf(entrante);
+
+      if (realISaliente >= 0) poolActivo.splice(realISaliente, 1);
+      if (realIEntrante >= 0) poolEspera.splice(realIEntrante, 1);
+
+      if (cursorEspera >= poolEspera.length) cursorEspera = 0;
+
       poolActivo.push(entrante);
       poolEspera.push(saliente);
-      // Re-ordenar el recién reingresado al final de su UA
       poolEspera.sort((a, b) => {
         const uaA = ORDEN_UA.indexOf(a.dataset.ua);
         const uaB = ORDEN_UA.indexOf(b.dataset.ua);
@@ -941,10 +998,24 @@ const Rotacion = (() => {
   }
 
   function detener() {
+    generacion++; // invalida cualquier setTimeout pendiente de rotarUno()
     if (intervalId) { window.clearInterval(intervalId); intervalId = null; }
     if (timeoutId)  { window.clearTimeout(timeoutId);   timeoutId  = null; }
-    poolActivo  = [];
-    poolEspera  = [];
+
+    // BUG FIX CRÍTICO (Bug 03):
+    // Quitar la clase de "espera" de CUALQUIER elemento que la tenga, sin
+    // importar de qué sede o pool provenga. Si detener() se llama mientras
+    // un elemento está a mitad de su fade-out (saliente con la clase ya
+    // aplicada pero el setTimeout aún pendiente), ese elemento quedaría
+    // permanentemente oculto y excluido de todos los pools sin recuperación.
+    // Al restaurar aquí, ningún elemento puede quedar atrapado en ese estado.
+    document.querySelectorAll('.elemento--rotacion-espera').forEach((el) => {
+      el.classList.remove('elemento--rotacion-espera');
+      el.style.transition = '';
+    });
+
+    poolActivo   = [];
+    poolEspera   = [];
     cursorEspera = 0;
   }
 

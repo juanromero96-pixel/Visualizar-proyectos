@@ -10,8 +10,12 @@
   "marca": {
     "badge": "UNaM extensión",
     "universidad": "Universidad Nacional de Misiones",
-    "logoPath": "assets/logos/unam-badge.svg"
+    "logoPath": "assets/logos/unam-logo-oficial.png"
   },
-  "ordenSedes": ["posadas", "obera", "eldorado"],
+  "ordenSedes": [
+    "posadas",
+    "obera",
+    "eldorado"
+  ],
   "version": 1
 }
