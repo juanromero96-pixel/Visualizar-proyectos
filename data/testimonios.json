@@ -49,7 +49,7 @@
   {
     "id": "t-catogui-posadas",
     "sede": "posadas",
-    "nombreCompleto": "Ing. Sergio Catogui",
+    "nombreCompleto": "Ing. Sergio Edgardo Katogui",
     "cargo": "Vicerrector",
     "institucion": "UNaM",
     "foto": "assets/personas/sergio-catogui.jpeg",
@@ -134,7 +134,7 @@
   {
     "id": "t-guidec-posadas",
     "sede": "posadas",
-    "nombreCompleto": "Mg. Roberto Guidec",
+    "nombreCompleto": "Mgter. Roberto Guidek",
     "cargo": "Secretario General de Posgrado",
     "institucion": "UNaM",
     "foto": "assets/personas/roberto-guidec.webp",
@@ -199,7 +199,7 @@
   {
     "id": "t-catogui-obera",
     "sede": "obera",
-    "nombreCompleto": "Ing. Sergio Catogui",
+    "nombreCompleto": "Ing. Sergio Edgardo Katogui",
     "cargo": "Vicerrector",
     "institucion": "UNaM",
     "foto": "assets/personas/sergio-catogui.jpeg",
@@ -286,7 +286,7 @@
   {
     "id": "t-guidec-obera",
     "sede": "obera",
-    "nombreCompleto": "Mg. Roberto Guidec",
+    "nombreCompleto": "Mgter. Roberto Guidek",
     "cargo": "Secretario General de Posgrado",
     "institucion": "UNaM",
     "foto": "assets/personas/roberto-guidec.webp",
@@ -308,8 +308,8 @@
   {
     "id": "t-barbaro-obera",
     "sede": "obera",
-    "nombreCompleto": "Marcos Bárbaro",
-    "cargo": "Representante de extensión",
+    "nombreCompleto": "Marco Paolo Bárbaro",
+    "cargo": "Secretario de Extensión Universitaria",
     "institucion": "Facultad de Ingeniería (FI)",
     "foto": null,
     "citas": [
@@ -458,7 +458,7 @@
   {
     "id": "t-catogui-eldorado",
     "sede": "eldorado",
-    "nombreCompleto": "Ing. Sergio Catogui",
+    "nombreCompleto": "Ing. Sergio Edgardo Katogui",
     "cargo": "Vicerrector",
     "institucion": "UNaM",
     "foto": "assets/personas/sergio-catogui.jpeg",
@@ -480,7 +480,7 @@
   {
     "id": "t-guidec-eldorado",
     "sede": "eldorado",
-    "nombreCompleto": "Mg. Roberto Guidec",
+    "nombreCompleto": "Mgter. Roberto Guidek",
     "cargo": "Secretario General de Posgrado",
     "institucion": "UNaM",
     "foto": "assets/personas/roberto-guidec.webp",
