@@ -16,19 +16,32 @@
 </head>
 <body>
 
-  <!-- ── Chip de marca con logotipo oficial UNaM ──────────────────── -->
+  <!-- ── Componente institucional único: logo + hamburguesa (puntos 1, 9) ──
+       El logotipo PNG tiene onerror que activa el span de texto si el archivo
+       falla en producción (garantiza que siempre hay un elemento institucional
+       visible). El hamburguesa está integrado dentro del chip como parte del
+       mismo componente, no como un botón independiente. ── -->
   <div class="marca-chip" aria-hidden="false">
     <img
       class="marca-chip-logo"
       src="assets/logos/unam-logo-oficial.png"
       alt="Universidad Nacional de Misiones"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'"
     />
+    <span class="marca-chip-texto">UNaM extensión</span>
+    <button
+      class="menu-inst-btn menu-inst-btn--en-chip"
+      id="menu-inst-btn"
+      aria-label="Abrir menú institucional"
+      aria-expanded="false"
+      aria-controls="cajero-institucional"
+      aria-hidden="false"
+    >
+      <span class="menu-inst-linea" aria-hidden="true"></span>
+      <span class="menu-inst-linea" aria-hidden="true"></span>
+      <span class="menu-inst-linea" aria-hidden="true"></span>
+    </button>
   </div>
-
-  <!-- ── El .encabezado-evento fue eliminado: su información vive en el
-           panel "El Compendio Digital" del modal institucional. La
-           eliminación libera el cuadrante superior derecho de la pantalla
-           para que el mural documental pueda expandirse hasta ese espacio. ── -->
 
   <!-- ── Carrusel principal (no modificar) ───────────────────────────── -->
   <main id="carrusel" class="carrusel" aria-label="Recorrido por las sedes de la Semana Regional de la Extensión">
@@ -41,26 +54,6 @@
     <ol class="ruta-nodos"><!-- app.js completa los nodos --></ol>
     <button class="ruta-flecha ruta-flecha--siguiente" aria-label="Sede siguiente">›</button>
   </nav>
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       BOTÓN HAMBURGUESA — abre el modal institucional
-       z-index: 290, siempre encima del modal (280) y del telón (270).
-       Se hace visible mediante .menu-inst-btn--visible al terminar la intro.
-       ═══════════════════════════════════════════════════════════════════ -->
-  <!-- Botón hamburguesa a la derecha del chip — con el logo horizontal
-       el chip es más ancho (~200px). El hamburguesa se separa más. -->
-  <button
-    class="menu-inst-btn"
-    id="menu-inst-btn"
-    aria-label="Abrir menú institucional"
-    aria-expanded="false"
-    aria-controls="cajero-institucional"
-    aria-hidden="true"
-  >
-    <span class="menu-inst-linea" aria-hidden="true"></span>
-    <span class="menu-inst-linea" aria-hidden="true"></span>
-    <span class="menu-inst-linea" aria-hidden="true"></span>
-  </button>
 
   <!-- ══════════════════════════════════════════════════════════════════════
        TELÓN — fondo oscuro detrás del modal

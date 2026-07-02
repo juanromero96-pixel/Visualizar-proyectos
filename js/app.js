@@ -158,6 +158,7 @@ function pintarSedes(sedesVisibles, testimonios, registros, multimedia) {
         <h2 class="sede-kicker-titulo">${escaparHTML(sede.nombre)}</h2>
         <p class="sede-kicker-subtitulo">${escaparHTML(sede.subtitulo)}</p>
         ${parrafos}
+        ${sede.orientacion ? `<p class="sede-kicker-orientacion">${escaparHTML(sede.orientacion)}</p>` : ''}
         <ul class="sede-kicker-unidades">
           ${sede.unidadesAcademicas.map((u) => `<li>${escaparHTML(u)}</li>`).join('')}
         </ul>
@@ -177,7 +178,42 @@ function pintarSedes(sedesVisibles, testimonios, registros, multimedia) {
     ].sort((a, b) => a.ordenNarrativo - b.ordenNarrativo);
 
     items.forEach((item) => escenario.appendChild(crearElemento(item)));
+
+    // Si la sede no tiene registros de UA todavía, agregar un placeholder
+    // editorial elegante que comunique que el compendio sigue en construcción
+    // (punto 16 de la auditoría). Solo aplica a Eldorado actualmente.
+    const tieneUA = items.some((i) => i._tipo === 'registro-ua');
+    if (!tieneUA) {
+      escenario.appendChild(crearPlaceholderEnConstruccion(sede));
+    }
   });
+}
+
+/**
+ * Cuando una sede aún no tiene registros de Unidad Académica incorporados
+ * (actualmente Eldorado), se muestra un placeholder editorial elegante que
+ * comunica el carácter vivo del compendio sin generar sensación de vacío.
+ * El placeholder NO usa el sistema de layout.js — se posiciona mediante CSS
+ * centrado en el escenario, fuera del flujo del motor de distribución.
+ */
+function crearPlaceholderEnConstruccion(sede) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'escenario-en-construccion';
+  wrapper.setAttribute('aria-label', 'Contenido en incorporación');
+  wrapper.innerHTML = `
+    <div class="construccion-tarjeta">
+      <div class="construccion-acento"></div>
+      <p class="construccion-overline">Compendio en construcción</p>
+      <h3 class="construccion-titulo">El relato de ${escaparHTML(sede.nombre)} continúa</h3>
+      <p class="construccion-texto">
+        ${sede.unidadesAcademicas.map(escaparHTML).join(' y ')} están incorporando
+        sus registros al compendio. Los testimonios ya disponibles y los
+        documentos completos de cada unidad académica se agregarán próximamente.
+      </p>
+      <p class="construccion-sub">Este archivo crece con cada nueva fuente verificada.</p>
+    </div>
+  `;
+  return wrapper;
 }
 
 function crearElemento(item) {
@@ -190,6 +226,12 @@ function crearElemento(item) {
   el.dataset.escala = item.escala ?? 1;
   el.dataset.rotacion = item.rotacion ?? 0;
   if (item._tipo === 'testimonio') el.dataset.testimonioId = item.id;
+
+  // UA y tipo en dataset — necesarios para el sistema de constelaciones
+  // (hover highlight por UA) y para el agrupador de la rotación editorial.
+  const uaTexto = item.unidadAcademica || item.institucion || 'general';
+  el.dataset.ua   = normalizarClave(uaTexto);
+  el.dataset.tipo = item._tipo;   // 'testimonio' | 'registro-ua' | 'registro-conceptual' | 'video'
 
   el.style.setProperty('--escala', item.escala ?? 1);
   el.style.setProperty('--rot', `${item.rotacion ?? 0}deg`);
@@ -637,6 +679,11 @@ function hashSimple(texto = '') {
  * Al pasar el mouse o el foco de teclado por una tarjeta: la trae al
  * frente, la agranda levemente y atenúa (sin ocultar) a las demás. Al
  * salir, todo vuelve solo gracias a las transiciones CSS.
+ *
+ * Extensión para constelaciones documentales: cuando se pasa sobre un
+ * registro de Unidad Académica, TAMBIÉN se destacan todos los elementos
+ * de esa misma UA y se atenúan los de las otras. Esto hace visible la
+ * agrupación de la constelación sin necesidad de líneas ni gráficos.
  */
 function iniciarInteraccionDeEnfoque(secciones) {
   secciones.forEach((seccion) => {
@@ -644,16 +691,42 @@ function iniciarInteraccionDeEnfoque(secciones) {
     if (!escenario) return;
 
     escenario.querySelectorAll('.elemento').forEach((el) => {
+      const esNarradorUA = el.dataset.tipo === 'registro-ua';
+
       const activar = () => {
         escenario.classList.add('escenario--enfocando');
         el.classList.add('elemento--enfocado');
         el.style.zIndex = 999;
+
+        // Constelación documental: solo se activa al enfocar una tarjeta
+        // de Unidad Académica (el "narrador" de esa constelación).
+        if (esNarradorUA && el.dataset.ua) {
+          const uaActiva = el.dataset.ua;
+          escenario.dataset.uaActiva = uaActiva;
+          escenario.querySelectorAll('.elemento--visible').forEach((otro) => {
+            if (otro.dataset.ua === uaActiva) {
+              otro.classList.add('elemento--ua-relacionado');
+            } else {
+              otro.classList.add('elemento--ua-alejado');
+            }
+          });
+        }
       };
+
       const desactivar = () => {
         escenario.classList.remove('escenario--enfocando');
         el.classList.remove('elemento--enfocado');
         el.style.zIndex = '';
+
+        // Limpiar la constelación activa
+        if (esNarradorUA) {
+          delete escenario.dataset.uaActiva;
+          escenario.querySelectorAll('.elemento--ua-relacionado, .elemento--ua-alejado').forEach((e) => {
+            e.classList.remove('elemento--ua-relacionado', 'elemento--ua-alejado');
+          });
+        }
       };
+
       el.addEventListener('mouseenter', activar);
       el.addEventListener('mouseleave', desactivar);
       el.addEventListener('focusin', activar);
@@ -699,150 +772,180 @@ function escaparHTML(texto = '') {
 // SISTEMA DE ROTACIÓN DOCUMENTAL
 // =============================================================================
 //
-// El mural no muestra todas las tarjetas simultáneamente. La capacidad
-// visible depende del tamaño de pantalla — en resoluciones pequeñas se
-// muestran menos elementos. Los que no caben se ocultan en una "cola de
-// espera" y se intercambian gradualmente con los visibles, generando la
-// sensación de un archivo vivo.
+// La rotación no es aleatoria: sigue un orden editorial que refleja la
+// estructura narrativa del compendio.
 //
-// Regla de permanencia: los registros de Unidad Académica (marcados con
-// data-permanente="true") NUNCA rotan — son el nodo central narrativo de
-// cada constelación documental.
+// ESTADO INICIAL: solo se muestran los elementos permanentes (UA registros)
+// más 2 satélites por UA (video > testimonio UA > conceptual > autoridad UNaM).
+// Todo lo demás se oculta con fade escalonado. Esta es la primera imagen que
+// ve el usuario: tres ejes narrativos claros (uno por UA), cada uno con sus
+// primeros documentos asociados — NO veinte tarjetas en caos.
 //
-// Rendimiento: la rotación NUNCA recalcula posiciones (no hay reflow del
-// mural). Solo cambia la opacidad de elementos que ya tienen su lugar
-// asignado. Las posiciones quedan fijas; solo cambia quién es visible.
+// ROTACIÓN: se lleva un cursor por UA. Cada ciclo, entra el siguiente elemento
+// de la UA cuyo satélite lleva más tiempo sin mostrarse, reemplazando al
+// elemento de ESA MISMA UA que lleva más tiempo visible. Esto mantiene la
+// identidad de la constelación incluso mientras el contenido cambia.
+//
+// RENDIMIENTO: nunca se recalculan posiciones. Solo se cambia opacity vía
+// clase + inline transition. Zero reflow, zero layout thrashing.
 
 const Rotacion = (() => {
-  const INTERVALO_MS   = 9000;  // tiempo entre rotaciones
-  const FADE_SALIDA_MS = 580;   // duración del fade-out
-  const FADE_ENTRADA_MS = 700;  // duración del fade-in
-  const INICIO_DELAY_MS = 3000; // espera antes del primer ciclo
+  const INTERVALO_MS    = 10000;  // tiempo entre rotaciones (10s)
+  const FADE_SALIDA_MS  = 580;
+  const FADE_ENTRADA_MS = 700;
+  const INICIO_DELAY_MS = 2500;   // espera a que el reveal termine
 
-  let intervalId  = null;
-  let timeoutId   = null;
-  let poolActivo  = []; // elementos actualmente visibles (no permanentes)
-  let poolEspera  = []; // elementos ocultos esperando turno
+  // Prioridad de tipo para el estado inicial (menor número = se muestra antes)
+  const PRIORIDAD_TIPO = { 'video': 0, 'testimonio': 1, 'registro-conceptual': 2 };
 
-  /**
-   * Cuántos elementos pueden mostrarse cómodamente en pantalla.
-   * Fórmula empírica: área / 120000 px² por elemento.
-   * Ej: 1920×1080 ≈ 17 · 1366×768 ≈ 9 · 1280×720 ≈ 8 · UltraWide ≈ 23.
-   * Se clampea entre 8 (mínimo legible) y 22 (máximo documental).
-   */
+  // UA en orden narrativo para la rotación round-robin
+  const ORDEN_UA = ['fhycs','fceqyn','fce','fayd','fi','fcf','escuelaagrotecnicaeldorado','unam','general'];
+
+  let intervalId    = null;
+  let timeoutId     = null;
+  let poolActivo    = [];   // [{el, ua, tipoNum}] — elementos visibles no-permanentes
+  let poolEspera    = [];   // misma estructura — elementos ocultos en cola
+  let cursorEspera  = 0;    // cursor que recorre el poolEspera en orden editorial
+
   function calcularCapacidad() {
     return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
   }
 
-  /**
-   * Oculta un elemento con fade suave.
-   * Guarda la transición anterior para no interferir con otras animaciones.
-   */
+  function tipoPrioridad(el) {
+    return PRIORIDAD_TIPO[el.dataset.tipo] ?? 99;
+  }
+
   function ocultarConFade(el) {
     el.style.transition = `opacity ${FADE_SALIDA_MS}ms ease`;
     el.classList.add('elemento--rotacion-espera');
   }
 
-  /**
-   * Muestra un elemento desde el estado oculto con fade suave.
-   */
   function mostrarConFade(el) {
-    // Eliminar "espera" para que la opacidad vuelva a su valor original
     el.style.transition = `opacity ${FADE_ENTRADA_MS}ms ease`;
     el.classList.remove('elemento--rotacion-espera');
   }
 
   /**
-   * Configura los pools de rotación para una sede.
-   * Llama a esto DESPUÉS del reveal inicial, no antes.
+   * Configura el estado inicial del mural para una sede:
+   *   1. Todos los permanentes (UA registros) siempre visibles.
+   *   2. Para cada UA con permanente: los 2 mejores satélites (video > testi > conceptual).
+   *   3. UNaM autoridades (gestionadas por el sistema K=2): visibles si están reveladas.
+   *   4. Todo lo demás: oculto con fade escalonado → poolEspera.
    */
   function configurar(seccion) {
     if (!seccion) return;
     const escenario = seccion.querySelector('.escenario');
     if (!escenario) return;
 
-    // Solo trabajar con elementos visibles y no ocultos por el sistema
-    // de autoridades (que maneja su propia rotación independiente)
     const candidatos = Array.from(
       escenario.querySelectorAll('.elemento--visible:not(.elemento--oculto-autoridad)')
     );
 
-    const permanentes = candidatos.filter((el) => el.dataset.permanente === 'true');
+    const permanentes  = candidatos.filter((el) => el.dataset.permanente === 'true');
+    const uasConNarradores = [...new Set(permanentes.map((el) => el.dataset.ua))];
+
+    // Para cada UA con un narrador, seleccionar sus mejores satélites
+    const SLOTS_POR_UA  = Math.max(1, Math.min(3, Math.floor((calcularCapacidad() - permanentes.length) / Math.max(1, uasConNarradores.length))));
+    const satelitesIniciales = new Set();
+
+    uasConNarradores.forEach((ua) => {
+      const candidatosUA = candidatos
+        .filter((el) => el.dataset.ua === ua && el.dataset.permanente !== 'true')
+        .sort((a, b) => tipoPrioridad(a) - tipoPrioridad(b));
+      candidatosUA.slice(0, SLOTS_POR_UA).forEach((el) => satelitesIniciales.add(el));
+    });
+
+    // Autoridades UNaM visibles van al pool activo (el sistema K=2 ya las gestionó)
+    const autUNaM = candidatos.filter(
+      (el) => el.dataset.ua === 'unam' && el.dataset.permanente !== 'true'
+    );
+    autUNaM.forEach((el) => satelitesIniciales.add(el));
+
     const rotativos = candidatos.filter((el) => el.dataset.permanente !== 'true');
+    poolActivo = rotativos.filter((el) => satelitesIniciales.has(el));
+    poolEspera = rotativos.filter((el) => !satelitesIniciales.has(el));
 
-    const capacidad = calcularCapacidad();
-    const slotsDisponibles = Math.max(0, capacidad - permanentes.length);
+    // Ordenar poolEspera en orden editorial (por UA, luego por tipo)
+    poolEspera.sort((a, b) => {
+      const uaA = ORDEN_UA.indexOf(a.dataset.ua);
+      const uaB = ORDEN_UA.indexOf(b.dataset.ua);
+      if (uaA !== uaB) return (uaA < 0 ? 99 : uaA) - (uaB < 0 ? 99 : uaB);
+      return tipoPrioridad(a) - tipoPrioridad(b);
+    });
+    cursorEspera = 0;
 
-    // Barajar para variedad en cada visita
-    mezclarFisherYates([...rotativos]); // mezclarFisherYates ya existe en app.js
-
-    poolActivo = rotativos.slice(0, slotsDisponibles);
-    poolEspera = rotativos.slice(slotsDisponibles);
-
-    // Asegurarse de que todos los activos estén visibles
+    // Mostrar los seleccionados (sin transición — ya deberían estar visibles)
     poolActivo.forEach((el) => {
       el.style.transition = '';
       el.classList.remove('elemento--rotacion-espera');
     });
 
-    // Ocultar gradualmente los que están en espera (escalonado)
+    // Ocultar los demás con fade escalonado
     poolEspera.forEach((el, i) => {
-      window.setTimeout(() => ocultarConFade(el), i * 120 + 400);
+      window.setTimeout(() => ocultarConFade(el), i * 80 + 300);
     });
   }
 
   /**
-   * Intercambia un elemento visible por uno de la cola de espera.
+   * Rotación editorial: toma el siguiente elemento del poolEspera según el
+   * cursor (que avanza en orden UA → tipo) y reemplaza el satélite más
+   * antiguo de esa misma UA en poolActivo. Si no hay coincidencia de UA,
+   * reemplaza cualquier elemento rotativo.
    */
   function rotarUno() {
     if (!poolActivo.length || !poolEspera.length) return;
 
-    // Elegir el saliente y el entrante al azar
-    const iSaliente = Math.floor(Math.random() * poolActivo.length);
-    const iEntrante = Math.floor(Math.random() * poolEspera.length);
-    const saliente  = poolActivo[iSaliente];
-    const entrante  = poolEspera[iEntrante];
+    // Elemento entrante: siguiente en la cola editorial
+    const iEntrante = cursorEspera % poolEspera.length;
+    cursorEspera++;
+    const entrante = poolEspera[iEntrante];
+    const uaEntrante = entrante.dataset.ua;
 
-    // Fade-out del saliente
+    // Elemento saliente: el satélite activo de la misma UA (si existe)
+    let iSaliente = poolActivo.findIndex((el) => el.dataset.ua === uaEntrante && el.dataset.permanente !== 'true');
+    if (iSaliente < 0) {
+      // No hay match de UA: reemplazar cualquier satélite rotativo
+      iSaliente = poolActivo.findIndex((el) => el.dataset.ua !== 'unam' && el.dataset.permanente !== 'true');
+    }
+    if (iSaliente < 0) iSaliente = 0; // fallback
+
+    const saliente = poolActivo[iSaliente];
     ocultarConFade(saliente);
 
-    // Después del fade-out, traer al entrante
     window.setTimeout(() => {
-      // Actualizar pools
       poolActivo.splice(iSaliente, 1);
       poolEspera.splice(iEntrante, 1);
+      if (cursorEspera > poolEspera.length) cursorEspera = 0;
       poolActivo.push(entrante);
       poolEspera.push(saliente);
-
-      // Fade-in del entrante
+      // Re-ordenar el recién reingresado al final de su UA
+      poolEspera.sort((a, b) => {
+        const uaA = ORDEN_UA.indexOf(a.dataset.ua);
+        const uaB = ORDEN_UA.indexOf(b.dataset.ua);
+        if (uaA !== uaB) return (uaA < 0 ? 99 : uaA) - (uaB < 0 ? 99 : uaB);
+        return tipoPrioridad(a) - tipoPrioridad(b);
+      });
       mostrarConFade(entrante);
     }, FADE_SALIDA_MS + 80);
   }
 
-  /**
-   * Inicia la rotación para una sede específica.
-   * Detiene cualquier rotación anterior antes de comenzar.
-   */
   function iniciar(seccion) {
-    detener(); // cancelar ciclo anterior si existe
+    detener();
     if (!seccion) return;
-
-    // Esperar a que el reveal termine antes de organizar el pool
     timeoutId = window.setTimeout(() => {
       configurar(seccion);
-      // Iniciar el ciclo solo si hay elementos en espera
       if (poolEspera.length > 0) {
         intervalId = window.setInterval(rotarUno, INTERVALO_MS);
       }
     }, INICIO_DELAY_MS);
   }
 
-  /** Detiene la rotación y cancela timers. */
   function detener() {
     if (intervalId) { window.clearInterval(intervalId); intervalId = null; }
     if (timeoutId)  { window.clearTimeout(timeoutId);   timeoutId  = null; }
-    poolActivo = [];
-    poolEspera = [];
+    poolActivo  = [];
+    poolEspera  = [];
+    cursorEspera = 0;
   }
 
   return { iniciar, detener };

@@ -251,8 +251,9 @@
 .menu-inst-btn {
   position: fixed;
   top: calc(var(--modulo) * 1.2);
-  /* El chip con el logo horizontal oficial es más ancho que el badge SVG
-     anterior (~200px vs ~130px). Se ajusta la separación en consecuencia. */
+  /* El botón hamburguesa ESTÁ INTEGRADO en el chip (.menu-inst-btn--en-chip).
+     Las reglas de posición absoluta solo aplican si por alguna razón el
+     botón no tiene la clase --en-chip (como fallback legacy). */
   left: calc(var(--modulo) * 1.2 + 210px);
   z-index: 290;
 
@@ -284,6 +285,12 @@
   opacity: 1;
   pointer-events: auto;
   transform: scale(1);
+}
+/* El hamburguesa en-chip siempre visible (es parte del chip) */
+.menu-inst-btn--en-chip {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
 }
 
 .menu-inst-btn:hover,

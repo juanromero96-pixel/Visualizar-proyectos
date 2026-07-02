@@ -32,6 +32,11 @@ const Lector = (() => {
     superposicion.innerHTML = `
       <div class="lector-tarjeta" role="dialog" aria-modal="true" aria-label="Contenido completo">
         <button type="button" class="lector-cerrar" aria-label="Cerrar">✕</button>
+        <div class="lector-nav-ua" aria-label="Documentos relacionados" hidden>
+          <button type="button" class="lector-nav-ant" aria-label="Documento anterior">←</button>
+          <span class="lector-nav-ua-etiqueta"></span>
+          <button type="button" class="lector-nav-sig" aria-label="Documento siguiente">→</button>
+        </div>
         <div class="lector-contenido"></div>
       </div>
     `;
@@ -40,23 +45,96 @@ const Lector = (() => {
     tarjeta = superposicion.querySelector('.lector-tarjeta');
     contenido = superposicion.querySelector('.lector-contenido');
     botonCerrar = superposicion.querySelector('.lector-cerrar');
+    const navUA = superposicion.querySelector('.lector-nav-ua');
+    const btnAnt = superposicion.querySelector('.lector-nav-ant');
+    const btnSig = superposicion.querySelector('.lector-nav-sig');
 
     botonCerrar.addEventListener('click', cerrar);
     superposicion.addEventListener('click', (evento) => {
-      if (evento.target === superposicion) cerrar(); // clic en el fondo, no en la tarjeta
+      if (evento.target === superposicion) cerrar();
     });
     document.addEventListener('keydown', (evento) => {
       if (!estaAbierto()) return;
       if (evento.key === 'Escape') {
         cerrar();
       } else if (evento.key === 'Tab') {
-        // El único elemento interactivo del modal es el botón de cerrar:
-        // atraparlo ahí es simple y evita que Tab se escape al fondo
-        // mientras el lector está abierto.
         evento.preventDefault();
         botonCerrar.focus();
+      } else if (evento.key === 'ArrowRight') {
+        navegarUA(1);
+      } else if (evento.key === 'ArrowLeft') {
+        navegarUA(-1);
       }
     });
+
+    btnAnt.addEventListener('click', () => navegarUA(-1));
+    btnSig.addEventListener('click', () => navegarUA(1));
+  }
+
+  // Contexto de navegación intra-UA
+  let grupoUA = [];   // [{ el, registro|null }] — todos los docs del mismo UA visible
+  let posUA   = 0;    // posición actual en el grupo
+
+  /**
+   * Construye el grupo de navegación a partir del elemento actualmente abierto.
+   * Incluye todos los elementos visibles y no-ocultos del mismo UA en el
+   * escenario, ordenados por ordenNarrativo (dato en el DOM como data-orden).
+   */
+  function construirGrupoUA(elementoOrigen, registroActual) {
+    const ua = elementoOrigen.dataset.ua;
+    const escenario = elementoOrigen.closest('.escenario');
+    if (!ua || ua === 'unam' || !escenario) {
+      // Las autoridades UNaM no tienen grupo propio (aparecen en todas las sedes)
+      grupoUA = [{ el: elementoOrigen, registro: registroActual }];
+      posUA = 0;
+      return;
+    }
+    const hermanos = Array.from(
+      escenario.querySelectorAll(`.elemento[data-ua="${ua}"]:not(.elemento--oculto-autoridad):not(.elemento--rotacion-espera)`)
+    ).sort((a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0));
+
+    grupoUA = hermanos.map((el) => ({
+      el,
+      registro: el === elementoOrigen ? registroActual : null, // se resuelve al navegar
+    }));
+    posUA = grupoUA.findIndex((e) => e.el === elementoOrigen);
+    if (posUA < 0) posUA = 0;
+  }
+
+  function actualizarNavUA() {
+    const navUA = superposicion.querySelector('.lector-nav-ua');
+    const etiqueta = superposicion.querySelector('.lector-nav-ua-etiqueta');
+    if (grupoUA.length < 2) { navUA.hidden = true; return; }
+    navUA.hidden = false;
+    const ua = grupoUA[posUA]?.el?.dataset?.ua?.toUpperCase() || '';
+    etiqueta.textContent = `${ua}  ·  ${posUA + 1} / ${grupoUA.length}`;
+  }
+
+  function navegarUA(delta) {
+    if (grupoUA.length < 2) return;
+    posUA = ((posUA + delta) + grupoUA.length) % grupoUA.length;
+    const { el } = grupoUA[posUA];
+    // Abrir sin reconstruir el grupo
+    const iframe = superposicion.querySelector('.lector-video-iframe');
+    if (iframe) iframe.src = '';
+    contenido.innerHTML = '';
+    if (!el.dataset.tipo || el.dataset.tipo === 'testimonio') {
+      contenido.appendChild(construirContenidoTestimonio(el));
+    } else {
+      // Para no-testimonios necesitamos los datos del item; los leemos del DOM
+      // lo más que podemos (título desde el DOM si falta el registro guardado).
+      const reg = grupoUA[posUA].registro;
+      if (reg) {
+        if (reg._tipo === 'registro-ua') contenido.appendChild(construirContenidoRegistroUA(reg, el));
+        else if (reg._tipo === 'registro-conceptual') contenido.appendChild(construirContenidoRegistroConceptual(reg, el));
+        else if (reg._tipo === 'video' || reg.tipo === 'video') contenido.appendChild(construirContenidoVideo(reg, el));
+      } else {
+        // Fallback: mostrar título e invitar a expandir desde el mural
+        contenido.innerHTML = `<p style="padding:24px;opacity:0.7">Regresá al mural para expandir este documento.</p>`;
+      }
+    }
+    actualizarNavUA();
+    botonCerrar.focus();
   }
 
   function estaAbierto() {
@@ -79,10 +157,16 @@ const Lector = (() => {
     } else if (registro._tipo === 'registro-conceptual') {
       contenido.appendChild(construirContenidoRegistroConceptual(registro, elementoOrigen));
     } else if (registro._tipo === 'video' || registro.tipo === 'video') {
-      // Los videos de multimedia.json llegan con _tipo derivado de tipo.
-      // El lector los renderiza como un documento audiovisual: reproductor
-      // embebido en la parte superior, metadatos institucionales debajo.
       contenido.appendChild(construirContenidoVideo(registro, elementoOrigen));
+    }
+
+    // Construir grupo de navegación por UA para ← →
+    construirGrupoUA(elementoOrigen, registro);
+    actualizarNavUA();
+
+    // Guardar el registro en el grupo para que navegarUA pueda usarlo
+    if (registro && posUA >= 0 && posUA < grupoUA.length) {
+      grupoUA[posUA].registro = registro;
     }
 
     elementoOrigen.setAttribute('aria-expanded', 'true');

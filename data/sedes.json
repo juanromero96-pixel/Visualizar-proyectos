@@ -12,7 +12,8 @@
     ],
     "imagenFondo": "assets/backgrounds/posadas.jpg",
     "composicion": "convergente",
-    "visible": true
+    "visible": true,
+    "orientacion": "Explorá las experiencias de FHyCS, FCE y FCEQyN, y los proyectos que generaron en el territorio."
   },
   {
     "id": "obera",
@@ -26,7 +27,8 @@
     ],
     "imagenFondo": "assets/backgrounds/obera.jpg",
     "composicion": "diagonal",
-    "visible": true
+    "visible": true,
+    "orientacion": "Explorá las experiencias de FAyD y FI, y cómo arte, diseño e ingeniería trabajan juntos en el territorio."
   },
   {
     "id": "eldorado",
@@ -41,8 +43,15 @@
     "imagenFondo": "assets/backgrounds/eldorado.jpg",
     "composicion": "vertical",
     "zonasProtegidas": [
-      { "x": 0, "y": 0, "ancho": 100, "alto": 11, "motivo": "texto 'Ciudad de Eldorado' del arco — solo la franja del texto, no todo el cielo arriba" }
+      {
+        "x": 0,
+        "y": 0,
+        "ancho": 100,
+        "alto": 11,
+        "motivo": "texto 'Ciudad de Eldorado' del arco — solo la franja del texto, no todo el cielo arriba"
+      }
     ],
-    "visible": true
+    "visible": true,
+    "orientacion": "FCF y la Escuela Agrotécnica Eldorado integran el archivo. El compendio continúa incorporando sus registros."
   }
 ]
