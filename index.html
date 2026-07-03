@@ -13,6 +13,10 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/animations.css" />
   <link rel="stylesheet" href="css/intro.css" />
+  <!-- mobile.css: reinterpretación de la experiencia para ≤820px.
+       No modifica nada en desktop — solo sobreescribe bajo media query
+       y clases específicas (.es-mobile, .escenario--mobile, etc.) -->
+  <link rel="stylesheet" href="css/mobile.css" />
 </head>
 <body>
 
@@ -392,6 +396,9 @@
   <script src="js/layout.js"></script>
   <script src="js/lector.js"></script>
   <script src="js/intro.js"></script>
+  <!-- mobile.js carga antes de app.js para que window.Mobile esté disponible
+       en el momento en que iniciarSitio() comienza a ejecutarse -->
+  <script src="js/mobile.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

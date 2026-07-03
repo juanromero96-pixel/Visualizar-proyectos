@@ -29,7 +29,25 @@
   const contenedor = document.getElementById('carrusel');
   const secciones = Array.from(contenedor.querySelectorAll('.sede'));
 
-  const recalcular = () => secciones.forEach((s) => Distribuidor.distribuir(s));
+  // En mobile (≤820px) el motor de distribución espacial (Distribuidor.distribuir)
+  // no corre — el layout se gestiona mediante CSS flex + clases `.ua-capitulo`.
+  // En desktop, recalcular() hace exactamente lo mismo que antes.
+  const recalcular = () => {
+    if (window.esMobile && window.esMobile()) {
+      // Mobile: reagrupar por UA y activar el layout vertical de capítulos
+      secciones.forEach((s) => {
+        // Si el escenario ya fue reorganizado como mobile, no rehacerlo
+        const esc = s.querySelector('.escenario');
+        if (esc && !esc.classList.contains('escenario--mobile')) {
+          window.Mobile?.reorganizarSede(s);
+          window.Mobile?.actualizarHeader(s);
+        }
+      });
+    } else {
+      // Desktop: layout flotante con motor de distribución espacial
+      secciones.forEach((s) => Distribuidor.distribuir(s));
+    }
+  };
 
   // Antes de la primera distribución: se decide qué autoridades de alcance
   // UNaM se muestran en cada sede (nunca las cinco a la vez — ver
@@ -55,9 +73,13 @@
   // vez más cuando eso pasa, además de en cada cambio de tamaño de ventana.
   if (document.fonts?.ready) document.fonts.ready.then(() => {
     recalcular();
-    // Una vez que las fuentes cargaron y el layout quedó calculado con
-    // el tamaño tipográfico real, arrancar la rotación para la sede inicial.
-    if (secciones[0]) Rotacion.iniciar(secciones[0]);
+    if (window.esMobile && window.esMobile()) {
+      // Mobile: no rotation; swipe navigation between sedes
+      window.Mobile?.inicializarSwipe(contenedor, carrusel);
+    } else {
+      // Desktop: start editorial rotation for the initial sede
+      if (secciones[0]) Rotacion.iniciar(secciones[0]);
+    }
   });
 
   let pendienteResize = null;
@@ -68,7 +90,8 @@
 
   iniciarInteraccionDeEnfoque(secciones);
   Lector.iniciar();
-
+  // Inicializar la experiencia móvil (no hace nada en desktop)
+  window.Mobile?.inicializar();
   Secuenciador.iniciar();
 
   const carrusel = new Carrusel({
@@ -76,17 +99,24 @@
     secciones,
     onCambio: (indice, seccionNueva) => {
       actualizarRuta(indice);
-      // Se vuelve a sortear el conjunto de autoridades visibles ANTES de
-      // intentar revelar — si es la primera vez que se entra a esta sede,
-      // el Secuenciador necesita encontrar ya decidido quién se muestra;
-      // si ya se había revelado antes, esta misma llamada se encarga de
-      // mostrar/ocultar y reacomodar el resto (ver más abajo).
       aplicarSubconjuntoDeAutoridades(seccionNueva, testimonios);
-      Secuenciador.entrar(seccionNueva); // si ya se reveló antes, esto no hace nada
-      refrescarCitas(seccionNueva, testimonios); // esto sí corre siempre, aunque ya se haya visitado
-      // Reiniciar la rotación para la nueva sede — cancela el timer de la
-      // sede anterior y comienza el ciclo de la nueva con un delay para
-      // esperar a que el reveal termine.
+
+      // En mobile: reorganizar en capítulos UA si aún no se hizo para esta sede
+      if (window.esMobile && window.esMobile()) {
+        const esc = seccionNueva.querySelector('.escenario');
+        if (esc && !esc.classList.contains('escenario--mobile')) {
+          window.Mobile?.reorganizarSede(seccionNueva);
+          window.Mobile?.actualizarHeader(seccionNueva);
+        }
+        Secuenciador.entrar(seccionNueva);
+        refrescarCitas(seccionNueva, testimonios);
+        // Rotación desactivada en móvil — la lectura siempre tiene prioridad
+        return;
+      }
+
+      // Desktop: flujo normal
+      Secuenciador.entrar(seccionNueva);
+      refrescarCitas(seccionNueva, testimonios);
       Rotacion.iniciar(seccionNueva);
     },
   });

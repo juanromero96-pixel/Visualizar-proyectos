@@ -148,8 +148,17 @@ const Lector = (() => {
    */
   function abrir(elementoOrigen, registro = null) {
     elementoActivador = elementoOrigen;
-    contenido.innerHTML = '';
 
+    // En mobile: usar el bottom sheet en vez del modal centrado de desktop
+    if (window.esMobile && window.esMobile()) {
+      abrirEnMobile(elementoOrigen, registro);
+      return;
+    }
+    abrirEnDesktop(elementoOrigen, registro);
+  }
+
+  function abrirEnDesktop(elementoOrigen, registro) {
+    contenido.innerHTML = '';
     if (!registro) {
       contenido.appendChild(construirContenidoTestimonio(elementoOrigen));
     } else if (registro._tipo === 'registro-ua') {
@@ -159,20 +168,84 @@ const Lector = (() => {
     } else if (registro._tipo === 'video' || registro.tipo === 'video') {
       contenido.appendChild(construirContenidoVideo(registro, elementoOrigen));
     }
-
-    // Construir grupo de navegación por UA para ← →
     construirGrupoUA(elementoOrigen, registro);
     actualizarNavUA();
-
-    // Guardar el registro en el grupo para que navegarUA pueda usarlo
     if (registro && posUA >= 0 && posUA < grupoUA.length) {
       grupoUA[posUA].registro = registro;
     }
-
     elementoOrigen.setAttribute('aria-expanded', 'true');
     document.body.classList.add('lector-bloqueando-scroll');
     superposicion.classList.add('lector-superposicion--abierta');
     window.setTimeout(() => botonCerrar.focus(), 60);
+  }
+
+  function abrirEnMobile(elementoOrigen, registro) {
+    const sheet = window.LectorSheet;
+    if (!sheet) { abrirEnDesktop(elementoOrigen, registro); return; }
+
+    construirGrupoUA(elementoOrigen, registro);
+    if (registro && posUA >= 0 && posUA < grupoUA.length) {
+      grupoUA[posUA].registro = registro;
+    }
+
+    const nodo = construirNodoParaTipo(elementoOrigen, registro);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'lector-mobile-wrapper';
+
+    if (grupoUA.length > 1) {
+      const navEl = document.createElement('div');
+      navEl.className = 'lector-nav-ua';
+      const ua = (elementoOrigen.dataset.ua || '').toUpperCase();
+      navEl.innerHTML = `
+        <button class="lector-nav-ant" aria-label="Documento anterior">←</button>
+        <span class="lector-nav-ua-etiqueta">\${ua} · \${posUA + 1}/\${grupoUA.length}</span>
+        <button class="lector-nav-sig" aria-label="Documento siguiente">→</button>
+      `;
+      navEl.querySelector('.lector-nav-ant').addEventListener('click', () => navegarUAMobile(-1, sheet));
+      navEl.querySelector('.lector-nav-sig').addEventListener('click', () => navegarUAMobile(1, sheet));
+      wrapper.appendChild(navEl);
+    }
+    if (nodo) wrapper.appendChild(nodo);
+
+    elementoOrigen.setAttribute('aria-expanded', 'true');
+    sheet.abrir(wrapper);
+
+    const cerrarOriginal = sheet.cerrar.bind(sheet);
+    sheet.cerrar = () => {
+      const iframe = sheet.body.querySelector('.lector-video-iframe');
+      if (iframe) iframe.src = '';
+      elementoActivador?.setAttribute('aria-expanded', 'false');
+      elementoActivador = null;
+      cerrarOriginal();
+      sheet.cerrar = cerrarOriginal;
+    };
+  }
+
+  function construirNodoParaTipo(elementoOrigen, registro) {
+    if (!registro) return construirContenidoTestimonio(elementoOrigen);
+    if (registro._tipo === 'registro-ua') return construirContenidoRegistroUA(registro, elementoOrigen);
+    if (registro._tipo === 'registro-conceptual') return construirContenidoRegistroConceptual(registro, elementoOrigen);
+    if (registro._tipo === 'video' || registro.tipo === 'video') return construirContenidoVideo(registro, elementoOrigen);
+    return null;
+  }
+
+  function navegarUAMobile(delta, sheet) {
+    if (grupoUA.length < 2) return;
+    posUA = ((posUA + delta) + grupoUA.length) % grupoUA.length;
+    const { el, registro: reg } = grupoUA[posUA];
+    const iframe = sheet.body.querySelector('.lector-video-iframe');
+    if (iframe) iframe.src = '';
+    const nodo = construirNodoParaTipo(el, reg);
+    const navEl = sheet.body.querySelector('.lector-nav-ua');
+    const ua = (el.dataset.ua || '').toUpperCase();
+    if (navEl) navEl.querySelector('.lector-nav-ua-etiqueta').textContent = `\${ua} · \${posUA + 1}/\${grupoUA.length}`;
+    const oldNode = sheet.body.querySelector('.lector-mobile-wrapper > *:not(.lector-nav-ua)');
+    if (oldNode) oldNode.remove();
+    if (nodo) {
+      const parent = navEl?.parentElement || sheet.body;
+      parent.appendChild(nodo);
+    }
+    sheet.body.scrollTop = 0;
   }
 
   function construirContenidoTestimonio(elementoOrigen) {
