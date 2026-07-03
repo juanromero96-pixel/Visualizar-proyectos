@@ -1,102 +1,36 @@
 /* =============================================================================
-   mobile.css — Reinterpretación de la experiencia para dispositivos móviles
+   mobile.css — Motor único adaptativo (Arquitectura B)
    ─────────────────────────────────────────────────────────────────────────────
-   Este archivo SOLO aplica en ≤820px. La versión desktop (styles.css,
-   intro.css, animations.css) no se modifica. Toda la reinterpretación
-   convive con el desktop mediante selectores de media query y clases
-   específicas (.es-mobile, .escenario--mobile, .ua-capitulo, etc.).
+   Principio: el mismo DOM, el mismo motor JS (layout.js), adaptado por CSS.
 
-   Principio editorial: en móvil la experiencia pasa de "mural espacial libre"
-   a "sucesión documental de capítulos por Unidad Académica". El concepto
-   museográfico se preserva: las UA siguen siendo el eje narrativo,
-   simplemente se expresa de forma secuencial en vez de espacial.
+   layout.js ya tiene su propio guard en L60:
+     if (!window.matchMedia('(min-width: 821px)').matches) return;
+   → En mobile, el motor de escritorio sale solo SIN tocar el DOM.
+   → Los elementos quedan con sus CSS custom properties (--x, --y, --rot).
+   → Este archivo sobreescribe las reglas CSS que consumen esas propiedades,
+     convirtiendo el "lienzo posicional" en una "columna documental".
+
+   Dos capas complementarias:
+     A. @media (max-width: 820px) — para browsers que reportan el viewport
+        correctamente (la mayoría).
+     B. .es-mobile selector — fallback para browsers que usan layout viewport
+        de 980px aunque el dispositivo tenga 393px (Chromium/Brave con
+        html{overflow:hidden} en versiones anteriores a nuestro fix).
    ========================================================================== */
 
 /* =============================================================================
-   A. RESET MÓVIL DEL MURAL EXISTENTE
-   Cancela el posicionamiento absoluto del desktop para los elementos
-   dentro de un .escenario--mobile.
+   A. MEDIA QUERY — reset del posicionamiento absoluto
    ========================================================================== */
-
-
-/* =============================================================================
-   CAPA 2 — SELECTORES .es-mobile (complemento de la media query)
-   ─────────────────────────────────────────────────────────────────────────────
-   En algunos browsers móviles (Brave, Chrome viejo en Android) con
-   html{overflow:hidden}, el layout viewport puede reportarse como 980px
-   incluso cuando el device-width es 393px, haciendo que @media(max-width:820px)
-   nunca matchee. Esta capa de selectores usa la clase .es-mobile que mobile.js
-   agrega INMEDIATAMENTE al <html> antes de que app.js renderice el DOM.
-   Así, incluso si la media query falla, los estilos críticos se aplican.
-   ========================================================================== */
-
-/* Mural: forzar flujo normal (no absoluto) */
-.es-mobile .escenario--mobile .elemento {
-  position: relative !important;
-  left: auto !important;
-  top: auto !important;
-  z-index: auto !important;
-  transform: none !important;
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-/* Kicker: ocultar siempre en mobile */
-.es-mobile .sede-kicker {
-  display: none !important;
-}
-
-/* Backdrop-filter: eliminar en mobile para performance */
-.es-mobile .elemento-interior,
-.es-mobile .elemento--testimonio .elemento-interior,
-.es-mobile .elemento--registro-ua .elemento-interior,
-.es-mobile .elemento--registro-conceptual .elemento-interior,
-.es-mobile .elemento--video .elemento-interior {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Cajero desktop: ocultar en mobile */
-.es-mobile .cajero,
-.es-mobile .cajero-telon {
-  display: none !important;
-}
-
-/* Ken Burns: desactivar en mobile */
-.es-mobile .intro-fondo-imagen,
-.es-mobile .sede-bg {
-  animation: none !important;
-}
-
-/* Rotación de tarjetas: eliminar en mobile */
-.es-mobile .escenario--mobile .elemento--visible {
-  transform: none !important;
-}
-
-/* Fade de entrada en mobile: simple */
-.es-mobile .escenario--mobile .elemento {
-  opacity: 0;
-  transition: opacity 360ms ease !important;
-}
-.es-mobile .escenario--mobile .elemento--visible {
-  opacity: 1 !important;
-}
 
 @media (max-width: 820px) {
 
-  /* ── Estructura base ──────────────────────────────────────────────────── */
-  html, body {
-    overflow-x: hidden;
-  }
-
-  /* Carrusel: scroll horizontal snapeado entre sedes */
+  /* ── Carrusel de sedes: horizontal con snap ────────────────────────────── */
   .carrusel {
     flex-direction: row !important;
     scroll-snap-type: x mandatory !important;
     overflow-x: scroll;
     overflow-y: hidden;
     height: 100dvh;
-    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -110,443 +44,275 @@
     height: 100dvh;
   }
 
-  /* Foto de fondo: menos blurred en móvil, sin Ken Burns */
-  .sede-bg {
-    filter: none;
-    /* Ken Burns desactivado en móvil — se reemplaza por imagen estática */
-    animation: none !important;
-  }
-
-  /* El velo cubre más: hace el mural legible sin blur en las tarjetas */
+  /* ── Foto de fondo: sin Ken Burns (GPU) ──────────────────────────────── */
+  .sede-bg   { animation: none !important; filter: none; }
   .sede-velo {
     background: linear-gradient(
       180deg,
-      rgba(10, 14, 16, 0.75) 0%,
-      rgba(10, 14, 16, 0.88) 35%,
-      rgba(10, 14, 16, 0.95) 100%
+      rgba(10,14,16,0.75) 0%,
+      rgba(10,14,16,0.88) 35%,
+      rgba(10,14,16,0.95) 100%
     ) !important;
   }
 
-  /* ── Ocultar el kicker lateral ──────────────────────────────────────── */
-  .sede-kicker {
-    display: none !important;
-  }
+  /* ── Kicker lateral: oculto en mobile ─────────────────────────────────── */
+  .sede-kicker { display: none !important; }
 
-  /* ── Escenario mobile: flujo vertical ──────────────────────────────── */
-  .escenario--mobile {
+  /* ── NÚCLEO: El escenario pasa de "lienzo posicional" a "columna documental"
+     Un flex-column ordena los elementos por UA mediante la propiedad `order`
+     sin necesitar mover ningún nodo del DOM. ─────────────────────────────── */
+  .escenario {
     position: relative !important;
     height: auto !important;
     overflow: visible !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 0 !important;
-    margin-top: 0 !important;
-    padding: 0 0 100px 0 !important;
-    min-height: calc(100dvh - 120px);
+    gap: 1px;
+    padding: 8px 0 90px !important;
   }
 
-  /* ── Elementos en flujo (no absolutos) ─────────────────────────────── */
-  .escenario--mobile .elemento {
+  /* ── Elementos: cancelar posicionamiento absoluto ─────────────────────── */
+  .elemento {
     position: relative !important;
     left: auto !important;
     top: auto !important;
     z-index: auto !important;
-    /* Rotaciones eliminadas en móvil: no son legibles y reducen la
-       precisión del tap en pantallas pequeñas */
+    /* La propiedad `order` agrupa por UA sin mover el DOM.
+       --ua-order se inyecta en crearElemento() para cada sede. */
+    order: var(--ua-order, 5);
+    /* Tipo del narrador UA (registro-ua = orden 0) va primero dentro del flex.
+       Se distingue visualmente con el borde izquierdo más grueso (ver abajo). */
     transform: none !important;
     width: 100% !important;
     max-width: 100% !important;
-    /* Fade-in de entrada */
     opacity: 0;
     transition: opacity 360ms ease !important;
     cursor: pointer;
-    /* Sin backdrop-filter: mayor performance en GPU móvil */
   }
 
-  .escenario--mobile .elemento--visible {
+  .elemento--visible {
     opacity: 1 !important;
     transform: none !important;
   }
 
-  /* Sin rotación-espera en móvil: todos los elementos son visibles */
-  .escenario--mobile .elemento--rotacion-espera {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    transition: none !important;
-  }
+  /* Elementos hidden por K=2 o rotación: mantener ocultos */
+  .elemento--oculto-autoridad { opacity: 0 !important; pointer-events: none !important; height: 0; overflow: hidden; }
+  .elemento--rotacion-espera  { opacity: 0 !important; pointer-events: none !important; height: 0; overflow: hidden; }
 
-  /* Interiors: ancho completo, sin backdrop-filter */
-  .escenario--mobile .elemento-interior {
+  /* ── Interiors: ancho completo, sin backdrop-filter (GPU) ─────────────── */
+  .elemento-interior {
     width: 100% !important;
     max-width: 100% !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border-radius: 0 !important;
-  }
-
-  /* Tarjetas UA narradoras reciben más peso visual */
-  .escenario--mobile .elemento--narrador-capitulo .elemento-interior {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
     border-top: none !important;
-    border-left: 4px solid var(--color-ua, var(--unam-cian)) !important;
     border-right: none !important;
     border-bottom: none !important;
-    background: rgba(10, 14, 16, 0.95) !important;
+    border-left: 4px solid var(--color-ua, var(--unam-cian)) !important;
+    padding: 16px !important;
   }
 
-  /* Testimonios institucionales más compactos en móvil */
-  .escenario--mobile .elemento--testimonio-institucional .elemento-interior {
-    max-width: 100% !important;
+  /* UA narrador (registro-ua) recibe más peso visual */
+  .elemento--registro-ua .elemento-interior {
+    border-left-width: 5px !important;
+    background: rgba(10,14,16,0.97) !important;
+    padding: 20px 16px !important;
   }
 
-  /* ── Hover → estados táctiles ──────────────────────────────────────── */
-  /* En móvil no hay hover. Los efectos de escala/sombra al tap: */
-  .escenario--mobile .elemento:active .elemento-interior {
+  /* Videos: miniatura full-width */
+  .elemento--video .elemento-interior {
+    padding: 0 !important;
+    overflow: hidden;
+  }
+  .elemento--video .video-miniatura-envoltorio {
+    width: 100%;
+    aspect-ratio: 16/9;
+  }
+  .elemento--video .video-meta { padding: 14px 16px !important; }
+  .elemento--video .video-play-btn { width: 56px !important; height: 56px !important; }
+
+  /* Tipografía mínima móvil: 15px para legibilidad */
+  .testimonio-cita   { font-size: 0.94rem !important; -webkit-line-clamp: 2 !important; }
+  .testimonio-nombre { font-size: 0.95rem !important; }
+  .registro-titulo   { font-size: 1.02rem !important; }
+
+  /* CTAs: touch target mínimo 44px */
+  .testimonio-expandir,
+  .registro-expandir,
+  .registro-conceptual-expandir,
+  .video-expandir {
+    font-size: 0.8rem !important;
+    min-height: 44px;
+    padding: 10px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    opacity: 0.85 !important;
+  }
+
+  /* ── Hover (no existe en táctil) → tap feedback ──────────────────────── */
+  .elemento:active .elemento-interior {
     transform: scale(0.98) !important;
     transition: transform 120ms ease !important;
   }
-
-  /* Suprimir efectos de hover de desktop */
-  .escenario--mobile .elemento--enfocado .elemento-interior,
-  .escenario--mobile .elemento--registro-ua.elemento--enfocado .elemento-interior,
-  .escenario--mobile .elemento--registro-conceptual.elemento--enfocado .elemento-interior,
-  .escenario--mobile .elemento--testimonio.elemento--enfocado .elemento-interior,
-  .escenario--mobile .elemento--testimonio-institucional.elemento--enfocado .elemento-interior {
+  /* Suprimir efectos de hover desktop */
+  .elemento--enfocado .elemento-interior,
+  .elemento--registro-ua.elemento--enfocado .elemento-interior,
+  .elemento--testimonio.elemento--enfocado .elemento-interior {
     transform: none !important;
-    box-shadow: none !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
     filter: none !important;
   }
+  /* Constelaciones hover → no en móvil (CSS flow ya agrupa por UA) */
+  .elemento--ua-alejado { opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
 
-  /* Constelaciones por UA: sin dimming en móvil (el scroll vertical
-     ya separa las constelaciones secuencialmente) */
-  .escenario--mobile .elemento--ua-alejado {
-    opacity: 1 !important;
-    filter: none !important;
-    pointer-events: auto !important;
-  }
-  .escenario--mobile .elemento--ua-relacionado {
-    filter: none !important;
-  }
-}
+  /* ── Cajero desktop: oculto en mobile ─────────────────────────────────── */
+  .cajero, .cajero-telon { display: none !important; }
 
-/* =============================================================================
-   B. HEADER CONTEXTUAL DE SEDE (reemplaza al kicker lateral)
-   ========================================================================== */
+  /* ── Logo + hamburguesa compact ───────────────────────────────────────── */
+  .marca-chip { padding: 5px 10px !important; gap: 6px !important; }
+  .marca-chip-logo { height: clamp(26px,3vh,36px) !important; }
+  .menu-inst-btn--en-chip { width: 38px !important; height: 38px !important; }
 
-@media (max-width: 820px) {
-
-  .sede-header-mobile {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    background: rgba(10, 14, 16, 0.96);
-    border-bottom: 1px solid rgba(245, 243, 238, 0.1);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-
-  .sede-header-mobile-compacto {
+  /* ── Navegación de sedes: bottom bar ──────────────────────────────────── */
+  .ruta {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 80;
+    background: rgba(10,14,16,0.94);
+    border-top: 1px solid rgba(245,243,238,0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    min-height: 52px;
-  }
-
-  .sede-header-mobile-num {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--unam-cian);
-    opacity: 0.8;
-    flex-shrink: 0;
-  }
-
-  .sede-header-mobile-titulo {
-    flex: 1;
-    margin: 0;
-    font-size: clamp(1.1rem, 5vw, 1.4rem);
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-
-  .sede-header-mobile-toggle {
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: rgba(245, 243, 238, 0.08);
-    color: var(--papel);
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    font-size: 1rem;
-    transition: background 150ms ease, transform 280ms ease;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-  .sede-header-mobile-toggle:hover,
-  .sede-header-mobile-toggle:focus-visible {
-    background: rgba(0, 163, 224, 0.18);
-    outline: 2px solid var(--unam-cian);
-    outline-offset: 2px;
-  }
-  .sede-header-mobile--expandido .sede-header-mobile-toggle {
-    transform: rotate(180deg);
-  }
-
-  .sede-header-mobile-expandido {
-    padding: 0 16px 16px;
-    border-top: 1px solid rgba(245, 243, 238, 0.08);
-    overflow-y: auto;
-    max-height: 50dvh;
-  }
-
-  .sede-header-mobile-subtitulo {
-    margin: 12px 0 8px;
-    font-size: 0.8rem;
-    font-weight: 400;
-    font-style: italic;
-    color: var(--unam-verde);
-  }
-
-  .sede-header-mobile-texto {
-    margin: 0 0 10px;
-    font-size: 0.85rem;
-    font-weight: 300;
-    line-height: 1.6;
-    opacity: 0.86;
-  }
-
-  .sede-header-mobile-orientacion {
-    margin: 0 0 10px;
-    font-size: 0.8rem;
-    font-weight: 400;
-    font-style: italic;
-    color: var(--unam-cian);
-    opacity: 0.88;
-  }
-
-  .sede-header-mobile-uas {
-    list-style: none;
-    margin: 0 0 12px;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
     gap: 4px;
+    justify-content: space-between;
   }
-  .sede-header-mobile-uas li {
-    font-size: 0.76rem;
-    font-weight: 400;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    opacity: 0.72;
-    padding: 4px 0;
-    border-top: 1px solid rgba(245, 243, 238, 0.1);
-  }
-  .sede-header-mobile-uas li:first-child { border-top: none; }
-
-  .sede-header-mobile-contador {
-    margin: 0 0 14px;
-    font-size: 0.72rem;
-    opacity: 0.6;
-  }
-  .sede-header-mobile-contador span { font-weight: 700; color: var(--unam-cian); }
-
-  .sede-header-mobile-cerrar {
-    width: 100%;
-    border: 1px solid rgba(245, 243, 238, 0.22);
-    background: transparent;
-    color: var(--papel);
-    padding: 12px;
-    border-radius: 4px;
-    font-size: 0.84rem;
-    cursor: pointer;
-    transition: background 150ms ease;
-    min-height: 44px;
-  }
-  .sede-header-mobile-cerrar:hover,
-  .sede-header-mobile-cerrar:focus-visible {
-    background: rgba(245, 243, 238, 0.06);
-    outline: 2px solid var(--unam-cian);
-    outline-offset: 2px;
-  }
-}
-
-/* =============================================================================
-   C. CAPÍTULOS UA (constelaciones → agrupaciones editoriales)
-   ========================================================================== */
-
-@media (max-width: 820px) {
-
-  .ua-capitulo {
-    border-left: 3px solid var(--color-ua-cap, var(--unam-cian));
-    margin: 0;
-    padding: 0;
-    position: relative;
-  }
-
-  /* Header del capítulo UA */
-  .ua-capitulo-header {
-    display: flex;
+  .ruta-flecha {
+    display: flex !important;
     align-items: center;
-    gap: 10px;
-    padding: 14px 16px 10px;
-    background: rgba(10, 14, 16, 0.6);
-    position: sticky;
-    top: 52px;  /* debajo del header de sede */
-    z-index: 30;
-    border-bottom: 1px solid rgba(var(--color-ua-cap, 0,163,224), 0.2);
-  }
-
-  .ua-capitulo-header--unam {
-    border-bottom-color: rgba(245, 243, 238, 0.1);
-  }
-
-  .ua-capitulo-sigla {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--color-ua-cap, var(--unam-cian));
-    background: rgba(var(--color-ua-cap, 0,163,224), 0.12);
-    padding: 3px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--color-ua-cap, var(--unam-cian));
+    justify-content: center;
+    width: 44px !important;
+    height: 44px !important;
+    border: 1px solid rgba(245,243,238,0.18);
+    background: rgba(245,243,238,0.06);
+    border-radius: 50%;
+    font-size: 1.4rem;
+    color: var(--papel);
     flex-shrink: 0;
+    cursor: pointer;
+    min-width: 44px;
   }
-
-  .ua-capitulo-nombre {
-    font-size: 0.76rem;
-    font-weight: 400;
-    opacity: 0.82;
-    flex: 1;
-    line-height: 1.3;
+  .ruta-nodos {
+    display: flex; flex: 1; justify-content: center;
+    gap: 6px; list-style: none; margin: 0; padding: 0;
   }
-
-  .ua-capitulo-cantidad {
-    font-size: 0.66rem;
-    opacity: 0.5;
-    flex-shrink: 0;
+  .ruta-nodo {
+    font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 10px 12px !important;
+    border-bottom: 2px solid transparent;
+    background: transparent; color: var(--papel);
+    opacity: 0.55;
+    transition: opacity 160ms ease;
+    min-height: 44px; cursor: pointer;
+    border-top: none; border-left: none; border-right: none;
     white-space: nowrap;
   }
-
-  /* Contenido del capítulo */
-  .ua-capitulo-contenido {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding: 8px 0;
+  .ruta-nodo--activo {
+    opacity: 1;
+    border-bottom-color: var(--unam-cian) !important;
   }
 
-  /* Elementos dentro del capítulo */
-  .ua-capitulo-contenido .elemento--mobile {
-    margin: 0;
-    border-bottom: 1px solid rgba(245, 243, 238, 0.07);
-  }
-
-  .ua-capitulo-contenido .elemento--mobile:last-child {
-    border-bottom: none;
-  }
-
-  /* Interiors adaptados al ancho completo */
-  .ua-capitulo-contenido .elemento-interior {
+  /* ── Intro overlay: bottom-up en mobile ───────────────────────────────── */
+  .intro { align-items: flex-end !important; padding: 0 !important; }
+  .intro-tarjeta {
     width: 100% !important;
-    max-width: 100% !important;
-    padding: 16px !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    border-top: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
-    border-left: 4px solid var(--color-ua-cap, var(--unam-cian)) !important;
+    max-height: 90dvh !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 24px 20px calc(32px + env(safe-area-inset-bottom,0px)) !important;
+    overflow-y: auto;
+  }
+  .intro-fondo-imagen { animation: none !important; filter: blur(0.5px) !important; }
+  .intro-titulo { font-size: clamp(1.4rem,6vw,1.8rem) !important; }
+  .intro-acciones {
+    position: sticky; bottom: 0;
+    background: rgba(8,12,16,0.96);
+    padding: 12px 0 0;
+  }
+  .intro-btn { min-height: 50px !important; font-size: 0.95rem !important; }
+
+  /* ── Placeholder Eldorado en construcción ─────────────────────────────── */
+  .escenario-en-construccion {
+    position: relative !important;
+    top: auto !important; left: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    padding: 16px;
+    pointer-events: auto;
   }
 
-  /* Tarjeta UA narrador: mayor peso visual */
-  .ua-capitulo-contenido .elemento--narrador-capitulo .elemento-interior {
-    background: rgba(10, 14, 16, 0.96) !important;
-    padding: 20px 16px !important;
-    border-left-width: 5px !important;
-  }
-
-  /* Expandir indicadores: más grandes en móvil */
-  .ua-capitulo .testimonio-expandir,
-  .ua-capitulo .registro-expandir,
-  .ua-capitulo .registro-conceptual-expandir,
-  .ua-capitulo .video-expandir {
-    font-size: 0.8rem !important;
-    min-height: 36px;
-    padding: 8px 0 !important;
-    opacity: 0.9 !important;
-    color: var(--color-ua-cap, var(--unam-cian)) !important;
-  }
-
-  /* Video cards adaptadas */
-  .ua-capitulo .elemento--video .elemento-interior {
-    padding: 0 !important;
-    border-left: 4px solid var(--color-ua-cap, var(--unam-cian)) !important;
-    overflow: hidden;
-  }
-  .ua-capitulo .video-miniatura-envoltorio {
-    aspect-ratio: 16 / 9;
-    width: 100%;
-  }
-  .ua-capitulo .video-miniatura {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .ua-capitulo .video-meta {
-    padding: 14px 16px !important;
-  }
-  .ua-capitulo .video-play-btn {
-    width: 56px !important;
-    height: 56px !important;
-    font-size: 1.3rem !important;
-  }
-
-  /* Testimonios: cita a 1 sola línea en el mural; completo en el lector */
-  .ua-capitulo .testimonio-cita {
-    -webkit-line-clamp: 2 !important;
-    font-size: 0.9rem !important;
-    line-height: 1.55 !important;
-  }
-
-  /* Tipografía más legible en móvil */
-  .ua-capitulo .registro-titulo { font-size: 1rem !important; }
-  .ua-capitulo .testimonio-nombre { font-size: 0.95rem !important; }
-
-  /* Separador entre capítulos */
-  .ua-capitulo-separador {
-    height: 2px;
-    margin: 8px 0;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--color-ua-sep, var(--unam-cian)) 20%,
-      var(--color-ua-sep, var(--unam-cian)) 80%,
-      transparent 100%
-    );
-    opacity: 0.3;
-  }
-
-  .ua-capitulo-separador-linea {
-    display: none; /* el background del padre ya hace la línea */
-  }
+  /* ── Accesibilidad ────────────────────────────────────────────────────── */
+  *:focus-visible { outline: 2px solid var(--unam-cian) !important; outline-offset: 3px !important; }
 }
 
 /* =============================================================================
-   D. BOTTOM SHEETS — lector y cajero
+   B. CAPA .es-mobile — fallback independiente de la media query
+   (actúa si matchMedia falla por layout viewport de 980px)
+   ========================================================================== */
+
+.es-mobile .escenario {
+  position: relative !important;
+  height: auto !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 1px;
+  padding: 8px 0 90px !important;
+}
+
+.es-mobile .elemento {
+  position: relative !important;
+  left: auto !important; top: auto !important;
+  z-index: auto !important;
+  order: var(--ua-order, 5);
+  transform: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  opacity: 0;
+  transition: opacity 360ms ease !important;
+}
+
+.es-mobile .elemento--visible {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.es-mobile .elemento-interior {
+  width: 100% !important;
+  max-width: 100% !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.es-mobile .sede-kicker { display: none !important; }
+.es-mobile .cajero, .es-mobile .cajero-telon { display: none !important; }
+.es-mobile .intro-fondo-imagen, .es-mobile .sede-bg { animation: none !important; }
+.es-mobile .elemento--rotacion-espera { opacity: 0 !important; pointer-events: none !important; height: 0; overflow: hidden; }
+
+/* =============================================================================
+   C. BOTTOM SHEETS — lector y cajero
    ========================================================================== */
 
 .bottom-sheet {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   z-index: 500;
-  background: rgba(8, 12, 16, 0.98);
+  background: rgba(8,12,16,0.98);
   border-radius: 20px 20px 0 0;
   border-top: 2px solid var(--unam-cian);
   max-height: 92dvh;
@@ -556,427 +322,95 @@
   flex-direction: column;
   overflow: hidden;
 }
-
-.bottom-sheet--abierto {
-  transform: translateY(0);
-}
-
-.bottom-sheet--pantalla-completa {
-  max-height: 96dvh;
-  border-top: 2px solid var(--unam-cian);
-}
+.bottom-sheet--abierto { transform: translateY(0); }
+.bottom-sheet--pantalla-completa { max-height: 96dvh; }
 
 .bottom-sheet-track {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   padding: 12px 16px 10px;
-  position: relative;
-  flex-shrink: 0;
-  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
+  position: relative; flex-shrink: 0;
+  border-bottom: 1px solid rgba(245,243,238,0.1);
 }
-
 .bottom-sheet-handle {
-  width: 40px;
-  height: 4px;
-  background: rgba(245, 243, 238, 0.35);
-  border-radius: 2px;
-  flex-shrink: 0;
+  width: 40px; height: 4px;
+  background: rgba(245,243,238,0.35);
+  border-radius: 2px; flex-shrink: 0;
 }
-
 .bottom-sheet-cerrar {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border: none;
-  background: rgba(245, 243, 238, 0.08);
-  color: var(--papel);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 1rem;
-  cursor: pointer;
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; border: none;
+  background: rgba(245,243,238,0.08); color: var(--papel);
+  border-radius: 50%; display: grid; place-items: center;
+  font-size: 1rem; cursor: pointer;
   transition: background 140ms ease;
 }
 .bottom-sheet-cerrar:hover,
-.bottom-sheet-cerrar:focus-visible {
-  background: rgba(245, 243, 238, 0.18);
-  outline: 2px solid var(--unam-cian);
-  outline-offset: 2px;
-}
+.bottom-sheet-cerrar:focus-visible { background: rgba(245,243,238,0.18); }
 
 .bottom-sheet-body {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  padding: 0;
 }
 
-/* Telón detrás del bottom sheet */
 .bottom-sheet-telon {
-  position: fixed;
-  inset: 0;
-  z-index: 499;
-  background: rgba(0, 0, 0, 0.65);
-  opacity: 0;
-  pointer-events: none;
+  position: fixed; inset: 0; z-index: 499;
+  background: rgba(0,0,0,0.65);
+  opacity: 0; pointer-events: none;
   transition: opacity 300ms ease;
   backdrop-filter: blur(2px);
 }
-.bottom-sheet-telon--visible {
-  opacity: 1;
-  pointer-events: auto;
-}
+.bottom-sheet-telon--visible { opacity: 1; pointer-events: auto; }
 
-/* ── Lector bottom sheet ────────────────────────────────────────────── */
-
+/* Lector en el bottom sheet */
 .bottom-sheet--lector .lector-tarjeta {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  width: 100% !important;
-  max-height: none !important;
-  overflow: visible !important;
-  padding: 0 !important;
-  margin: 0 !important;
+  background: transparent !important; box-shadow: none !important;
+  border-radius: 0 !important; width: 100% !important;
+  max-height: none !important; overflow: visible !important;
+  padding: 0 !important; margin: 0 !important;
 }
-
-.bottom-sheet--lector .lector-cerrar {
-  /* El cerrar está en el track del sheet, no en el lector */
-  display: none !important;
-}
-
-.bottom-sheet--lector .lector-contenido {
-  padding: 20px 16px 32px !important;
-}
-
+.bottom-sheet--lector .lector-cerrar { display: none !important; }
+.bottom-sheet--lector .lector-contenido { padding: 20px 16px 32px !important; }
 .bottom-sheet--lector .lector-nav-ua {
   padding: 10px 16px !important;
-  border-bottom: 1px solid rgba(245, 243, 238, 0.1) !important;
-  position: sticky;
-  top: 0;
-  background: rgba(8, 12, 16, 0.96);
-  z-index: 10;
+  border-bottom: 1px solid rgba(245,243,238,0.1) !important;
+  position: sticky; top: 0;
+  background: rgba(8,12,16,0.96); z-index: 10;
 }
+.bottom-sheet--lector .lector-video-ratio { margin: 0 -16px; }
 
-.bottom-sheet--lector .lector-video-ratio {
-  margin: 0 -16px;  /* full bleed del video */
-}
-
-/* ── Cajero bottom sheet ─────────────────────────────────────────────── */
-
-.cajero-mobile-contenido {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
+/* Cajero mobile */
+.cajero-mobile-contenido { display: flex; flex-direction: column; height: 100%; }
 .cajero-mobile-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 10px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
-  flex-shrink: 0;
+  border-bottom: 1px solid rgba(245,243,238,0.1); flex-shrink: 0;
 }
-
 .cajero-mobile-logo { height: 24px; width: 24px; }
-
 .cajero-mobile-titulo {
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--unam-cian);
+  font-size: 0.76rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--unam-cian);
 }
-
 .cajero-mobile-nav {
-  display: flex;
-  overflow-x: auto;
-  scrollbar-width: none;
-  gap: 0;
+  display: flex; overflow-x: auto; scrollbar-width: none; gap: 0;
   padding: 0 12px;
-  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
-  flex-shrink: 0;
+  border-bottom: 1px solid rgba(245,243,238,0.1); flex-shrink: 0;
 }
 .cajero-mobile-nav::-webkit-scrollbar { display: none; }
-.cajero-mobile-nav .cajero-tab {
-  font-size: 0.76rem;
-  padding: 12px 14px;
-  white-space: nowrap;
-  min-height: 44px;
-}
-
+.cajero-mobile-nav .cajero-tab { font-size: 0.76rem; padding: 12px 14px; min-height: 44px; }
 .cajero-mobile-cuerpo {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
-
-.cajero-mobile-cuerpo .cajero-panel {
-  padding: 20px 16px 40px !important;
-}
-
-/* Texto a 2 columnas → 1 columna en cajero mobile */
-.cajero-mobile-cuerpo .cajero-seccion-texto {
-  columns: 1 !important;
-}
-.cajero-mobile-cuerpo .cajero-creditos {
-  grid-template-columns: 1fr !important;
-}
-.cajero-mobile-cuerpo .cajero-tipos-lista {
-  grid-template-columns: 1fr !important;
-}
-
-/* Ocultar el cajero desktop en móvil */
-@media (max-width: 820px) {
-  .cajero { display: none !important; }
-  .cajero-telon { display: none !important; }
-}
+.cajero-mobile-cuerpo .cajero-panel { padding: 20px 16px 40px !important; }
+.cajero-mobile-cuerpo .cajero-seccion-texto { columns: 1 !important; }
+.cajero-mobile-cuerpo .cajero-creditos { grid-template-columns: 1fr !important; }
+.cajero-mobile-cuerpo .cajero-tipos-lista { grid-template-columns: 1fr !important; }
 
 /* =============================================================================
-   E. NAVEGACIÓN ENTRE SEDES EN MÓVIL
+   D. REDUCED MOTION
    ========================================================================== */
-
-@media (max-width: 820px) {
-
-  /* Tab bar de sedes */
-  .ruta {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 80;
-    background: rgba(10, 14, 16, 0.94);
-    border-top: 1px solid rgba(245, 243, 238, 0.1);
-    padding: 10px 16px 10px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    /* Asegurar espacio para el safe area de iOS */
-    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    justify-content: space-between;
-  }
-
-  .ruta-flecha {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 44px !important;
-    height: 44px !important;
-    border: 1px solid rgba(245, 243, 238, 0.18);
-    background: rgba(245, 243, 238, 0.06);
-    border-radius: 50%;
-    font-size: 1.4rem;
-    color: var(--papel);
-    transition: background 140ms ease;
-    flex-shrink: 0;
-    cursor: pointer;
-    min-width: 44px;
-  }
-  .ruta-flecha:hover,
-  .ruta-flecha:focus-visible {
-    background: rgba(0, 163, 224, 0.2);
-    outline: 2px solid var(--unam-cian);
-    outline-offset: 2px;
-  }
-
-  .ruta-nodos {
-    display: flex;
-    flex: 1;
-    justify-content: center;
-    gap: 8px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .ruta-nodo {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    padding: 10px 12px !important;
-    border-bottom: 2px solid transparent;
-    border-radius: 0;
-    background: transparent;
-    color: var(--papel);
-    opacity: 0.55;
-    transition: opacity 160ms ease, border-color 160ms ease;
-    min-height: 44px;
-    cursor: pointer;
-    border: none;
-    white-space: nowrap;
-  }
-  .ruta-nodo--activo {
-    opacity: 1;
-    border-bottom-color: var(--unam-cian) !important;
-    border-bottom-width: 2px;
-  }
-  .ruta-nodo:hover, .ruta-nodo:focus-visible {
-    opacity: 0.88;
-    outline: 2px solid var(--unam-cian);
-    outline-offset: 2px;
-  }
-}
-
-/* =============================================================================
-   F. LOGO + HAMBURGUESA EN MÓVIL
-   ========================================================================== */
-
-@media (max-width: 820px) {
-  /* En móvil el chip del logo reduce y el hamburguesa es más táctil */
-  .marca-chip {
-    padding: 5px 10px 5px 10px !important;
-    gap: 6px !important;
-  }
-
-  .marca-chip-logo {
-    height: clamp(26px, 3vh, 36px) !important;
-  }
-
-  .menu-inst-btn--en-chip {
-    width: 40px !important;
-    height: 40px !important;
-  }
-}
-
-/* =============================================================================
-   G. INTRO EN MÓVIL — ajustes de la pantalla de bienvenida
-   ========================================================================== */
-
-@media (max-width: 820px) {
-  .intro {
-    align-items: flex-end !important;
-    padding: 0 !important;
-  }
-
-  .intro-tarjeta {
-    width: 100% !important;
-    max-height: 88dvh !important;
-    border-radius: 20px 20px 0 0 !important;
-    padding: 24px 20px 32px !important;
-    /* safe area iOS */
-    padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px)) !important;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .intro-titulo { font-size: clamp(1.4rem, 6vw, 1.8rem) !important; }
-
-  .intro-acciones {
-    position: sticky;
-    bottom: 0;
-    background: rgba(8, 12, 16, 0.96);
-    padding: 12px 0 0;
-    margin: 0;
-  }
-
-  .intro-btn {
-    font-size: 0.95rem !important;
-    padding: 15px 24px !important;
-    min-height: 50px !important;
-  }
-
-  /* Ken Burns desactivado en móvil */
-  .intro-fondo-imagen {
-    animation: none !important;
-    filter: blur(0.5px) !important;
-  }
-}
-
-/* =============================================================================
-   H. PERFORMANCE MÓVIL
-   ========================================================================== */
-
-@media (max-width: 820px) {
-
-  /* Eliminar backdrop-filter en todo excepto el header sticky */
-  .elemento-interior,
-  .elemento--testimonio .elemento-interior,
-  .elemento--registro-ua .elemento-interior,
-  .elemento--registro-conceptual .elemento-interior,
-  .elemento--video .elemento-interior,
-  .elemento--foto .elemento-interior {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  /* Forzar GPU compositing solo donde se necesita */
-  .sede-header-mobile,
-  .ua-capitulo-header,
-  .ruta,
-  .marca-chip,
-  .bottom-sheet {
-    will-change: transform;
-    transform: translateZ(0);
-  }
-
-  /* Reducir complejidad de sombras */
-  .elemento-interior {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35) !important;
-  }
-}
-
-/* =============================================================================
-   I. ACCESIBILIDAD MÓVIL
-   ========================================================================== */
-
-/* Áreas táctiles mínimas: 44px según WCAG 2.5.8 */
-@media (max-width: 820px) {
-  .testimonio-expandir,
-  .registro-expandir,
-  .registro-conceptual-expandir,
-  .video-expandir {
-    min-height: 44px !important;
-    display: flex !important;
-    align-items: center !important;
-    padding: 10px 0 !important;
-  }
-
-  button, [role="button"], a, .elemento {
-    /* Mínimo táctil implícito con min-height/min-width donde aplique */
-  }
-}
-
-/* Focus visible en todos los contextos táctiles */
-@media (max-width: 820px) {
-  *:focus-visible {
-    outline: 2px solid var(--unam-cian) !important;
-    outline-offset: 3px !important;
-  }
-}
-
-/* prefers-reduced-motion para mobile también */
 @media (max-width: 820px) and (prefers-reduced-motion: reduce) {
   .bottom-sheet { transition: none !important; }
-  .sede-header-mobile-expandido { transition: none !important; }
-  .ua-capitulo-separador { display: none; }
-  .escenario--mobile .elemento { transition: none !important; }
-}
-
-/* =============================================================================
-   J. ESCENARIO EN CONSTRUCCIÓN EN MÓVIL (Eldorado)
-   ========================================================================== */
-
-@media (max-width: 820px) {
-  .escenario-en-construccion {
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    transform: none !important;
-    width: 100% !important;
-    padding: 16px;
-    pointer-events: auto;
-  }
-  .construccion-tarjeta {
-    padding: 24px 20px !important;
-  }
+  .elemento { transition: none !important; }
 }

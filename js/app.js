@@ -29,27 +29,16 @@
   const contenedor = document.getElementById('carrusel');
   const secciones = Array.from(contenedor.querySelectorAll('.sede'));
 
-  // En mobile (≤820px) el motor de distribución espacial (Distribuidor.distribuir)
-  // no corre — el layout se gestiona mediante CSS flex + clases `.ua-capitulo`.
-  // En desktop, recalcular() hace exactamente lo mismo que antes.
+  // Motor único adaptativo (Arquitectura B):
+  // Distribuidor.distribuir(s) tiene su propio guard en layout.js L60:
+  //   if (!window.matchMedia('(min-width: 821px)').matches) return;
+  // → En mobile sale solo. El posicionamiento mobile lo resuelve mobile.css.
+  // → No hay fork JS, no hay segundo motor, no hay condición de carrera.
   const recalcular = () => {
-    const mobile = window.esMobile && window.esMobile();
-    console.log('[App.recalcular] modo=' + (mobile ? 'MOBILE' : 'DESKTOP') +
-                ' innerWidth=' + window.innerWidth +
+    console.log('[App.recalcular] innerWidth=' + window.innerWidth +
+                ' esMobile=' + (window.esMobile?.() ?? '—') +
                 ' es-mobile=' + document.documentElement.classList.contains('es-mobile'));
-    if (mobile) {
-      // Mobile: reagrupar por UA y activar el layout vertical de capítulos
-      secciones.forEach((s) => {
-        const esc = s.querySelector('.escenario');
-        if (esc && !esc.classList.contains('escenario--mobile')) {
-          window.Mobile?.reorganizarSede(s);
-          window.Mobile?.actualizarHeader(s);
-        }
-      });
-    } else {
-      // Desktop: layout flotante con motor de distribución espacial
-      secciones.forEach((s) => Distribuidor.distribuir(s));
-    }
+    secciones.forEach((s) => Distribuidor.distribuir(s));
   };
 
   // Antes de la primera distribución: se decide qué autoridades de alcance
@@ -76,13 +65,8 @@
   // vez más cuando eso pasa, además de en cada cambio de tamaño de ventana.
   if (document.fonts?.ready) document.fonts.ready.then(() => {
     recalcular();
-    if (window.esMobile && window.esMobile()) {
-      // Mobile: no rotation; swipe navigation between sedes
-      window.Mobile?.inicializarSwipe(contenedor, carrusel);
-    } else {
-      // Desktop: start editorial rotation for the initial sede
-      if (secciones[0]) Rotacion.iniciar(secciones[0]);
-    }
+    // Rotacion arranca en desktop; en mobile Rotacion.iniciar() sale solo
+    if (secciones[0]) Rotacion.iniciar(secciones[0]);
   });
 
   let pendienteResize = null;
@@ -93,8 +77,7 @@
 
   iniciarInteraccionDeEnfoque(secciones);
   Lector.iniciar();
-  // Inicializar la experiencia móvil (no hace nada en desktop)
-  window.Mobile?.inicializar();
+  window.Mobile?.inicializar(); // solo configura bottom sheets, no toca el DOM del mural
   Secuenciador.iniciar();
 
   const carrusel = new Carrusel({
@@ -103,23 +86,9 @@
     onCambio: (indice, seccionNueva) => {
       actualizarRuta(indice);
       aplicarSubconjuntoDeAutoridades(seccionNueva, testimonios);
-
-      // En mobile: reorganizar en capítulos UA si aún no se hizo para esta sede
-      if (window.esMobile && window.esMobile()) {
-        const esc = seccionNueva.querySelector('.escenario');
-        if (esc && !esc.classList.contains('escenario--mobile')) {
-          window.Mobile?.reorganizarSede(seccionNueva);
-          window.Mobile?.actualizarHeader(seccionNueva);
-        }
-        Secuenciador.entrar(seccionNueva);
-        refrescarCitas(seccionNueva, testimonios);
-        // Rotación desactivada en móvil — la lectura siempre tiene prioridad
-        return;
-      }
-
-      // Desktop: flujo normal
       Secuenciador.entrar(seccionNueva);
       refrescarCitas(seccionNueva, testimonios);
+      // Rotacion.iniciar() tiene su propio guard: sale si esMobile()
       Rotacion.iniciar(seccionNueva);
     },
   });
@@ -264,7 +233,20 @@ function crearElemento(item) {
   // (hover highlight por UA) y para el agrupador de la rotación editorial.
   const uaTexto = item.unidadAcademica || item.institucion || 'general';
   el.dataset.ua   = normalizarClave(uaTexto);
-  el.dataset.tipo = item._tipo;   // 'testimonio' | 'registro-ua' | 'registro-conceptual' | 'video'
+  el.dataset.tipo = item._tipo;
+
+  // --ua-order: permite que CSS (propiedad `order` en flex column) agrupe
+  // los elementos por UA en mobile SIN mover ningún nodo del DOM.
+  // Los UA registros (narratores) van primero dentro de su UA (offset -0.5
+  // no es posible con enteros; se controla via z-index relativo en CSS).
+  const UA_ORDER = {
+    fhycs:0, fceqyn:1, fce:2,      // Posadas
+    fayd:3,  fi:4,                   // Oberá
+    fcf:5,   escuelaagrotecnicaeldorado:6, // Eldorado
+    general:7,
+    unam:9,                          // Autoridades UNaM siempre al final
+  };
+  el.style.setProperty('--ua-order', UA_ORDER[normalizarClave(uaTexto)] ?? 8);
 
   el.style.setProperty('--escala', item.escala ?? 1);
   el.style.setProperty('--rot', `${item.rotacion ?? 0}deg`);
@@ -1027,6 +1009,12 @@ const Rotacion = (() => {
   }
 
   function iniciar(seccion) {
+    // En mobile el layout es CSS flow — todos los elementos son visibles
+    // simultáneamente en scroll vertical. La rotación (que oculta elementos
+    // con opacity:0) no tiene sentido y además conflictuaría con el CSS
+    // que muestra todos los .elemento. El guard esMobile() previene que
+    // se corra cualquier lógica de ocultamiento sobre elementos en flujo.
+    if (window.esMobile && window.esMobile()) return;
     detener();
     if (!seccion) return;
     timeoutId = window.setTimeout(() => {
