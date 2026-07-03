@@ -14,12 +14,67 @@
 
 'use strict';
 
-// ─── Detección de móvil (reactiva) ───────────────────────────────────────────
+// ─── Detección de móvil — dual check ────────────────────────────────────────
+//
+// No confiar únicamente en matchMedia: en algunos Chromium para Android,
+// si hay cualquier configuración de viewport atípica, matchMedia puede
+// devolver false aunque window.innerWidth sea 393px.
+// Se usa OR lógico: si CUALQUIERA de las dos medidas dice "mobile" → mobile.
+//
+// window.innerWidth es la fuente más directa: retorna el ancho del viewport
+// visual en CSS pixels, independiente de layout viewport o content overflow.
+
 const mqMobile = window.matchMedia('(max-width: 820px)');
-const esMobile = () => mqMobile.matches;
+
+const esMobile = () => {
+  const mq = mqMobile.matches;
+  // innerWidth puede ser 0 durante el parsing inicial — en ese caso
+  // confiar solo en mqMobile hasta que el viewport esté disponible.
+  const iw = window.innerWidth > 0 ? window.innerWidth <= 820 : mq;
+  const resultado = mq || iw;  // OR: si cualquiera indica mobile → mobile
+  return resultado;
+};
 
 // Expuesto para que app.js lo consulte
 window.esMobile = esMobile;
+
+// ─── Diagnóstico de ejecución en consola ────────────────────────────────────
+// Estos logs aparecen en las DevTools del navegador (chrome://inspect o Brave
+// remote debugging). Permiten verificar en tiempo real que el módulo se carga
+// y que la detección de mobile es correcta antes del primer render.
+const _diag = (msg) => console.log('[Mobile]', msg);
+_diag(`Cargado. matchMedia=${mqMobile.matches} innerWidth=${window.innerWidth}`);
+
+// ─── Clase es-mobile INMEDIATA (pre-DOM-ready) ──────────────────────────────
+//
+// CRÍTICO: la clase debe agregarse ANTES de que app.js corra su fetch y
+// empiece a crear elementos. Esto garantiza que:
+//   a) los selectores CSS .es-mobile están activos desde el frame 0
+//   b) esMobile() ya puede usarse sincrónicamente en app.js
+//
+// Se agrega aquí (top-level sync) Y en DOMContentLoaded (para el caso
+// en que window.innerWidth no estuviera disponible en el primer check).
+
+if (esMobile()) {
+  document.documentElement.classList.add('es-mobile');
+  _diag('es-mobile añadido en carga inicial (innerWidth=' + window.innerWidth + ')');
+}
+
+// Re-verificación en DOMContentLoaded: garantiza que si innerWidth era 0
+// durante el parsing inicial, el re-check con el viewport ya resuelto
+// corrija la clase antes de que app.js complete el fetch.
+document.addEventListener('DOMContentLoaded', () => {
+  _diag('DOMContentLoaded. esMobile=' + esMobile() +
+        ' innerWidth=' + window.innerWidth +
+        ' matchMedia=' + mqMobile.matches);
+  if (esMobile()) {
+    document.documentElement.classList.add('es-mobile');
+    _diag('es-mobile confirmado en DOMContentLoaded');
+  } else {
+    document.documentElement.classList.remove('es-mobile');
+    _diag('NO es mobile — clase removida');
+  }
+}, { once: true });
 
 // ─── Orden editorial de tipos dentro de un capítulo UA ───────────────────────
 const PRIORIDAD_TIPO_MOBILE = {
@@ -61,15 +116,24 @@ const NOMBRES_UA = {
  * @param {HTMLElement} seccion — la sección <section class="sede">
  */
 function reorganizarMobile(seccion) {
-  if (!esMobile()) return;
+  if (!esMobile()) {
+    _diag('reorganizarMobile: SKIP — esMobile()=false, innerWidth=' + window.innerWidth);
+    return;
+  }
 
   const escenario = seccion.querySelector('.escenario');
-  if (!escenario || escenario.classList.contains('escenario--mobile')) return;
+  if (!escenario || escenario.classList.contains('escenario--mobile')) {
+    _diag('reorganizarMobile: SKIP — escenario--mobile ya existe en ' + (seccion.dataset?.sede || '?'));
+    return;
+  }
 
-  // Recoger TODOS los elementos (incluyendo ocultos por K=2)
-  // Los ocultos por K=2 (.elemento--oculto-autoridad) no se muestran
   const todos = Array.from(escenario.querySelectorAll('.elemento'));
-  if (!todos.length) return;
+  _diag('reorganizarMobile: INICIO para sede=' + (seccion.dataset?.sede || '?') +
+        ' — ' + todos.length + ' elementos encontrados');
+  if (!todos.length) {
+    _diag('reorganizarMobile: SKIP — sin elementos');
+    return;
+  }
 
   // Agrupar por data-ua
   const grupos = new Map();
@@ -159,6 +223,11 @@ function reorganizarMobile(seccion) {
   escenario.innerHTML = '';
   escenario.appendChild(frag);
   escenario.classList.add('escenario--mobile');
+
+  _diag('reorganizarMobile: COMPLETADO para sede=' + (seccion.dataset?.sede || '?') +
+        ' — ' + gruposOrdenados.length + ' grupos UA creados' +
+        ' — escenario--mobile=' + escenario.classList.contains('escenario--mobile') +
+        ' — ua-capitulos=' + escenario.querySelectorAll('.ua-capitulo').length);
 }
 
 // ─── 2. HEADER CONTEXTUAL DE SEDE (reemplaza el kicker lateral) ──────────────
@@ -547,10 +616,45 @@ function inicializarPausaRotacion() {
  * Se llama desde app.js cuando el DOM está listo.
  */
 function inicializarMobile() {
-  if (!esMobile()) return;
+  if (!esMobile()) {
+    _diag('inicializarMobile: SKIP — esMobile()=false');
+    return;
+  }
 
-  // Marcar el body con clase mobile para que CSS pueda usar selectores simples
+  // Garantizar que es-mobile esté seteado (triple check con el momento de init)
   document.documentElement.classList.add('es-mobile');
+  _diag('inicializarMobile: EJECUTADO — innerWidth=' + window.innerWidth +
+        ' es-mobile=' + document.documentElement.classList.contains('es-mobile'));
+
+  // Indicador visual temporal: confirma en pantalla que el modo mobile está activo.
+  // Desaparece automáticamente en 3 segundos. Solo visible si el modo mobile se activa.
+  // Útil para verificar en el dispositivo sin abrir DevTools.
+  const badge = document.createElement('div');
+  badge.id = 'mobile-debug-badge';
+  badge.style.cssText = [
+    'position:fixed',
+    'top:50%',
+    'left:50%',
+    'transform:translate(-50%,-50%)',
+    'z-index:9999',
+    'background:#00a3e0',
+    'color:#fff',
+    'padding:14px 24px',
+    'border-radius:8px',
+    'font-family:sans-serif',
+    'font-size:16px',
+    'font-weight:bold',
+    'text-align:center',
+    'box-shadow:0 4px 20px rgba(0,0,0,0.5)',
+    'pointer-events:none',
+    'transition:opacity 500ms ease',
+  ].join(';');
+  badge.textContent = '📱 MODO MÓVIL ACTIVO';
+  document.body.appendChild(badge);
+  setTimeout(() => {
+    badge.style.opacity = '0';
+    setTimeout(() => badge.remove(), 600);
+  }, 3000);
 
   inicializarLectorMobile();
   inicializarCajeroMobile();

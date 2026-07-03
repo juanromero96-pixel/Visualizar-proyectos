@@ -33,10 +33,13 @@
   // no corre — el layout se gestiona mediante CSS flex + clases `.ua-capitulo`.
   // En desktop, recalcular() hace exactamente lo mismo que antes.
   const recalcular = () => {
-    if (window.esMobile && window.esMobile()) {
+    const mobile = window.esMobile && window.esMobile();
+    console.log('[App.recalcular] modo=' + (mobile ? 'MOBILE' : 'DESKTOP') +
+                ' innerWidth=' + window.innerWidth +
+                ' es-mobile=' + document.documentElement.classList.contains('es-mobile'));
+    if (mobile) {
       // Mobile: reagrupar por UA y activar el layout vertical de capítulos
       secciones.forEach((s) => {
-        // Si el escenario ya fue reorganizado como mobile, no rehacerlo
         const esc = s.querySelector('.escenario');
         if (esc && !esc.classList.contains('escenario--mobile')) {
           window.Mobile?.reorganizarSede(s);
@@ -602,7 +605,14 @@ function aplicarSubconjuntoDeAutoridades(seccion, testimonios) {
   // distribución general, igual conviene dejar que el recalcular() de
   // iniciarSitio() se encargue una sola vez para las tres sedes juntas).
   if (huboCambios && seccion.dataset.yaDistribuidoUnaVez === 'true') {
-    Distribuidor.distribuir(seccion);
+    // En mobile el layout es CSS vertical con capítulos UA — el motor de
+    // distribución espacial (Distribuidor) posicionaría absolutamente todos
+    // los elementos, destruyendo la reorganización editorial ya construida.
+    // La guardia esMobile() previene que aplicarSubconjuntoDeAutoridades,
+    // llamada en cada cambio de sede desde el Carrusel, sobrescriba el layout.
+    if (!(window.esMobile && window.esMobile())) {
+      Distribuidor.distribuir(seccion);
+    }
   }
   seccion.dataset.yaDistribuidoUnaVez = 'true';
 }
