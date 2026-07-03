@@ -231,22 +231,36 @@ function crearElemento(item) {
 
   // UA y tipo en dataset — necesarios para el sistema de constelaciones
   // (hover highlight por UA) y para el agrupador de la rotación editorial.
+  //
+  // Usar resolverUA() para todos los campos: maneja tanto siglas cortas ('FAyD')
+  // como nombres completos ('Facultad de Arte y Diseño (FAyD)') extrayendo
+  // la sigla del paréntesis. Esto hace que data-ua sea consistente entre:
+  //   UA registros:  item.unidadAcademica = 'FAyD'      → 'fayd'
+  //   Testimonios:   item.institucion = 'Fac. ... (FAyD)' → 'fayd'  ← CORRECTO
+  // Sin este fix, el segundo caso producía 'facultaddearteydisenofayd', rompiendo
+  // el matching de las constelaciones UA y el orden CSS.
   const uaTexto = item.unidadAcademica || item.institucion || 'general';
-  el.dataset.ua   = normalizarClave(uaTexto);
+  const ua = resolverUA(uaTexto);
+  el.dataset.ua   = ua;
   el.dataset.tipo = item._tipo;
 
   // --ua-order: permite que CSS (propiedad `order` en flex column) agrupe
   // los elementos por UA en mobile SIN mover ningún nodo del DOM.
-  // Los UA registros (narratores) van primero dentro de su UA (offset -0.5
-  // no es posible con enteros; se controla via z-index relativo en CSS).
+  // Esquema multiplicado: uaBase*2 + tipoOffset.
+  //   tipoOffset=0 → narrador UA (registro-ua) va PRIMERO dentro de su UA
+  //   tipoOffset=1 → todos los satélites van después del narrador
+  // Ejemplo Posadas: FHyCS-narrador→order=0, FHyCS-videos/testi→order=1,
+  //                  FCEQyN-narrador→order=2, FCEQyN-sat→order=3, etc.
   const UA_ORDER = {
-    fhycs:0, fceqyn:1, fce:2,      // Posadas
-    fayd:3,  fi:4,                   // Oberá
-    fcf:5,   escuelaagrotecnicaeldorado:6, // Eldorado
+    fhycs:0, fceqyn:1, fce:2,           // Posadas
+    fayd:3,  fi:4,                        // Oberá
+    fcf:5,   escuelaagrotecnicaeldorado:6,// Eldorado
     general:7,
-    unam:9,                          // Autoridades UNaM siempre al final
+    unam:9,                               // Autoridades UNaM siempre al final
   };
-  el.style.setProperty('--ua-order', UA_ORDER[normalizarClave(uaTexto)] ?? 8);
+  const uaBase      = UA_ORDER[ua] ?? 8;
+  const tipoOffset  = item._tipo === 'registro-ua' ? 0 : 1;
+  el.style.setProperty('--ua-order', uaBase * 2 + tipoOffset);
 
   el.style.setProperty('--escala', item.escala ?? 1);
   el.style.setProperty('--rot', `${item.rotacion ?? 0}deg`);
@@ -261,13 +275,10 @@ function crearElemento(item) {
 
   if (item._tipo === 'testimonio') {
     crearTarjetaTestimonio(item, interior);
-    // Tratamiento diferencial para autoridades de alcance UNaM (Documento
-    // Técnico, sección 8.2): borde izquierdo más grueso y tipografía del
-    // nombre levemente mayor, para que su carácter institucional no se
-    // confunda con el resto de los testimonios sin romper la coherencia
-    // visual general (es una variación sutil, no un rediseño).
     if (item.institucion === 'UNaM') el.classList.add('elemento--testimonio-institucional');
-    el.style.setProperty('--color-ua', colorDeUnidadAcademica(item.institucion));
+    // resolverUA() extrae la sigla corta del nombre completo de la institución:
+    // "Facultad de Arte y Diseño (FAyD)" → "fayd" → color correcto de la UA.
+    el.style.setProperty('--color-ua', colorDeUnidadAcademica(resolverUA(item.institucion || '')));
     el.setAttribute('aria-haspopup', 'dialog');
     el.setAttribute('aria-expanded', 'false');
     el.addEventListener('click', () => Lector.abrir(el));
@@ -650,6 +661,33 @@ function normalizarClave(texto = '') {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Extrae la clave canónica de UA de cualquier forma de identificación:
+ *
+ *   "FAyD"                                  → "fayd"   (sigla directa)
+ *   "Facultad de Arte y Diseño (FAyD)"      → "fayd"   (extrae el paréntesis)
+ *   "Facultad de Ingeniería (FI)"           → "fi"
+ *   "Escuela Agrotécnica Eldorado"          → "escuelaagrotecnicaeldorado"
+ *   "UNaM"                                  → "unam"   (caso especial)
+ *   null / undefined                        → "general"
+ *
+ * Esto resuelve el bug donde normalizarClave('Facultad de Arte y Diseño (FAyD)')
+ * producía 'facultaddearteydisenofayd' en vez de 'fayd', rompiendo el matching
+ * de data-ua entre UA registros (uaTexto='FAyD') y testimonios UA
+ * (uaTexto='Facultad de Arte y Diseño (FAyD)').
+ */
+function resolverUA(texto) {
+  if (!texto) return 'general';
+  if (texto === 'UNaM') return 'unam';
+  // Extraer sigla del paréntesis final: "... (FAyD)" → "fayd"
+  const m = texto.match(/\(([A-Za-z]+(?:[A-Za-z]|\d)*)\)\s*$/);
+  if (m) return normalizarClave(m[1]);
+  // Si el texto ya es corto (sigla directa como "FAyD", "FI")
+  if (texto.length <= 12 && !/\s{2,}/.test(texto)) return normalizarClave(texto);
+  // Nombre largo sin paréntesis: EAE, nombres completos sin sigla
+  return normalizarClave(texto);
 }
 
 /**

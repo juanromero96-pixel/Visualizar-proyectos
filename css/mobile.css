@@ -83,7 +83,7 @@
     z-index: auto !important;
     /* La propiedad `order` agrupa por UA sin mover el DOM.
        --ua-order se inyecta en crearElemento() para cada sede. */
-    order: var(--ua-order, 5);
+    order: var(--ua-order, 17);
     /* Tipo del narrador UA (registro-ua = orden 0) va primero dentro del flex.
        Se distingue visualmente con el borde izquierdo más grueso (ver abajo). */
     transform: none !important;
@@ -98,6 +98,17 @@
     opacity: 1 !important;
     transform: none !important;
   }
+
+  /* ── Separadores visuales de capítulos UA ─────────────────────────────
+     Los UA registros (narradores) son el primer elemento de cada grupo.
+     Un margen superior y un separador crean la sensación de capítulo sin
+     DOM restructuring. El borde superior usa el color de la UA. */
+  .elemento--registro-ua {
+    margin-top: 16px !important;
+    border-top: 1px solid rgba(0, 163, 224, 0.2) !important;
+  }
+
+
 
   /* Elementos hidden por K=2 o rotación: mantener ocultos */
   .elemento--oculto-autoridad { opacity: 0 !important; pointer-events: none !important; height: 0; overflow: hidden; }
@@ -282,7 +293,7 @@
   position: relative !important;
   left: auto !important; top: auto !important;
   z-index: auto !important;
-  order: var(--ua-order, 5);
+  order: var(--ua-order, 17);
   transform: none !important;
   width: 100% !important;
   max-width: 100% !important;
