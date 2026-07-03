@@ -19,13 +19,32 @@
 
 'use strict';
 
-// ─── Detección de viewport — dual check ──────────────────────────────────────
+// ─── Detección de móvil — triple check ───────────────────────────────────────
+//
+// Por qué el triple check:
+//
+// 1. matchMedia('max-width: 820px') — falla si el browser reporta el layout
+//    viewport como 980px (ocurre en Chromium/Brave cuando el carrusel tiene
+//    3 sedes × 100vw = contenido de 300vw, inflando el "initial containing block").
+//
+// 2. window.innerWidth <= 820 — también puede verse afectado por el mismo
+//    problema de layout viewport en algunos browsers.
+//
+// 3. matchMedia('pointer: coarse AND hover: none') — DETECCIÓN DEFINITIVA:
+//    No depende del ancho del viewport. Identifica dispositivos con puntero
+//    impreciso (dedo) sin capacidad de hover — los smartphones y tablets.
+//    No puede ser engañada por overflow de contenido ni por layout viewport.
+//    Bootstrap 5, Tailwind CSS y Material Design usan esta misma media feature.
+
 const mqMobile = window.matchMedia('(max-width: 820px)');
+const mqTactil = window.matchMedia('(pointer: coarse) and (hover: none)');
 
 const esMobile = () => {
-  const mq = mqMobile.matches;
-  const iw = window.innerWidth > 0 ? window.innerWidth <= 820 : mq;
-  return mq || iw;
+  const mq     = mqMobile.matches;
+  const tactil = mqTactil.matches;   // ← TRIGGER PRIMARIO — funciona siempre
+  const iw     = window.innerWidth > 0 ? window.innerWidth <= 820 : mq;
+  const result = mq || tactil || iw;
+  return result;
 };
 
 window.esMobile = esMobile;
@@ -40,12 +59,8 @@ if (esMobile()) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  _diag(`DOMContentLoaded. esMobile=${esMobile()} innerWidth=${window.innerWidth}`);
-  if (esMobile()) {
-    document.documentElement.classList.add('es-mobile');
-  } else {
-    document.documentElement.classList.remove('es-mobile');
-  }
+  _diag(`DOMContentLoaded. mq=${mqMobile.matches} tactil=${mqTactil.matches} iw=${window.innerWidth}`);
+  actualizarClaseMobile();
 }, { once: true });
 
 // ─── Bottom sheet genérico ────────────────────────────────────────────────────
@@ -252,15 +267,18 @@ function inicializarSwipeSedes(carruselEl, carruselInstance) {
 
 // ─── Resize reactivo ─────────────────────────────────────────────────────────
 
-mqMobile.addEventListener('change', (e) => {
-  if (e.matches) {
+function actualizarClaseMobile() {
+  if (esMobile()) {
     document.documentElement.classList.add('es-mobile');
-    _diag('resize → es-mobile activado');
+    _diag('es-mobile: ACTIVO — mq=' + mqMobile.matches + ' tactil=' + mqTactil.matches + ' iw=' + window.innerWidth);
   } else {
     document.documentElement.classList.remove('es-mobile');
-    _diag('resize → es-mobile desactivado');
+    _diag('es-mobile: INACTIVO');
   }
-});
+}
+
+mqMobile.addEventListener('change', actualizarClaseMobile);
+mqTactil.addEventListener('change', actualizarClaseMobile);
 
 // ─── Inicialización principal ─────────────────────────────────────────────────
 

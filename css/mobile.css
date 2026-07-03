@@ -22,7 +22,10 @@
    A. MEDIA QUERY — reset del posicionamiento absoluto
    ========================================================================== */
 
-@media (max-width: 820px) {
+@media (max-width: 820px), (pointer: coarse) and (hover: none) {
+  /* Trigger A: max-width:820px para browsers que reportan viewport correcto.
+     Trigger B: pointer:coarse + hover:none para smartphones (no depende del
+     ancho del viewport — funciona aunque el carrusel infle el layout viewport). */
 
   /* ── Carrusel de sedes: horizontal con snap ────────────────────────────── */
   .carrusel {
@@ -410,7 +413,7 @@
 /* =============================================================================
    D. REDUCED MOTION
    ========================================================================== */
-@media (max-width: 820px) and (prefers-reduced-motion: reduce) {
+@media ((max-width: 820px), (pointer: coarse) and (hover: none)) and (prefers-reduced-motion: reduce) {
   .bottom-sheet { transition: none !important; }
   .elemento { transition: none !important; }
 }

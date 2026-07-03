@@ -57,7 +57,14 @@ const Distribuidor = (() => {
 
     // Por debajo de 821px el CSS ya pasa a flujo vertical (left/top:auto);
     // calcular posiciones ahí no tendría efecto visible.
-    if (!window.matchMedia('(min-width: 821px)').matches) return;
+    // Guard triple: sale en mobile usando la misma lógica que esMobile() en mobile.js.
+    // 1. max-width < 821px  → browser reporta viewport correcto
+    // 2. pointer:coarse     → dispositivo táctil (funciona aunque viewport esté inflado)
+    // 3. esMobile()         → check JS unificado (si mobile.js cargó antes)
+    const esTactilPuro = window.matchMedia('(pointer: coarse) and (hover: none)').matches;
+    const esViewportChico = !window.matchMedia('(min-width: 821px)').matches;
+    const esMobileJS = typeof window.esMobile === 'function' && window.esMobile();
+    if (esViewportChico || esTactilPuro || esMobileJS) return;
 
     // :not(.elemento--oculto-autoridad) — las autoridades que el sorteo de
     // app.js dejó afuera de esta visita NO participan del cálculo de
