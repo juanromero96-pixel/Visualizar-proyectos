@@ -245,24 +245,16 @@ function abrirCajeroMobile() {
 }
 
 // ─── Swipe entre sedes ────────────────────────────────────────────────────────
-
+// El carrusel usa CSS scroll-snap-type: x mandatory + IntersectionObserver.
+// El browser ya maneja el swipe horizontal nativo: al deslizar, el carrusel
+// snappea a la siguiente sede y el IntersectionObserver dispara onCambio.
+// Un detector de swipe JS adicional sería redundante y podría causar doble-
+// scroll (CSS snap mueve al Sede B, y entonces JS también llama ir(C)).
+// Por eso inicializarSwipeSedes es un no-op — se conserva por compatibilidad
+// de API pero no registra ningún listener.
 function inicializarSwipeSedes(carruselEl, carruselInstance) {
-  if (!esMobile()) return;
-  let x0 = 0, y0 = 0;
-
-  carruselEl.addEventListener('touchstart', e => {
-    x0 = e.touches[0].clientX;
-    y0 = e.touches[0].clientY;
-  }, { passive: true });
-
-  carruselEl.addEventListener('touchend', e => {
-    if (!esMobile()) return;
-    const dx = e.changedTouches[0].clientX - x0;
-    const dy = e.changedTouches[0].clientY - y0;
-    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
-    if (dx < 0) carruselInstance.siguiente();
-    else carruselInstance.anterior();
-  }, { passive: true });
+  // Intencionalmente vacío: CSS scroll-snap maneja el swipe nativo.
+  // La navegación táctil entre sedes funciona sin código JS adicional.
 }
 
 // ─── Resize reactivo ─────────────────────────────────────────────────────────
