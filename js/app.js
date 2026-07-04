@@ -93,6 +93,11 @@
     },
   });
 
+  // Swipe horizontal entre sedes — solo en mobile.
+  // Se inicializa DESPUÉS de crear el Carrusel porque necesita la instancia
+  // para llamar a carrusel.siguiente() y carrusel.anterior().
+  window.Mobile?.inicializarSwipe(contenedor, carrusel);
+
   document.querySelectorAll('.ruta-nodo').forEach((boton) => {
     boton.addEventListener('click', () => carrusel.ir(Number(boton.dataset.indice)));
   });
