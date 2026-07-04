@@ -1,33 +1,33 @@
 /* =============================================================================
-   mobile.css — Motor único adaptativo (Arquitectura B)
+   mobile.css — El mural documental en dispositivos táctiles
    ─────────────────────────────────────────────────────────────────────────────
-   Principio: el mismo DOM, el mismo motor JS (layout.js), adaptado por CSS.
+   PRINCIPIO CONCEPTUAL:
+   Mobile NO es una lista ni un feed. Es el mismo mural documental, reinterpretado
+   para un viewport de 375-430px. Las anotaciones siguen flotando sobre la ciudad.
+   La diferencia con desktop es de ESCALA y COMPOSICIÓN, nunca de concepto.
 
-   layout.js ya tiene su propio guard en L60:
-     if (!window.matchMedia('(min-width: 821px)').matches) return;
-   → En mobile, el motor de escritorio sale solo SIN tocar el DOM.
-   → Los elementos quedan con sus CSS custom properties (--x, --y, --rot).
-   → Este archivo sobreescribe las reglas CSS que consumen esas propiedades,
-     convirtiendo el "lienzo posicional" en una "columna documental".
-
-   Dos capas complementarias:
-     A. @media (max-width: 820px) — para browsers que reportan el viewport
-        correctamente (la mayoría).
-     B. .es-mobile selector — fallback para browsers que usan layout viewport
-        de 980px aunque el dispositivo tenga 393px (Chromium/Brave con
-        html{overflow:hidden} en versiones anteriores a nuestro fix).
+   ARQUITECTURA:
+   El motor de layout.js corre en mobile exactamente igual que en desktop.
+   Lee las zonas protegidas (logo, hamburguesa, navegación) del DOM y las
+   respeta. Los elementos siguen siendo position:absolute con transform:translate.
+   El CSS solo adapta:
+     · Tamaño máximo de tarjetas (caben en 375px)
+     · Materialidad documental (sombras, profundidad)
+     · Ciudad visible (velo más liviano)
+     · Rendimiento (sin backdrop-filter, sin Ken Burns)
+     · Navegación táctil
+     · Bottom sheets para lector y cajero
    ========================================================================== */
 
 /* =============================================================================
-   A. MEDIA QUERY — reset del posicionamiento absoluto
+   A. VIEWPORT Y CARRUSEL
+   El carrusel es horizontal con snap, igual que en desktop.
+   Cada sede es un lienzo de 100vw × 100dvh que el usuario navega con swipe.
    ========================================================================== */
 
 @media (max-width: 820px), (pointer: coarse) and (hover: none) {
-  /* Trigger A: max-width:820px para browsers que reportan viewport correcto.
-     Trigger B: pointer:coarse + hover:none para smartphones (no depende del
-     ancho del viewport — funciona aunque el carrusel infle el layout viewport). */
 
-  /* ── Carrusel de sedes: horizontal con snap ────────────────────────────── */
+  /* Carrusel: horizontal, snap por sede */
   .carrusel {
     flex-direction: row !important;
     scroll-snap-type: x mandatory !important;
@@ -42,291 +42,355 @@
     width: 100vw !important;
     min-width: 100vw !important;
     scroll-snap-align: start;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     height: 100dvh;
   }
 
-  /* ── Foto de fondo: sin Ken Burns (GPU) ──────────────────────────────── */
-  .sede-bg   { animation: none !important; filter: none; }
+  /* =============================================================================
+     B. EL MURAL — ciudad visible, anotaciones flotantes
+     ========================================================================== */
+
+  /* Ciudad más visible — el fondo urbano es parte del relato */
   .sede-velo {
     background: linear-gradient(
       180deg,
-      rgba(10,14,16,0.75) 0%,
-      rgba(10,14,16,0.88) 35%,
-      rgba(10,14,16,0.95) 100%
+      rgba(10, 14, 16, 0.60) 0%,
+      rgba(10, 14, 16, 0.72) 50%,
+      rgba(10, 14, 16, 0.80) 100%
     ) !important;
   }
 
-  /* ── Kicker lateral: oculto en mobile ─────────────────────────────────── */
+  /* Ken Burns desactivado (GPU) */
+  .sede-bg { animation: none !important; }
+
+  /* Kicker: oculto — el mural habla por sí mismo */
   .sede-kicker { display: none !important; }
 
-  /* ── NÚCLEO: El escenario pasa de "lienzo posicional" a "columna documental"
-     Un flex-column ordena los elementos por UA mediante la propiedad `order`
-     sin necesitar mover ningún nodo del DOM. ─────────────────────────────── */
-  .escenario {
-    position: relative !important;
-    height: auto !important;
-    overflow: visible !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 1px;
-    padding: 8px 0 90px !important;
-  }
+  /* El escenario es el lienzo completo — los elementos flotan dentro */
+  /* (sin sobreescribir position: la hereda de styles.css como absolute) */
 
-  /* ── Elementos: cancelar posicionamiento absoluto ─────────────────────── */
-  .elemento {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    z-index: auto !important;
-    /* La propiedad `order` agrupa por UA sin mover el DOM.
-       --ua-order se inyecta en crearElemento() para cada sede. */
-    order: var(--ua-order, 17);
-    /* Tipo del narrador UA (registro-ua = orden 0) va primero dentro del flex.
-       Se distingue visualmente con el borde izquierdo más grueso (ver abajo). */
-    transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    opacity: 0;
-    transition: opacity 360ms ease !important;
-    cursor: pointer;
-  }
+  /* =============================================================================
+     C. TAMAÑO DE LAS ANOTACIONES
+     Los documentos son más pequeños que en desktop para caber en 375px
+     sin superponer texto. El motor de layout mide los offsetWidth/Height
+     reales (ya con estos max-width) para calcular posiciones sin colisión.
+     ========================================================================== */
 
-  .elemento--visible {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-
-  /* ── Separadores visuales de capítulos UA ─────────────────────────────
-     Los UA registros (narradores) son el primer elemento de cada grupo.
-     Un margen superior y un separador crean la sensación de capítulo sin
-     DOM restructuring. El borde superior usa el color de la UA. */
-  .elemento--registro-ua {
-    margin-top: 16px !important;
-    border-top: 1px solid rgba(0, 163, 224, 0.2) !important;
-  }
-
-
-
-  /* Elementos hidden por K=2 o rotación: mantener ocultos */
-  .elemento--oculto-autoridad { opacity: 0 !important; pointer-events: none !important; height: 0; overflow: hidden; }
-  .elemento--rotacion-espera  { opacity: 0 !important; pointer-events: none !important; height: 0; overflow: hidden; }
-
-  /* ── Interiors: ancho completo, sin backdrop-filter (GPU) ─────────────── */
+  /* Todas las interiors: quitar backdrop-filter (GPU) y limitar ancho */
   .elemento-interior {
-    width: 100% !important;
-    max-width: 100% !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border-radius: 0 !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
-    border-top: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
-    border-left: 4px solid var(--color-ua, var(--unam-cian)) !important;
-    padding: 16px !important;
   }
 
-  /* UA narrador (registro-ua) recibe más peso visual */
+  /* Experiencias UA — protagonistas del relato */
   .elemento--registro-ua .elemento-interior {
-    border-left-width: 5px !important;
-    background: rgba(10,14,16,0.97) !important;
-    padding: 20px 16px !important;
+    max-width: min(218px, 57vw) !important;
+    padding: 14px 16px 12px !important;
   }
 
-  /* Videos: miniatura full-width */
+  /* Registros conceptuales */
+  .elemento--registro-conceptual .elemento-interior {
+    max-width: min(185px, 49vw) !important;
+    padding: 12px 14px 10px !important;
+  }
+
+  /* Testimonios UA */
+  .elemento--testimonio .elemento-interior {
+    max-width: min(175px, 46vw) !important;
+    padding: 11px 13px 9px !important;
+  }
+
+  /* Autoridades institucionales UNaM */
+  .elemento--testimonio-institucional .elemento-interior {
+    max-width: min(165px, 44vw) !important;
+    padding: 10px 12px 8px !important;
+  }
+
+  /* Videos: miniatura compacta */
   .elemento--video .elemento-interior {
+    max-width: min(195px, 52vw) !important;
     padding: 0 !important;
     overflow: hidden;
   }
-  .elemento--video .video-miniatura-envoltorio {
-    width: 100%;
-    aspect-ratio: 16/9;
+  .elemento--video .video-meta {
+    padding: 10px 12px 8px !important;
   }
-  .elemento--video .video-meta { padding: 14px 16px !important; }
-  .elemento--video .video-play-btn { width: 56px !important; height: 56px !important; }
-
-  /* Tipografía mínima móvil: 15px para legibilidad */
-  .testimonio-cita   { font-size: 0.94rem !important; -webkit-line-clamp: 2 !important; }
-  .testimonio-nombre { font-size: 0.95rem !important; }
-  .registro-titulo   { font-size: 1.02rem !important; }
-
-  /* CTAs: touch target mínimo 44px */
-  .testimonio-expandir,
-  .registro-expandir,
-  .registro-conceptual-expandir,
-  .video-expandir {
+  .elemento--video .video-titulo {
     font-size: 0.8rem !important;
-    min-height: 44px;
-    padding: 10px 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    opacity: 0.85 !important;
+    -webkit-line-clamp: 2 !important;
+  }
+  .elemento--video .video-resumen {
+    display: none !important;  /* solo visible en el lector */
+  }
+  .elemento--video .video-play-btn {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1rem !important;
   }
 
-  /* ── Hover (no existe en táctil) → tap feedback ──────────────────────── */
-  .elemento:active .elemento-interior {
-    transform: scale(0.98) !important;
-    transition: transform 120ms ease !important;
+  /* =============================================================================
+     D. TIPOGRAFÍA EDITORIAL
+     Escala mínima de 14px para legibilidad en pantallas de 375px.
+     ========================================================================== */
+
+  .registro-titulo          { font-size: 0.9rem !important; line-height: 1.3 !important; }
+  .registro-resumen         { font-size: 0.76rem !important; -webkit-line-clamp: 2 !important; }
+  .registro-ua-badge        { font-size: 0.58rem !important; margin-bottom: 7px !important; }
+  .registro-expandir        { font-size: 0.7rem !important; padding: 6px 0 !important; min-height: 32px !important; }
+
+  .testimonio-nombre        { font-size: 0.86rem !important; }
+  .testimonio-cargo         { font-size: 0.66rem !important; }
+  .testimonio-institucion   { font-size: 0.62rem !important; margin-bottom: 7px !important; }
+  .testimonio-cita          { font-size: 0.78rem !important; -webkit-line-clamp: 2 !important; padding-left: 11px !important; }
+  .testimonio-expandir      { font-size: 0.7rem !important; padding: 6px 0 !important; min-height: 32px !important; }
+
+  .registro-conceptual-titulo   { font-size: 0.84rem !important; }
+  .registro-conceptual-resumen  { font-size: 0.74rem !important; }
+  .registro-conceptual-expandir { font-size: 0.68rem !important; min-height: 32px !important; }
+
+  /* Autoridades: más compactas aún */
+  .elemento--testimonio-institucional .testimonio-foto {
+    width: 34px !important; height: 34px !important;
+    min-width: 34px !important; min-height: 34px !important;
   }
-  /* Suprimir efectos de hover desktop */
+  .elemento--testimonio-institucional .testimonio-foto img,
+  .elemento--testimonio-institucional .testimonio-foto .testimonio-monograma {
+    width: 34px !important; height: 34px !important;
+    font-size: 0.78rem !important;
+  }
+  .elemento--testimonio-institucional .testimonio-nombre { font-size: 0.8rem !important; }
+  .elemento--testimonio-institucional .testimonio-cita   { -webkit-line-clamp: 1 !important; }
+
+  /* =============================================================================
+     E. MATERIALIDAD DOCUMENTAL
+     Las anotaciones deben parecer fichas, registros, papeles —
+     nunca componentes UI ni cards de Material Design.
+     ========================================================================== */
+
+  /* Sombra más pronunciada: da profundidad al mural */
+  .elemento-interior {
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.55),
+      0 1px 4px rgba(0, 0, 0, 0.38) !important;
+  }
+
+  /* Los interiors mantienen sus bordes de color UA */
+
+  /* Tap feedback: el documento "cede" levemente */
+  .elemento:active .elemento-interior {
+    transform: scale(0.97) !important;
+    transition: transform 100ms ease !important;
+  }
+
+  /* Suprimir efectos de hover (no existen en táctil) */
+  .elemento--ua-alejado { opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
+  .elemento--ua-relacionado { filter: none !important; }
   .elemento--enfocado .elemento-interior,
   .elemento--registro-ua.elemento--enfocado .elemento-interior,
   .elemento--testimonio.elemento--enfocado .elemento-interior {
     transform: none !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
     filter: none !important;
   }
-  /* Constelaciones hover → no en móvil (CSS flow ya agrupa por UA) */
-  .elemento--ua-alejado { opacity: 1 !important; filter: none !important; pointer-events: auto !important; }
 
-  /* ── Cajero desktop: oculto en mobile ─────────────────────────────────── */
+  /* =============================================================================
+     F. ROTACIÓN — los elementos entran y salen suavemente
+     La rotación sigue corriendo en mobile para crear el mural vivo.
+     Los UA registros son permanentes. Los satélites rotan cada 10s.
+     ========================================================================== */
+  .elemento--rotacion-espera {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    /* transition ya viene del inline style de mobile.js */
+  }
+
+  /* =============================================================================
+     G. CAJERO DESKTOP → OCULTO
+     En mobile se usa el bottom sheet del cajero.
+     ========================================================================== */
   .cajero, .cajero-telon { display: none !important; }
 
-  /* ── Logo + hamburguesa compact ───────────────────────────────────────── */
-  .marca-chip { padding: 5px 10px !important; gap: 6px !important; }
-  .marca-chip-logo { height: clamp(26px,3vh,36px) !important; }
+  /* =============================================================================
+     H. LOGO + HAMBURGUESA COMPACT
+     ========================================================================== */
+  .marca-chip {
+    padding: 5px 10px !important;
+    gap: 6px !important;
+  }
+  .marca-chip-logo { height: clamp(26px, 3vh, 36px) !important; }
   .menu-inst-btn--en-chip { width: 38px !important; height: 38px !important; }
 
-  /* ── Navegación de sedes: bottom bar ──────────────────────────────────── */
+  /* Barras del hamburguesa: más negras, más gruesas, más legibles */
+  .menu-inst-linea {
+    background-color: var(--unam-negro, #0e1216) !important;
+    height: 2.5px !important;
+    width: 18px !important;
+  }
+
+  /* =============================================================================
+     I. NAVEGACIÓN DE SEDES — tab bar bottom
+     Botones amplios y táctiles, visibles sobre el mural.
+     ========================================================================== */
   .ruta {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     z-index: 80;
-    background: rgba(10,14,16,0.94);
-    border-top: 1px solid rgba(245,243,238,0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: rgba(10, 14, 16, 0.92);
+    border-top: 1px solid rgba(245, 243, 238, 0.12);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     justify-content: space-between;
   }
+
   .ruta-flecha {
     display: flex !important;
     align-items: center;
     justify-content: center;
     width: 44px !important;
     height: 44px !important;
-    border: 1px solid rgba(245,243,238,0.18);
-    background: rgba(245,243,238,0.06);
+    border: 1px solid rgba(245, 243, 238, 0.2);
+    background: rgba(245, 243, 238, 0.06);
     border-radius: 50%;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     color: var(--papel);
     flex-shrink: 0;
     cursor: pointer;
+    transition: background 140ms ease;
     min-width: 44px;
   }
+  .ruta-flecha:active { background: rgba(0, 163, 224, 0.22); }
+
   .ruta-nodos {
-    display: flex; flex: 1; justify-content: center;
-    gap: 6px; list-style: none; margin: 0; padding: 0;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
+
   .ruta-nodo {
-    font-size: 0.72rem; font-weight: 700;
-    letter-spacing: 0.04em; text-transform: uppercase;
-    padding: 10px 12px !important;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 10px 14px !important;
+    border: none;
     border-bottom: 2px solid transparent;
-    background: transparent; color: var(--papel);
-    opacity: 0.55;
-    transition: opacity 160ms ease;
-    min-height: 44px; cursor: pointer;
-    border-top: none; border-left: none; border-right: none;
+    background: transparent;
+    color: var(--papel);
+    opacity: 0.50;
+    transition: opacity 140ms ease, border-color 140ms ease;
+    min-height: 44px;
+    cursor: pointer;
     white-space: nowrap;
   }
   .ruta-nodo--activo {
     opacity: 1;
     border-bottom-color: var(--unam-cian) !important;
   }
+  .ruta-nodo:active { opacity: 0.85; }
 
-  /* ── Intro overlay: bottom-up en mobile ───────────────────────────────── */
-  .intro { align-items: flex-end !important; padding: 0 !important; }
+  /* =============================================================================
+     J. INTRO OVERLAY — bottom-up
+     ========================================================================== */
+  .intro {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
   .intro-tarjeta {
     width: 100% !important;
     max-height: 90dvh !important;
     border-radius: 20px 20px 0 0 !important;
-    padding: 24px 20px calc(32px + env(safe-area-inset-bottom,0px)) !important;
+    padding: 24px 20px calc(32px + env(safe-area-inset-bottom, 0px)) !important;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .intro-fondo-imagen { animation: none !important; filter: blur(0.5px) !important; }
-  .intro-titulo { font-size: clamp(1.4rem,6vw,1.8rem) !important; }
+  .intro-titulo { font-size: clamp(1.4rem, 6vw, 1.8rem) !important; }
+  .intro-btn { min-height: 50px !important; font-size: 0.95rem !important; }
   .intro-acciones {
     position: sticky; bottom: 0;
-    background: rgba(8,12,16,0.96);
+    background: rgba(8, 12, 16, 0.96);
     padding: 12px 0 0;
   }
-  .intro-btn { min-height: 50px !important; font-size: 0.95rem !important; }
 
-  /* ── Placeholder Eldorado en construcción ─────────────────────────────── */
+  /* =============================================================================
+     K. PLACEHOLDER ELDORADO
+     ========================================================================== */
   .escenario-en-construccion {
-    position: relative !important;
-    top: auto !important; left: auto !important;
-    transform: none !important;
-    width: 100% !important;
-    padding: 16px;
-    pointer-events: auto;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 6;
+    width: min(340px, 88vw);
+    pointer-events: none;
   }
 
-  /* ── Accesibilidad ────────────────────────────────────────────────────── */
-  *:focus-visible { outline: 2px solid var(--unam-cian) !important; outline-offset: 3px !important; }
+  /* =============================================================================
+     L. ACCESIBILIDAD
+     ========================================================================== */
+  *:focus-visible {
+    outline: 2px solid var(--unam-cian) !important;
+    outline-offset: 3px !important;
+  }
 }
 
 /* =============================================================================
-   B. CAPA .es-mobile — fallback independiente de la media query
-   (actúa si matchMedia falla por layout viewport de 980px)
+   CAPA .es-mobile — fallback independiente de media query
+   Para browsers que reportan viewport inflado por el carrusel de 3 sedes
+   (300vw total). Activada por JS (pointer:coarse OR innerWidth<=820).
    ========================================================================== */
 
-.es-mobile .escenario {
-  position: relative !important;
-  height: auto !important;
-  overflow: visible !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 1px;
-  padding: 8px 0 90px !important;
-}
-
-.es-mobile .elemento {
-  position: relative !important;
-  left: auto !important; top: auto !important;
-  z-index: auto !important;
-  order: var(--ua-order, 17);
-  transform: none !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  opacity: 0;
-  transition: opacity 360ms ease !important;
-}
-
-.es-mobile .elemento--visible {
-  opacity: 1 !important;
-  transform: none !important;
-}
-
+/* Quitar backdrop-filter en todos los dispositivos táctiles (performance) */
 .es-mobile .elemento-interior {
-  width: 100% !important;
-  max-width: 100% !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 
+/* Materialidad documental */
+.es-mobile .elemento-interior {
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.55),
+    0 1px 4px rgba(0, 0, 0, 0.38) !important;
+}
+
+/* Kicker oculto */
 .es-mobile .sede-kicker { display: none !important; }
+
+/* Cajero desktop oculto */
 .es-mobile .cajero, .es-mobile .cajero-telon { display: none !important; }
-.es-mobile .intro-fondo-imagen, .es-mobile .sede-bg { animation: none !important; }
-.es-mobile .elemento--rotacion-espera { opacity: 0 !important; pointer-events: none !important; height: 0; overflow: hidden; }
+
+/* Performance */
+.es-mobile .intro-fondo-imagen,
+.es-mobile .sede-bg { animation: none !important; }
+
+/* Barras del hamburguesa: negras y gruesas */
+.es-mobile .menu-inst-linea {
+  background-color: var(--unam-negro, #0e1216) !important;
+  height: 2.5px !important;
+}
+
+/* Element sizing — limitar ancho para que el layout los coloque sin overflow */
+.es-mobile .elemento--registro-ua .elemento-interior        { max-width: min(218px, 57vw) !important; }
+.es-mobile .elemento--registro-conceptual .elemento-interior { max-width: min(185px, 49vw) !important; }
+.es-mobile .elemento--testimonio .elemento-interior          { max-width: min(175px, 46vw) !important; }
+.es-mobile .elemento--testimonio-institucional .elemento-interior { max-width: min(165px, 44vw) !important; }
+.es-mobile .elemento--video .elemento-interior               { max-width: min(195px, 52vw) !important; }
 
 /* =============================================================================
-   C. BOTTOM SHEETS — lector y cajero
+   BOTTOM SHEETS — lector y cajero
    ========================================================================== */
 
 .bottom-sheet {
   position: fixed;
   bottom: 0; left: 0; right: 0;
   z-index: 500;
-  background: rgba(8,12,16,0.98);
+  background: rgba(8, 12, 16, 0.98);
   border-radius: 20px 20px 0 0;
   border-top: 2px solid var(--unam-cian);
   max-height: 92dvh;
@@ -340,37 +404,46 @@
 .bottom-sheet--pantalla-completa { max-height: 96dvh; }
 
 .bottom-sheet-track {
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 12px 16px 10px;
-  position: relative; flex-shrink: 0;
-  border-bottom: 1px solid rgba(245,243,238,0.1);
+  position: relative;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
 }
 .bottom-sheet-handle {
   width: 40px; height: 4px;
-  background: rgba(245,243,238,0.35);
-  border-radius: 2px; flex-shrink: 0;
+  background: rgba(245, 243, 238, 0.35);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 .bottom-sheet-cerrar {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  width: 44px; height: 44px; border: none;
-  background: rgba(245,243,238,0.08); color: var(--papel);
-  border-radius: 50%; display: grid; place-items: center;
+  position: absolute; right: 12px; top: 50%;
+  transform: translateY(-50%);
+  width: 44px; height: 44px;
+  border: none;
+  background: rgba(245, 243, 238, 0.08);
+  color: var(--papel);
+  border-radius: 50%;
+  display: grid; place-items: center;
   font-size: 1rem; cursor: pointer;
   transition: background 140ms ease;
 }
-.bottom-sheet-cerrar:hover,
-.bottom-sheet-cerrar:focus-visible { background: rgba(245,243,238,0.18); }
+.bottom-sheet-cerrar:active { background: rgba(245, 243, 238, 0.18); }
 
 .bottom-sheet-body {
-  flex: 1; overflow-y: auto;
+  flex: 1;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
 
 .bottom-sheet-telon {
-  position: fixed; inset: 0; z-index: 499;
-  background: rgba(0,0,0,0.65);
+  position: fixed; inset: 0;
+  z-index: 499;
+  background: rgba(0, 0, 0, 0.65);
   opacity: 0; pointer-events: none;
   transition: opacity 300ms ease;
   backdrop-filter: blur(2px);
@@ -379,40 +452,49 @@
 
 /* Lector en el bottom sheet */
 .bottom-sheet--lector .lector-tarjeta {
-  background: transparent !important; box-shadow: none !important;
-  border-radius: 0 !important; width: 100% !important;
-  max-height: none !important; overflow: visible !important;
-  padding: 0 !important; margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  width: 100% !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 .bottom-sheet--lector .lector-cerrar { display: none !important; }
 .bottom-sheet--lector .lector-contenido { padding: 20px 16px 32px !important; }
 .bottom-sheet--lector .lector-nav-ua {
   padding: 10px 16px !important;
-  border-bottom: 1px solid rgba(245,243,238,0.1) !important;
+  border-bottom: 1px solid rgba(245, 243, 238, 0.1) !important;
   position: sticky; top: 0;
-  background: rgba(8,12,16,0.96); z-index: 10;
+  background: rgba(8, 12, 16, 0.96);
+  z-index: 10;
 }
-.bottom-sheet--lector .lector-video-ratio { margin: 0 -16px; }
 
 /* Cajero mobile */
 .cajero-mobile-contenido { display: flex; flex-direction: column; height: 100%; }
 .cajero-mobile-header {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(245,243,238,0.1); flex-shrink: 0;
+  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
+  flex-shrink: 0;
 }
 .cajero-mobile-logo { height: 24px; width: 24px; }
 .cajero-mobile-titulo {
-  font-size: 0.76rem; font-weight: 700; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--unam-cian);
+  font-size: 0.76rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--unam-cian);
 }
 .cajero-mobile-nav {
   display: flex; overflow-x: auto; scrollbar-width: none; gap: 0;
   padding: 0 12px;
-  border-bottom: 1px solid rgba(245,243,238,0.1); flex-shrink: 0;
+  border-bottom: 1px solid rgba(245, 243, 238, 0.1);
+  flex-shrink: 0;
 }
 .cajero-mobile-nav::-webkit-scrollbar { display: none; }
-.cajero-mobile-nav .cajero-tab { font-size: 0.76rem; padding: 12px 14px; min-height: 44px; }
+.cajero-mobile-nav .cajero-tab {
+  font-size: 0.76rem; padding: 12px 14px; min-height: 44px;
+}
 .cajero-mobile-cuerpo {
   flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
@@ -422,9 +504,9 @@
 .cajero-mobile-cuerpo .cajero-tipos-lista { grid-template-columns: 1fr !important; }
 
 /* =============================================================================
-   D. REDUCED MOTION
+   REDUCED MOTION
    ========================================================================== */
-@media ((max-width: 820px), (pointer: coarse) and (hover: none)) and (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce) {
   .bottom-sheet { transition: none !important; }
-  .elemento { transition: none !important; }
+  .elemento-interior { transition: none !important; }
 }

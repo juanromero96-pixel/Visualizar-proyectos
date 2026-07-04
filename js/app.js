@@ -1052,12 +1052,10 @@ const Rotacion = (() => {
   }
 
   function iniciar(seccion) {
-    // En mobile el layout es CSS flow — todos los elementos son visibles
-    // simultáneamente en scroll vertical. La rotación (que oculta elementos
-    // con opacity:0) no tiene sentido y además conflictuaría con el CSS
-    // que muestra todos los .elemento. El guard esMobile() previene que
-    // se corra cualquier lógica de ocultamiento sobre elementos en flujo.
-    if (window.esMobile && window.esMobile()) return;
+    // La rotación trabaja en todos los canales — desktop y mobile.
+    // En mobile muestra 4-5 satélites visibles a la vez (calcularCapacidad)
+    // y los intercambia gradualmente, creando la sensación de mural vivo
+    // sin saturar la pantalla. Los UA registros permanecen siempre visibles.
     detener();
     if (!seccion) return;
     timeoutId = window.setTimeout(() => {
