@@ -837,6 +837,8 @@ function actualizarRuta(indiceActual) {
   const total = Number(document.documentElement.style.getPropertyValue('--total-sedes')) || 1;
   const progreso = total > 1 ? indiceActual / (total - 1) : 1;
   document.documentElement.style.setProperty('--progreso-ruta', progreso.toFixed(3));
+  // Sincronizar el nav mobile independiente (#ruta-m)
+  window.actualizarNavMobile?.(indiceActual);
 }
 
 function escaparHTML(texto = '') {
@@ -892,6 +894,13 @@ const Rotacion = (() => {
   let generacion    = 0;
 
   function calcularCapacidad() {
+    // En mobile el viewport es ~375px — el mismo número de elementos que
+    // en desktop (8-22) causa superposiciones inevitables. Se usa una
+    // fórmula separada que limita a 5-7 elementos simultáneos, dando
+    // más espacio de respiración a cada anotación del mural.
+    if (window.esMobile?.()) {
+      return Math.max(5, Math.min(7, Math.round(window.innerWidth * window.innerHeight / 50000)));
+    }
     return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
   }
 

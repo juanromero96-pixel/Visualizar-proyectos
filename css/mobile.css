@@ -431,21 +431,25 @@
   /* =============================================================================
      J. INTRO OVERLAY — bottom-up
      ========================================================================== */
+  /* Intro: card centrada en el viewport — "cartel flotante a la mitad de la
+     pantalla" como solicitado. No es bottom-sheet, es un modal centrado con
+     dimensiones apropiadas para mobile. */
   .intro {
-    align-items: flex-end !important;
-    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
   }
   .intro-tarjeta {
-    width: 100% !important;
-    max-height: 90dvh !important;
-    border-radius: 20px 20px 0 0 !important;
-    padding: 24px 20px calc(32px + env(safe-area-inset-bottom, 0px)) !important;
+    width: min(92vw, 380px) !important;
+    max-height: min(88dvh, 680px) !important;
+    border-radius: 12px !important;
+    padding: 24px 20px 28px !important;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .intro-fondo-imagen { animation: none !important; filter: blur(0.5px) !important; }
-  .intro-titulo { font-size: clamp(1.4rem, 6vw, 1.8rem) !important; }
-  .intro-btn { min-height: 50px !important; font-size: 0.95rem !important; }
+  .intro-fondo-imagen { animation: none !important; filter: blur(1px) !important; }
+  .intro-titulo { font-size: clamp(1.3rem, 5.5vw, 1.7rem) !important; }
+  .intro-btn { min-height: 50px !important; font-size: 0.92rem !important; }
   .intro-acciones {
     position: sticky; bottom: 0;
     background: rgba(8, 12, 16, 0.96);
@@ -581,6 +585,17 @@
    BOTTOM SHEETS — lector y cajero
    ========================================================================== */
 
+
+  /* ==========================================================================
+     NAV MOBILE INDEPENDIENTE (#ruta-m)
+     Elemento creado por mobile.js, sin herencia del desktop .ruta.
+     El desktop .ruta se oculta en mobile para evitar conflictos.
+     ======================================================================= */
+  .ruta {
+    /* Ocultar el nav desktop en mobile — reemplazado por #ruta-m */
+    display: none !important;
+  }
+
 .bottom-sheet {
   position: fixed;
   bottom: 0; left: 0; right: 0;
@@ -705,3 +720,61 @@
   .bottom-sheet { transition: none !important; }
   .elemento-interior { transition: none !important; }
 }
+
+/* =============================================================================
+   #ruta-m — Nav mobile creado por mobile.js
+   No está dentro de ninguna media query: se aplica siempre porque el elemento
+   solo existe si esMobile() es true (lo crea JS). Sin herencia del .ruta
+   desktop, sin conflictos de CSS, sin truncación.
+   ========================================================================== */
+
+#ruta-m {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  display: flex;
+  align-items: stretch;
+  background: rgba(10, 14, 16, 0.94);
+  border-top: 1px solid rgba(245, 243, 238, 0.14);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  min-height: 52px;
+  /* backdrop-filter solo si no es demasiado pesado */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.ruta-m-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(245, 243, 238, 0.55);
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: normal;        /* permite salto de línea */
+  line-height: 1.25;
+  padding: 10px 6px;
+  cursor: pointer;
+  min-height: 44px;           /* touch target WCAG */
+  transition: color 140ms ease, border-color 140ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ruta-m-btn--activo {
+  color: rgba(245, 243, 238, 1);
+  border-bottom-color: var(--unam-cian, #00a3e0);
+}
+
+.ruta-m-btn:active {
+  color: rgba(245, 243, 238, 0.85);
+  background: rgba(255, 255, 255, 0.04);
+}
+

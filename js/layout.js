@@ -60,7 +60,7 @@ const Distribuidor = (() => {
 
     // En mobile el viewport es ~375px de ancho: los elementos necesitan más
     // separación para que el texto no se superpon­ga entre tarjetas adyacentes.
-    SEPARACION_MINIMA = (window.esMobile?.() ? 36 : 16);
+    SEPARACION_MINIMA = (window.esMobile?.() ? 48 : 16);
 
     // El motor de layout corre tanto en Desktop como en Mobile.
     // En Mobile los elementos siguen flotando sobre la ciudad — el mural

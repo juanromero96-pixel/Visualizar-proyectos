@@ -244,6 +244,57 @@ function abrirCajeroMobile() {
   cajeroSheet.abrir(contenido);
 }
 
+// ─── Nav mobile: elemento independiente ──────────────────────────────────────
+// El .ruta desktop tiene demasiada herencia CSS para sobreescribir de forma
+// confiable en mobile. En su lugar se crea un elemento completamente nuevo
+// (#ruta-m) que no hereda nada del sistema desktop.
+// Los clicks delegan a los botones .ruta-nodo originales para conservar
+// toda la lógica del Carrusel (ir(), onCambio, Rotacion.iniciar, etc.).
+
+function crearNavMobile() {
+  if (!esMobile()) return;
+  if (document.getElementById('ruta-m')) return; // ya existe
+
+  // Esperar a que pintarRuta() haya creado los .ruta-nodo
+  const sedesNodos = Array.from(document.querySelectorAll('.ruta-nodo'));
+  if (!sedesNodos.length) {
+    window.setTimeout(crearNavMobile, 400);
+    return;
+  }
+
+  const nav = document.createElement('nav');
+  nav.id = 'ruta-m';
+  nav.setAttribute('aria-label', 'Navegación entre sedes');
+
+  sedesNodos.forEach((nodo, i) => {
+    const nombre = nodo.querySelector('.ruta-nodo-nombre')?.textContent?.trim()
+                   || `Sede ${i + 1}`;
+    const btn = document.createElement('button');
+    btn.className = 'ruta-m-btn';
+    btn.dataset.indice = String(i);
+    btn.textContent = nombre;
+    btn.setAttribute('aria-label', `Ir a ${nombre}`);
+    if (nodo.classList.contains('ruta-nodo--activo')) {
+      btn.classList.add('ruta-m-btn--activo');
+    }
+    btn.addEventListener('click', () => {
+      nodo.click();  // delega al botón original → dispara carrusel.ir()
+    });
+    nav.appendChild(btn);
+  });
+
+  document.body.appendChild(nav);
+
+  // Función pública para sincronizar estado al cambiar sede
+  window.actualizarNavMobile = (indice) => {
+    nav.querySelectorAll('.ruta-m-btn').forEach((b, i) => {
+      b.classList.toggle('ruta-m-btn--activo', i === indice);
+    });
+  };
+
+  _diag(`crearNavMobile: nav creado con ${sedesNodos.length} sedes`);
+}
+
 // ─── Swipe entre sedes ────────────────────────────────────────────────────────
 // El carrusel usa CSS scroll-snap-type: x mandatory + IntersectionObserver.
 // El browser ya maneja el swipe horizontal nativo: al deslizar, el carrusel
@@ -279,9 +330,13 @@ function inicializarMobile() {
     _diag('inicializarMobile: SKIP (no es mobile)');
     return;
   }
-  _diag(`inicializarMobile: EJECUTADO (innerWidth=${window.innerWidth})`);
+  _diag(`inicializarMobile: EJECUTADO — innerWidth=${window.innerWidth} tactil=${mqTactil.matches}`);
   inicializarLectorMobile();
   inicializarCajeroMobile();
+  // El nav se crea después de que pintarRuta() haya poblado los .ruta-nodo.
+  // Se llama aquí porque inicializarMobile() se llama al final de iniciarSitio()
+  // cuando la nav del desktop ya existe.
+  crearNavMobile();
 }
 
 // ─── API pública ──────────────────────────────────────────────────────────────
@@ -289,6 +344,7 @@ function inicializarMobile() {
 window.Mobile = {
   inicializar:      inicializarMobile,
   inicializarSwipe: inicializarSwipeSedes,
+  crearNav:         crearNavMobile,
   abrirCajero:      abrirCajeroMobile,
   getLectorSheet:   () => lectorSheet,
 };
