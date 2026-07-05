@@ -388,15 +388,17 @@ function crearTarjetaTestimonio(item, interior) {
   figura.className = 'testimonio-foto';
 
   // Color del monograma derivado de la UA de la persona, no de un hash aleatorio.
-  // Esto vincula visualmente cada ficha con su constelación UA: todos los
-  // monogramas FAyD serán del color de FAyD, todos los de FCEQyN del de FCEQyN.
-  // En desktop la foto puede estar presente; en mobile el CSS oculta la foto
-  // y muestra el monograma documental (cuadrado, no circular).
   const uaKey = resolverUA(item.unidadAcademica || item.institucion || '');
   const colorMonograma = colorDeUnidadAcademica(uaKey) || '#00a3e0';
+  const iniciales = inicialesDe(item.nombreCompleto);
 
-  if (item.foto) {
-    const iniciales = inicialesDe(item.nombreCompleto);
+  // En mobile: siempre monograma documental (cuadrado), nunca foto circular.
+  // Manejado en JS para evitar dependencias de media query con viewport inflado.
+  // En desktop: foto si existe, monograma como fallback.
+  const esMobileNow = window.esMobile?.();
+
+  if (item.foto && !esMobileNow) {
+    // Desktop con foto
     figura.innerHTML = `
       <img class="testimonio-foto-img" src="${item.foto}" alt="${escaparHTML(item.nombreCompleto)}" loading="lazy">
       <div class="testimonio-monograma testimonio-monograma--alt" style="--color-monograma:${colorMonograma}">${iniciales}</div>
@@ -404,7 +406,7 @@ function crearTarjetaTestimonio(item, interior) {
     figura.querySelector('.testimonio-foto-img')
           .addEventListener('error', () => figura.classList.add('testimonio-foto--rota'));
   } else {
-    const iniciales = inicialesDe(item.nombreCompleto);
+    // Mobile (siempre monograma) o desktop sin foto
     figura.innerHTML = `<div class="testimonio-monograma" style="--color-monograma:${colorMonograma}">${iniciales}</div>`;
   }
 
@@ -494,17 +496,18 @@ function colorDeUnidadAcademica(textoLibre = '') {
 function crearTarjetaRegistroUA(item, interior) {
   interior.style.setProperty('--ancho-registro', '290px');
 
-  // Las imágenes de sede son la firma visual de cada Unidad Académica en el mural.
-  // Aparecen como portada fotográfica en la parte superior de la tarjeta narradora,
-  // identificando el lugar físico donde ocurrió la extensión — igual que los
-  // testimonios muestran el rostro de quien habla, el UA registro muestra el
-  // campus de la facultad que vivió la experiencia.
   const portadaHTML = item.imagenPortada ? `
     <div class="registro-ua-portada" aria-hidden="true">
       <img src="${escaparHTML(item.imagenPortada)}"
            alt="${escaparHTML(item.unidadAcademica || '')} — sede"
            loading="lazy">
     </div>` : '';
+
+  // Agregar clase 'tiene-portada' al interior cuando hay imagen:
+  // evita el uso de :has() que no tiene soporte universal en browsers mobile.
+  if (item.imagenPortada) {
+    interior.classList.add('tiene-portada');
+  }
 
   interior.innerHTML = `
     ${portadaHTML}
@@ -520,6 +523,7 @@ function crearTarjetaRegistroUA(item, interior) {
     interior.querySelector('.registro-ua-portada img')
             .addEventListener('error', (e) => {
               e.target.closest('.registro-ua-portada').style.display = 'none';
+              interior.classList.remove('tiene-portada');
             });
   }
 }

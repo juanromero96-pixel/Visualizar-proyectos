@@ -313,6 +313,14 @@
   transition: transform 240ms ease, opacity 200ms ease, width 200ms ease;
 }
 
+/* Cuando el hamburguesa está dentro del chip de marca (fondo claro),
+   las líneas deben ser oscuras — en ambos canales, desktop y mobile. */
+.menu-inst-btn--en-chip .menu-inst-linea {
+  background: var(--unam-negro, #0e1216);
+  height: 2px;
+  width: 18px;
+}
+
 .menu-inst-btn--abierto .menu-inst-linea:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
 .menu-inst-btn--abierto .menu-inst-linea:nth-child(2) { opacity: 0; width: 0; }
 .menu-inst-btn--abierto .menu-inst-linea:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }

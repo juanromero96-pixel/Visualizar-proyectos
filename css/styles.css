@@ -457,14 +457,12 @@ button { font-family: inherit; cursor: pointer; }
   padding: 14px 18px 12px;
 }
 
-/* Cuando el interior tiene una portada, el border-top del interior
-   actúa como separador entre la imagen y la información contextual */
-.elemento--registro-ua .elemento-interior {
-  padding: 0;       /* el padding lo maneja .registro-ua-cuerpo */
+/* Con portada: el interior no tiene padding (lo maneja .registro-ua-cuerpo) */
+.elemento--registro-ua .elemento-interior.tiene-portada {
+  padding: 0;
 }
-
-/* Sin portada: mantener el padding original */
-.elemento--registro-ua .elemento-interior:not(:has(.registro-ua-portada)) {
+/* Sin portada: padding estándar del interior (igual que antes) */
+.elemento--registro-ua .elemento-interior:not(.tiene-portada) {
   padding: 18px 20px 14px;
 }
 
@@ -834,6 +832,15 @@ button { font-family: inherit; cursor: pointer; }
    opacity:0 y no interactúan; las transiciones las controla JS directamente
    vía inline style, así no interfieren con el reveal inicial del Secuenciador.
    ========================================================================== */
+
+/* Rotación: rule global (fuera de media query) con specificity reforzada
+   para garantizar que funcione independientemente del viewport reportado. */
+.elemento.elemento--rotacion-espera {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;  /* doble ocultamiento por si opacity falla */
+}
+
 .elemento--rotacion-espera {
   opacity: 0 !important;
   pointer-events: none !important;
@@ -1084,7 +1091,16 @@ button { font-family: inherit; cursor: pointer; }
   .elemento--ua-relacionado {
     transition: none !important;
   }
-  .elemento--rotacion-espera {
+  
+/* Rotación: rule global (fuera de media query) con specificity reforzada
+   para garantizar que funcione independientemente del viewport reportado. */
+.elemento.elemento--rotacion-espera {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;  /* doble ocultamiento por si opacity falla */
+}
+
+.elemento--rotacion-espera {
     transition: none !important;
   }
 }
