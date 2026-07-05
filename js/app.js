@@ -380,8 +380,17 @@ function crearTarjetaTestimonio(item, interior) {
   figura.className = 'testimonio-foto';
 
   if (item.foto) {
-    figura.innerHTML = `<img src="${item.foto}" alt="${escaparHTML(item.nombreCompleto)}" loading="lazy">`;
-    figura.querySelector('img').addEventListener('error', () => figura.classList.add('testimonio-foto--rota'));
+    // Siempre se genera el monograma ADEMÁS de la foto: en desktop se muestra
+    // la foto; en mobile para autoridades UNaM el CSS oculta la foto y
+    // muestra el monograma (lenguaje documental vs. perfil de red social).
+    const iniciales = inicialesDe(item.nombreCompleto);
+    const color = PALETA_MONOGRAMA[hashSimple(item.nombreCompleto) % PALETA_MONOGRAMA.length];
+    figura.innerHTML = `
+      <img class="testimonio-foto-img" src="${item.foto}" alt="${escaparHTML(item.nombreCompleto)}" loading="lazy">
+      <div class="testimonio-monograma testimonio-monograma--alt" style="--color-monograma:${color}">${iniciales}</div>
+    `;
+    figura.querySelector('.testimonio-foto-img')
+          .addEventListener('error', () => figura.classList.add('testimonio-foto--rota'));
   } else {
     const iniciales = inicialesDe(item.nombreCompleto);
     const color = PALETA_MONOGRAMA[hashSimple(item.nombreCompleto) % PALETA_MONOGRAMA.length];
@@ -395,7 +404,7 @@ function crearTarjetaTestimonio(item, interior) {
     <p class="testimonio-cargo">${escaparHTML(item.cargo)}</p>
     <p class="testimonio-institucion">${escaparHTML(item.institucion)}</p>
     <blockquote class="testimonio-cita">${escaparHTML(citas.reduce((mas, c) => (c.length > mas.length ? c : mas), ''))}</blockquote>
-    <span class="testimonio-expandir" aria-hidden="true">Ver relato ↗</span>
+    <span class="testimonio-expandir" aria-hidden="true">· Leer fragmento</span>
   `;
   // Arranca mostrando la cita MÁS LARGA disponible — no vacía, no la que
   // termine eligiéndose al azar — para que la primera medición de alto
@@ -477,7 +486,7 @@ function crearTarjetaRegistroUA(item, interior) {
     <span class="registro-ua-badge">${escaparHTML(item.unidadAcademica || '')}</span>
     <h3 class="registro-titulo">${escaparHTML(item.titulo)}</h3>
     <p class="registro-resumen">${escaparHTML(item.resumen)}</p>
-    <span class="registro-expandir" aria-hidden="true">Ver experiencia ↗</span>
+    <span class="registro-expandir" aria-hidden="true">· Abrir expediente</span>
   `;
 }
 
@@ -498,7 +507,7 @@ function crearTarjetaRegistroConceptual(item, interior) {
     <span class="registro-conceptual-badge">${etiqueta}</span>
     <h3 class="registro-conceptual-titulo">${escaparHTML(item.titulo)}</h3>
     <p class="registro-conceptual-resumen">${escaparHTML(item.resumen)}</p>
-    <span class="registro-conceptual-expandir" aria-hidden="true">Leer registro ↗</span>
+    <span class="registro-conceptual-expandir" aria-hidden="true">· Abrir registro</span>
   `;
 }
 
@@ -529,7 +538,7 @@ function crearTarjetaYoutubeVideo(item, interior) {
       <span class="video-badge">${escaparHTML(item.unidadAcademica || '')}${autorLabel}</span>
       <h3 class="video-titulo">${escaparHTML(item.titulo)}</h3>
       <p class="video-resumen">${escaparHTML(item.resumen)}</p>
-      <span class="video-expandir" aria-hidden="true">▶ Ver video →</span>
+      <span class="video-expandir" aria-hidden="true">▷ Registro audiovisual</span>
     </div>
   `;
 

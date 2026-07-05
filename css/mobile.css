@@ -203,11 +203,111 @@
     /* transition ya viene del inline style de mobile.js */
   }
 
+
+  /* ==========================================================================
+     AUTORIDADES — MATERIALIDAD DOCUMENTAL (C-02)
+     En el mural mobile las autoridades UNaM son fragmentos textuales.
+     NO son perfiles de red social. La fotografía circular (avatar) es el
+     gesto visual más característico de Material Design y redes sociales —
+     se oculta en el mural. Solo aparece en el lector expandido.
+     El monograma-alt (generado siempre que hay foto) toma su lugar:
+     un gesto tipográfico que evoca fichas de archivo, no aplicaciones UI.
+     ======================================================================= */
+  .elemento--testimonio-institucional .testimonio-foto-img {
+    display: none !important;
+  }
+  .elemento--testimonio-institucional .testimonio-monograma--alt {
+    display: grid !important;
+    place-items: center;
+    /* Mismo estilo que .testimonio-monograma estándar */
+    width: 36px; height: 36px; min-width: 36px; min-height: 36px;
+    border-radius: 4px;  /* cuadrado, no círculo — lenguaje documental */
+    background: var(--color-monograma, var(--unam-cian));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+  /* En UA testimonios también: monograma rectangular, no circular */
+  .elemento--testimonio .testimonio-monograma {
+    border-radius: 4px !important;  /* ficha, no burbuja */
+  }
+
+  /* ==========================================================================
+     VIDEO — REGISTRO AUDIOVISUAL (C-04, M-03)
+     El subtipo documental del video queda marcado tipográficamente en el badge.
+     La miniatura funciona como portada de un expediente audiovisual.
+     ======================================================================= */
+  .elemento--video .video-badge::before {
+    content: '▷ ';
+    font-size: 0.55rem;
+  }
+
   /* =============================================================================
      G. CAJERO DESKTOP → OCULTO
      En mobile se usa el bottom sheet del cajero.
      ========================================================================== */
   .cajero, .cajero-telon { display: none !important; }
+
+
+  /* ==========================================================================
+     MATERIALIDAD DOCUMENTAL (C-02, UI-01, UI-03)
+     Las anotaciones deben parecer fichas, papeles, expedientes — nunca Cards.
+     
+     BORDER-RADIUS: reducido drásticamente. Las hojas de archivo tienen esquinas
+     más rectas que los componentes UI. La diferencia entre 4px y 2px parece
+     mínima pero es conceptualmente crítica: 4px = widget moderno; 2px = ficha.
+     
+     SOMBRAS ESTRATIFICADAS: elementos más "alejados del mural" (--profundidad
+     mayor) tienen sombras más extendidas. Esto crea profundidad real, no
+     decorativa: el usuario siente que los documentos flotan a distintas
+     alturas sobre el territorio.
+     ======================================================================= */
+  
+  /* Experiencias UA — hojas prominentes, esquinas casi rectas */
+  .elemento--registro-ua .elemento-interior {
+    border-radius: 2px 4px 2px 2px !important;
+  }
+  
+  /* Registros conceptuales — fichas de archivo */
+  .elemento--registro-conceptual .elemento-interior {
+    border-radius: 1px 3px 1px 1px !important;
+  }
+
+  /* Testimonios UA — fragmentos textuales */
+  .elemento--testimonio .elemento-interior {
+    border-radius: 2px !important;
+  }
+
+  /* Autoridades — tarjetas de identificación tipográficas */
+  .elemento--testimonio-institucional .elemento-interior {
+    border-radius: 1px !important;
+  }
+
+  /* Videos — registros audiovisuales con esquina de "clapeta" */
+  .elemento--video .elemento-interior {
+    border-radius: 0 3px 3px 3px !important;
+  }
+  .elemento--video .video-miniatura-envoltorio {
+    border-radius: 0 !important;
+  }
+
+  /* Profundidad narrativa: sombra variable según --z del elemento.
+     Los documentos más elevados proyectan sombras más largas. */
+  .elemento-interior {
+    box-shadow:
+      0 calc(2px * var(--z, 4)) calc(8px * var(--z, 4) / 3) rgba(0,0,0,0.45),
+      0 1px 3px rgba(0,0,0,0.32) !important;
+  }
+
+  /* UA narrador: máxima elevación — domina la composición */
+  .elemento--registro-ua .elemento-interior {
+    box-shadow:
+      0 8px 28px rgba(0,0,0,0.58),
+      0 2px 6px rgba(0,0,0,0.40),
+      inset 0 1px 0 rgba(245,243,238,0.06) !important;
+  }
 
   /* =============================================================================
      H. LOGO + HAMBURGUESA COMPACT
@@ -266,19 +366,21 @@
   .ruta-nodos {
     display: flex;
     flex: 1;
-    justify-content: center;
-    gap: 4px;
+    justify-content: stretch;  /* equal distribution, no truncation */
+    gap: 2px;
     list-style: none;
     margin: 0;
     padding: 0;
   }
 
   .ruta-nodo {
-    font-size: 0.72rem;
+    flex: 1;                    /* each sede takes equal width */
+    text-align: center;
+    font-size: 0.68rem;         /* slightly smaller if needed to fit all 3 */
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    padding: 10px 14px !important;
+    padding: 10px 6px !important;  /* reduced horizontal padding */
     border: none;
     border-bottom: 2px solid transparent;
     background: transparent;
@@ -288,6 +390,8 @@
     min-height: 44px;
     cursor: pointer;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .ruta-nodo--activo {
     opacity: 1;
