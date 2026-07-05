@@ -65,8 +65,10 @@
   // vez más cuando eso pasa, además de en cada cambio de tamaño de ventana.
   if (document.fonts?.ready) document.fonts.ready.then(() => {
     recalcular();
-    // Rotacion arranca en desktop; en mobile Rotacion.iniciar() sale solo
-    if (secciones[0]) Rotacion.iniciar(secciones[0]);
+    // Rotacion ANTES del reveal inicial — misma razón que en onCambio.
+    if (secciones[0]) {
+      Rotacion.iniciar(secciones[0]);
+    }
   });
 
   let pendienteResize = null;
@@ -86,10 +88,16 @@
     onCambio: (indice, seccionNueva) => {
       actualizarRuta(indice);
       aplicarSubconjuntoDeAutoridades(seccionNueva, testimonios);
+      // CRÍTICO: Rotacion ANTES de Secuenciador.
+      // Rotacion.iniciar() marca los elementos excedentes con .elemento--rotacion-espera
+      // (opacity:0 !important). Cuando Secuenciador.entrar() agrega .elemento--visible
+      // a continuación, los marcados siguen ocultos porque rotacion-espera tiene
+      // mayor precedencia en el CSS (!important + source order posterior).
+      // Si el orden fuera al revés, habría un flash de todos los elementos
+      // durante el tiempo entre el reveal y el ocultamiento.
+      Rotacion.iniciar(seccionNueva);
       Secuenciador.entrar(seccionNueva);
       refrescarCitas(seccionNueva, testimonios);
-      // Rotacion.iniciar() tiene su propio guard: sale si esMobile()
-      Rotacion.iniciar(seccionNueva);
     },
   });
 
@@ -1023,9 +1031,21 @@ const Rotacion = (() => {
       el.classList.remove('elemento--rotacion-espera');
     });
 
-    // Ocultar los demás con fade escalonado
+    // Ocultar los demás.
+    // En mobile: instantáneo (sin stagger ni fade) — los elementos deben
+    // estar ocultos ANTES de que el Secuenciador agregue .elemento--visible.
+    // Con el delay=0 de iniciar(), este código corre antes de los setTimeouts
+    // del Secuenciador, así que la clase rotacion-espera ya está cuando
+    // el Secuenciador intenta revelar, y el CSS !important la mantiene oculta.
+    // En desktop: fade escalonado de 80ms por elemento para suavidad visual.
+    const esMovil = window.esMobile?.();
     poolEspera.forEach((el, i) => {
-      window.setTimeout(() => ocultarConFade(el), i * 80 + 300);
+      if (esMovil) {
+        el.style.transition = '';
+        el.classList.add('elemento--rotacion-espera');  // instantáneo
+      } else {
+        window.setTimeout(() => ocultarConFade(el), i * 80 + 300);  // escalonado
+      }
     });
   }
 
@@ -1096,13 +1116,14 @@ const Rotacion = (() => {
   }
 
   function iniciar(seccion) {
-    // La rotación trabaja en todos los canales — desktop y mobile.
     detener();
     if (!seccion) return;
-    // En mobile el Secuenciador hace un fade de 360ms: alcanza con esperar
-    // 400ms antes de correr configurar(). En desktop el reveal puede ser
-    // más lento y necesita el delay completo de 2500ms.
-    const delay = (window.esMobile?.() ? 400 : INICIO_DELAY_MS);
+    // En mobile: delay=0 — configurar() debe correr ANTES de que los
+    // setTimeouts del Secuenciador agreguen .elemento--visible.
+    // Con delay=0, nuestro setTimeout se encola primero (fue llamado antes
+    // de Secuenciador.entrar()) y dispara antes de los setTimeouts del stagger.
+    // En desktop: 2500ms para esperar el reveal animado más lento.
+    const delay = window.esMobile?.() ? 0 : INICIO_DELAY_MS;
     timeoutId = window.setTimeout(() => {
       configurar(seccion);
       if (poolEspera.length > 0) {

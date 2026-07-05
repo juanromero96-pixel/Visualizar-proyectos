@@ -86,7 +86,8 @@
     "animacion": "slide",
     "duracion": 700,
     "ordenNarrativo": 9,
-    "visible": true
+    "visible": true,
+    "imagenPortada": "assets/ua/fceqyn.jpg"
   },
   {
     "id": "r-fce-ua",
