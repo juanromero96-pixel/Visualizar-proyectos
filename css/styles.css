@@ -421,6 +421,58 @@ button { font-family: inherit; cursor: pointer; }
    transversal a la sede (no de una sola unidad académica) no lleva acento
    de color — es intencional, ya que no "pertenece" a ninguna facultad.
    ========================================================================== */
+
+/* =============================================================================
+   Tarjeta narradora UA — con imagen de sede como portada fotográfica.
+   La fotografía aérea o institucional identifica físicamente dónde ocurrió
+   la extensión universitaria. Aparece como cabecera de la tarjeta, igual
+   que los testimonios muestran el rostro de quien habla.
+   ========================================================================== */
+
+.registro-ua-portada {
+  width: 100%;
+  aspect-ratio: 16 / 7;   /* franja panorámica — no tan alta como para
+                              dominar la tarjeta, pero suficiente para
+                              contextualizar el lugar físico */
+  overflow: hidden;
+  display: block;
+  /* Sin border-radius: la imagen va hasta el borde del interior */
+}
+
+.registro-ua-portada img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 400ms ease;
+}
+
+.elemento--registro-ua:hover .registro-ua-portada img,
+.elemento--registro-ua:focus-within .registro-ua-portada img {
+  transform: scale(1.04);
+}
+
+/* El cuerpo de texto (badge + título + resumen) va debajo de la imagen */
+.registro-ua-cuerpo {
+  padding: 14px 18px 12px;
+}
+
+/* Cuando el interior tiene una portada, el border-top del interior
+   actúa como separador entre la imagen y la información contextual */
+.elemento--registro-ua .elemento-interior {
+  padding: 0;       /* el padding lo maneja .registro-ua-cuerpo */
+}
+
+/* Sin portada: mantener el padding original */
+.elemento--registro-ua .elemento-interior:not(:has(.registro-ua-portada)) {
+  padding: 18px 20px 14px;
+}
+
+/* Ajustes menores cuando hay imagen */
+.registro-ua-cuerpo .registro-ua-badge { margin-bottom: 8px; }
+.registro-ua-cuerpo .registro-titulo   { margin-bottom: 6px; }
+.registro-ua-cuerpo .registro-expandir { margin-top: 6px; }
+
 .elemento--registro-conceptual .elemento-interior {
   background: rgba(20, 24, 27, 0.55);
   border: 1px solid var(--niebla-borde);

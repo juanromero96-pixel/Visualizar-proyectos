@@ -484,13 +484,36 @@ function colorDeUnidadAcademica(textoLibre = '') {
  * al expandir en el lector (Lector.abrir, definido en lector.js).
  */
 function crearTarjetaRegistroUA(item, interior) {
-  interior.style.setProperty('--ancho-registro', '290px');  // +20px vs anterior, refuerza jerarquía Nivel 1
+  interior.style.setProperty('--ancho-registro', '290px');
+
+  // Las imágenes de sede son la firma visual de cada Unidad Académica en el mural.
+  // Aparecen como portada fotográfica en la parte superior de la tarjeta narradora,
+  // identificando el lugar físico donde ocurrió la extensión — igual que los
+  // testimonios muestran el rostro de quien habla, el UA registro muestra el
+  // campus de la facultad que vivió la experiencia.
+  const portadaHTML = item.imagenPortada ? `
+    <div class="registro-ua-portada" aria-hidden="true">
+      <img src="${escaparHTML(item.imagenPortada)}"
+           alt="${escaparHTML(item.unidadAcademica || '')} — sede"
+           loading="lazy">
+    </div>` : '';
+
   interior.innerHTML = `
-    <span class="registro-ua-badge">${escaparHTML(item.unidadAcademica || '')}</span>
-    <h3 class="registro-titulo">${escaparHTML(item.titulo)}</h3>
-    <p class="registro-resumen">${escaparHTML(item.resumen)}</p>
-    <span class="registro-expandir" aria-hidden="true">· Abrir expediente</span>
+    ${portadaHTML}
+    <div class="registro-ua-cuerpo">
+      <span class="registro-ua-badge">${escaparHTML(item.unidadAcademica || '')}</span>
+      <h3 class="registro-titulo">${escaparHTML(item.titulo)}</h3>
+      <p class="registro-resumen">${escaparHTML(item.resumen)}</p>
+      <span class="registro-expandir" aria-hidden="true">· Abrir expediente</span>
+    </div>
   `;
+
+  if (item.imagenPortada) {
+    interior.querySelector('.registro-ua-portada img')
+            .addEventListener('error', (e) => {
+              e.target.closest('.registro-ua-portada').style.display = 'none';
+            });
+  }
 }
 
 /**
@@ -1074,17 +1097,18 @@ const Rotacion = (() => {
 
   function iniciar(seccion) {
     // La rotación trabaja en todos los canales — desktop y mobile.
-    // En mobile muestra 4-5 satélites visibles a la vez (calcularCapacidad)
-    // y los intercambia gradualmente, creando la sensación de mural vivo
-    // sin saturar la pantalla. Los UA registros permanecen siempre visibles.
     detener();
     if (!seccion) return;
+    // En mobile el Secuenciador hace un fade de 360ms: alcanza con esperar
+    // 400ms antes de correr configurar(). En desktop el reveal puede ser
+    // más lento y necesita el delay completo de 2500ms.
+    const delay = (window.esMobile?.() ? 400 : INICIO_DELAY_MS);
     timeoutId = window.setTimeout(() => {
       configurar(seccion);
       if (poolEspera.length > 0) {
         intervalId = window.setInterval(rotarUno, INTERVALO_MS);
       }
-    }, INICIO_DELAY_MS);
+    }, delay);
   }
 
   function detener() {

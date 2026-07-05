@@ -45,7 +45,8 @@
     "animacion": "fade",
     "duracion": 700,
     "ordenNarrativo": 3,
-    "visible": true
+    "visible": true,
+    "imagenPortada": "assets/ua/fhycs.jpg"
   },
   {
     "id": "r-fceqyn-ua",
@@ -201,7 +202,8 @@
     "animacion": "slide",
     "duracion": 700,
     "ordenNarrativo": 8,
-    "visible": true
+    "visible": true,
+    "imagenPortada": "assets/ua/fi.jpg"
   },
   {
     "id": "r-conceptual-posadas",
