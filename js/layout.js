@@ -39,7 +39,10 @@
  * ninguna.
  */
 const Distribuidor = (() => {
-  const SEPARACION_MINIMA = 16; // px — distancia mínima configurable entre tarjetas
+  // Separación mínima entre tarjetas en px.
+  // En mobile se incrementa a 36px porque el viewport es más angosto y
+  // la legibilidad requiere más aire entre elementos que en desktop.
+  let SEPARACION_MINIMA = 16;   // se actualiza en distribuir() según el canal
   const MARGEN_ESCENARIO = 18; // px de aire respecto del borde del escenario
   const MARGEN_ZONA_PROTEGIDA = 20; // px de aire alrededor de cada zona protegida
   const PASO_BUSQUEDA = 24; // px — resolución de la búsqueda de posición, fija
@@ -54,6 +57,10 @@ const Distribuidor = (() => {
   function distribuir(seccion) {
     const escenario = seccion.querySelector('.escenario');
     if (!escenario) return;
+
+    // En mobile el viewport es ~375px de ancho: los elementos necesitan más
+    // separación para que el texto no se superpon­ga entre tarjetas adyacentes.
+    SEPARACION_MINIMA = (window.esMobile?.() ? 36 : 16);
 
     // El motor de layout corre tanto en Desktop como en Mobile.
     // En Mobile los elementos siguen flotando sobre la ciudad — el mural

@@ -379,22 +379,25 @@ function crearTarjetaTestimonio(item, interior) {
   const figura = document.createElement('figure');
   figura.className = 'testimonio-foto';
 
+  // Color del monograma derivado de la UA de la persona, no de un hash aleatorio.
+  // Esto vincula visualmente cada ficha con su constelación UA: todos los
+  // monogramas FAyD serán del color de FAyD, todos los de FCEQyN del de FCEQyN.
+  // En desktop la foto puede estar presente; en mobile el CSS oculta la foto
+  // y muestra el monograma documental (cuadrado, no circular).
+  const uaKey = resolverUA(item.unidadAcademica || item.institucion || '');
+  const colorMonograma = colorDeUnidadAcademica(uaKey) || '#00a3e0';
+
   if (item.foto) {
-    // Siempre se genera el monograma ADEMÁS de la foto: en desktop se muestra
-    // la foto; en mobile para autoridades UNaM el CSS oculta la foto y
-    // muestra el monograma (lenguaje documental vs. perfil de red social).
     const iniciales = inicialesDe(item.nombreCompleto);
-    const color = PALETA_MONOGRAMA[hashSimple(item.nombreCompleto) % PALETA_MONOGRAMA.length];
     figura.innerHTML = `
       <img class="testimonio-foto-img" src="${item.foto}" alt="${escaparHTML(item.nombreCompleto)}" loading="lazy">
-      <div class="testimonio-monograma testimonio-monograma--alt" style="--color-monograma:${color}">${iniciales}</div>
+      <div class="testimonio-monograma testimonio-monograma--alt" style="--color-monograma:${colorMonograma}">${iniciales}</div>
     `;
     figura.querySelector('.testimonio-foto-img')
           .addEventListener('error', () => figura.classList.add('testimonio-foto--rota'));
   } else {
     const iniciales = inicialesDe(item.nombreCompleto);
-    const color = PALETA_MONOGRAMA[hashSimple(item.nombreCompleto) % PALETA_MONOGRAMA.length];
-    figura.innerHTML = `<div class="testimonio-monograma" style="--color-monograma:${color}">${iniciales}</div>`;
+    figura.innerHTML = `<div class="testimonio-monograma" style="--color-monograma:${colorMonograma}">${iniciales}</div>`;
   }
 
   const cuerpo = document.createElement('div');
