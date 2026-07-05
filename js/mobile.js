@@ -244,6 +244,67 @@ function abrirCajeroMobile() {
   cajeroSheet.abrir(contenido);
 }
 
+// ─── Toast de información de sede ─────────────────────────────────────────────
+// Cuando el usuario toca un botón de sede en el nav mobile, un panel
+// compacto aparece brevemente con: nombre, subtítulo, UAs participantes y
+// texto orientador. Permite orientarse al ingresar a una nueva sala sin
+// tener que abrir el cajero institucional completo.
+// Se auto-descarta en 5 segundos o al tocar el panel.
+
+let toastTimer = null;
+
+function mostrarInfoSede(seccion) {
+  if (!seccion) return;
+
+  // Limpiar toast anterior
+  const anterior = document.getElementById('sede-info-toast');
+  if (anterior) {
+    clearTimeout(toastTimer);
+    anterior.remove();
+  }
+
+  // Leer datos del kicker oculto (siempre en el DOM, solo invisible en mobile)
+  const nombre  = seccion.querySelector('.sede-kicker-titulo')?.textContent?.trim()    || '';
+  const subtit  = seccion.querySelector('.sede-kicker-subtitulo')?.textContent?.trim() || '';
+  const orient  = seccion.querySelector('.sede-kicker-orientacion')?.textContent?.trim() || '';
+  const uasEls  = seccion.querySelectorAll('.sede-kicker-unidades li');
+  const uas     = Array.from(uasEls).map(li => li.textContent.trim()).filter(Boolean);
+  const docsN   = seccion.querySelectorAll('.elemento').length;
+  const sedeNum = seccion.querySelector('.sede-kicker-num')?.textContent?.trim() || '';
+
+  if (!nombre) return;
+
+  const toast = document.createElement('div');
+  toast.id = 'sede-info-toast';
+  toast.setAttribute('role', 'status');
+  toast.setAttribute('aria-live', 'polite');
+  toast.innerHTML = `
+    <div class="sit-header">
+      <span class="sit-num">${sedeNum}</span>
+      <h3 class="sit-nombre">${nombre}</h3>
+    </div>
+    ${subtit ? `<p class="sit-subtit">${subtit}</p>` : ''}
+    ${orient ? `<p class="sit-orient">${orient}</p>` : ''}
+    ${uas.length ? `<ul class="sit-uas">${uas.map(u => `<li>${u}</li>`).join('')}</ul>` : ''}
+    <p class="sit-count">${docsN} documentos · tocá para cerrar</p>
+  `;
+  document.body.appendChild(toast);
+
+  // Animar entrada
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('sit--visible'));
+  });
+
+  const cerrarToast = () => {
+    clearTimeout(toastTimer);
+    toast.classList.remove('sit--visible');
+    setTimeout(() => toast.remove(), 320);
+  };
+
+  toast.addEventListener('click', cerrarToast);
+  toastTimer = setTimeout(cerrarToast, 5000);
+}
+
 // ─── Nav mobile: elemento independiente ──────────────────────────────────────
 // El .ruta desktop tiene demasiada herencia CSS para sobreescribir de forma
 // confiable en mobile. En su lugar se crea un elemento completamente nuevo
@@ -253,14 +314,16 @@ function abrirCajeroMobile() {
 
 function crearNavMobile() {
   if (!esMobile()) return;
-  if (document.getElementById('ruta-m')) return; // ya existe
+  if (document.getElementById('ruta-m')) return;
 
-  // Esperar a que pintarRuta() haya creado los .ruta-nodo
   const sedesNodos = Array.from(document.querySelectorAll('.ruta-nodo'));
   if (!sedesNodos.length) {
     window.setTimeout(crearNavMobile, 400);
     return;
   }
+
+  // Obtener las secciones de sede para el toast
+  const secciones = Array.from(document.querySelectorAll('.sede'));
 
   const nav = document.createElement('nav');
   nav.id = 'ruta-m';
@@ -278,14 +341,14 @@ function crearNavMobile() {
       btn.classList.add('ruta-m-btn--activo');
     }
     btn.addEventListener('click', () => {
-      nodo.click();  // delega al botón original → dispara carrusel.ir()
+      nodo.click();                  // delega al botón original → carrusel.ir()
+      mostrarInfoSede(secciones[i]); // muestra el resumen de la sede
     });
     nav.appendChild(btn);
   });
 
   document.body.appendChild(nav);
 
-  // Función pública para sincronizar estado al cambiar sede
   window.actualizarNavMobile = (indice) => {
     nav.querySelectorAll('.ruta-m-btn').forEach((b, i) => {
       b.classList.toggle('ruta-m-btn--activo', i === indice);

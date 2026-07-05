@@ -60,7 +60,7 @@ const Distribuidor = (() => {
 
     // En mobile el viewport es ~375px de ancho: los elementos necesitan más
     // separación para que el texto no se superpon­ga entre tarjetas adyacentes.
-    SEPARACION_MINIMA = (window.esMobile?.() ? 48 : 16);
+    SEPARACION_MINIMA = (window.esMobile?.() ? 64 : 16);
 
     // El motor de layout corre tanto en Desktop como en Mobile.
     // En Mobile los elementos siguen flotando sobre la ciudad — el mural
@@ -334,6 +334,10 @@ const Distribuidor = (() => {
     agregarZonaDeElemento(zonas, document.querySelector('.menu-inst-btn'), rectEscenario);
     agregarZonaDeElemento(zonas, document.querySelector('.ruta'), rectEscenario);
     agregarZonaDeElemento(zonas, seccion.querySelector('.sede-kicker'), rectEscenario);
+    // En mobile, el nav original (.ruta) está oculto y reemplazado por #ruta-m.
+    // Se agrega #ruta-m como zona protegida para que el layout no coloque
+    // elementos detrás de la barra de navegación mobile.
+    agregarZonaDeElemento(zonas, document.getElementById('ruta-m'), rectEscenario);
 
     try {
       const declaradas = JSON.parse(seccion.dataset.zonasProtegidas || '[]');
