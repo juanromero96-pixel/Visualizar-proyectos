@@ -110,11 +110,12 @@ const Distribuidor = (() => {
 
     const factor = ubicarPorBusqueda(nodos, ancho, alto, zonas);
 
-    // ── Distribución editorial en zonas para mobile ──────────────────────────
-    // La asignación previa por zonas incorpora peso narrativo:
-    // elementos de mayor jerarquía documental (UA narradores, registros)
-    // se asignan a zonas centrales; autoridades y voces se distribuyen
-    // en la periferia. Esto crea constelaciones narrativas, no nubes uniformes.
+    // ── MOBILE: composición editorial por zonas ─────────────────────────────
+    // El mobile usa un motor de layout DIFERENTE al desktop:
+    // no hay Monte Carlo (ubicarPorBusqueda), sino asignación editorial
+    // directa a zonas narrativas. Esto garantiza que los UA narradores
+    // vayan al centro, y los satélites se distribuyan en la periferia.
+    // Se sale de la función ANTES de correr el algoritmo desktop.
     if (window.esMobile?.()) {
       const ZONAS_COLS = 2;
       const ZONAS_ROWS = 5;
@@ -201,8 +202,29 @@ const Distribuidor = (() => {
                 Math.min(alto - MARGEN_BOT - n.hBase / 2,
                 bestKey.cy + jitterY));
         }
+
+      });  // end ordenados.forEach
+
+      // Separación mínima post-zonas — solo 2 iteraciones para no destruir la composición
+      for (let iter = 0; iter < 2; iter++) {
+        for (let i = 0; i < nodos.length; i++) {
+          for (let j = i + 1; j < nodos.length; j++) {
+            separarPar(nodos[i], nodos[j]);
+          }
+        }
+        nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
+        empujarFueraDeZonas(nodos, zonas);
+      }
+      // Aplicar y retornar — el desktop nunca corre en mobile
+      nodos.forEach((n) => {
+        n.el.style.setProperty('--x', `${Math.round(n.x)}px`);
+        n.el.style.setProperty('--y', `${Math.round(n.y)}px`);
+        n.el.style.setProperty('--escala', n.escalaAutoral);
       });
+      return;
     }
+
+    // ── DESKTOP: algoritmo Monte Carlo completo ───────────────────────────────
 
     nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
     empujarFueraDeZonas(nodos, zonas);

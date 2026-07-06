@@ -64,7 +64,11 @@
   .sede-bg { animation: none !important; }
 
   /* Kicker: oculto — el mural habla por sí mismo */
-  .sede-kicker { display: none !important; }
+    /* El nav desktop (.ruta) se oculta en mobile — reemplazado por #ruta-m.
+     Esta regla está dentro del media query para NO afectar desktop. */
+  .ruta { display: none !important; }
+
+.sede-kicker { display: none !important; }
 
   /* El escenario es el lienzo completo — los elementos flotan dentro */
   /* (sin sobreescribir position: la hereda de styles.css como absolute) */
@@ -585,16 +589,6 @@
    BOTTOM SHEETS — lector y cajero
    ========================================================================== */
 
-
-  /* ==========================================================================
-     NAV MOBILE INDEPENDIENTE (#ruta-m)
-     Elemento creado por mobile.js, sin herencia del desktop .ruta.
-     El desktop .ruta se oculta en mobile para evitar conflictos.
-     ======================================================================= */
-  .ruta {
-    /* Ocultar el nav desktop en mobile — reemplazado por #ruta-m */
-    display: none !important;
-  }
 
 .bottom-sheet {
   position: fixed;
