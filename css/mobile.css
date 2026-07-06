@@ -88,19 +88,19 @@
 
   /* Experiencias UA — protagonistas del relato */
   .elemento--registro-ua .elemento-interior {
-    max-width: min(218px, 57vw) !important;
+    max-width: min(165px, 44vw) !important;
     padding: 14px 16px 12px !important;
   }
 
   /* Registros conceptuales */
   .elemento--registro-conceptual .elemento-interior {
-    max-width: min(185px, 49vw) !important;
+    max-width: min(155px, 41vw) !important;
     padding: 12px 14px 10px !important;
   }
 
   /* Testimonios UA */
   .elemento--testimonio .elemento-interior {
-    max-width: min(175px, 46vw) !important;
+    max-width: min(148px, 39vw) !important;
     padding: 11px 13px 9px !important;
   }
 
@@ -112,7 +112,7 @@
 
   /* Videos: miniatura compacta */
   .elemento--video .elemento-interior {
-    max-width: min(195px, 52vw) !important;
+    max-width: min(160px, 43vw) !important;
     padding: 0 !important;
     overflow: hidden;
   }
@@ -579,11 +579,11 @@
 }
 
 /* Element sizing — limitar ancho para que el layout los coloque sin overflow */
-.es-mobile .elemento--registro-ua .elemento-interior        { max-width: min(218px, 57vw) !important; }
-.es-mobile .elemento--registro-conceptual .elemento-interior { max-width: min(185px, 49vw) !important; }
-.es-mobile .elemento--testimonio .elemento-interior          { max-width: min(175px, 46vw) !important; }
+.es-mobile .elemento--registro-ua .elemento-interior        { max-width: min(165px, 44vw) !important; }
+.es-mobile .elemento--registro-conceptual .elemento-interior { max-width: min(155px, 41vw) !important; }
+.es-mobile .elemento--testimonio .elemento-interior          { max-width: min(148px, 39vw) !important; }
 .es-mobile .elemento--testimonio-institucional .elemento-interior { max-width: min(165px, 44vw) !important; }
-.es-mobile .elemento--video .elemento-interior               { max-width: min(195px, 52vw) !important; }
+.es-mobile .elemento--video .elemento-interior               { max-width: min(160px, 43vw) !important; }
 
 /* =============================================================================
    BOTTOM SHEETS — lector y cajero

@@ -126,83 +126,67 @@ const Distribuidor = (() => {
       const zH = altUtil / ZONAS_ROWS;
       const conteoZonas = new Map();
 
-      // Peso narrativo por tipo — menor número = mayor jerarquía documental
       const PESO_NARRATIVO = {
-        'registro-ua':        0,  // narrador de capítulo — zona más prominente
-        'registro-conceptual':1,  // reflexión editorial
-        'video':              2,  // registro audiovisual
-        'testimonio':         3,  // voz de extensionista
-        // UNaM autoridades y genérico
-        'default':            4,
+        'registro-ua': 0, 'registro-conceptual': 1, 'video': 2, 'testimonio': 3, 'default': 4,
       };
+      // filasNarrador: UA narrators reciben filas EXCLUSIVAS.
+      // Con 165px de ancho y zona de 188px, dos narrators en la misma fila
+      // se solapan 24px garantizados. Cada narrador necesita su fila propia.
+      const filasNarrador = new Set();
 
-      // Ordenar por peso narrativo: los más importantes eligen zona primero.
-      // Dentro del mismo peso: permanentes primero (van al centro).
       const ordenados = [...nodos].sort((a, b) => {
-        const pa = PESO_NARRATIVO[a.el.dataset.tipo] ?? PESO_NARRATIVO.default;
-        const pb = PESO_NARRATIVO[b.el.dataset.tipo] ?? PESO_NARRATIVO.default;
+        const pa = PESO_NARRATIVO[a.el.dataset.tipo] ?? 4;
+        const pb = PESO_NARRATIVO[b.el.dataset.tipo] ?? 4;
         if (pa !== pb) return pa - pb;
-        const ap = a.el.dataset.permanente === 'true' ? 0 : 1;
-        const bp = b.el.dataset.permanente === 'true' ? 0 : 1;
-        return ap - bp;
+        return (a.el.dataset.permanente === 'true' ? 0 : 1) - (b.el.dataset.permanente === 'true' ? 0 : 1);
       });
 
-      // Zonas preferenciales por peso narrativo:
-      // UA narradores → filas centrales (2-3 de 5) — el corazón del mural
-      // Conceptuales/videos → filas 1-4 — alrededor del núcleo
-      // Testimonios/autoridades → toda la altura, alternando columnas
-      const preferenciaFilas = (peso) => {
-        if (peso === 0) return [1, 2];             // centro del mural
-        if (peso === 1) return [0, 1, 2, 3];       // alrededor
-        if (peso === 2) return [0, 1, 2, 3, 4];    // todo el espacio
-        return [0, 1, 2, 3, 4];                    // sin restricción
+      const preferenciaFilas = (peso, esNarrador) => {
+        if (esNarrador) {
+          const opts = [0, 2, 4, 1, 3].filter(r => !filasNarrador.has(r));
+          return opts.length ? opts : [0, 1, 2, 3, 4];
+        }
+        if (peso === 1) return [1, 3, 0, 2, 4];
+        if (peso === 2) return [1, 2, 3, 0, 4];
+        return [0, 1, 2, 3, 4];
       };
 
       ordenados.forEach((n) => {
-        const peso = PESO_NARRATIVO[n.el.dataset.tipo] ?? PESO_NARRATIVO.default;
-        const filasPref = preferenciaFilas(peso);
+        const peso = PESO_NARRATIVO[n.el.dataset.tipo] ?? 4;
+        const esNarrador = peso === 0;
+        const filasPref = preferenciaFilas(peso, esNarrador);
 
-        // Buscar la mejor zona libre dentro de las filas preferidas,
-        // ponderando por distancia al ancla para mantener coherencia con los datos.
         let bestKey = null, bestScore = Infinity;
         for (const row of filasPref) {
           for (let col = 0; col < ZONAS_COLS; col++) {
             const key = `${row}-${col}`;
-            const zonaCount = conteoZonas.get(key) || 0;
-            const ocupacion = zonaCount * 5e5;
+            const ocupacion = (conteoZonas.get(key) || 0) * 5e5;
             const zonaCX = (col + 0.5) * zW;
             const zonaCY = MARGEN_TOP + (row + 0.5) * zH;
             const dist = Math.hypot(zonaCX - n.x, zonaCY - n.y);
             const score = dist + ocupacion;
-            if (score < bestScore) { bestScore = score; bestKey = { key, cx: zonaCX, cy: zonaCY }; }
+            if (score < bestScore) { bestScore = score; bestKey = { key, cx: zonaCX, cy: zonaCY, row }; }
           }
         }
-
         if (!bestKey) {
-          // Fallback: cualquier zona libre
-          for (let row = 0; row < ZONAS_ROWS; row++) {
-            for (let col = 0; col < ZONAS_COLS; col++) {
+          for (let row = 0; row < ZONAS_ROWS && !bestKey; row++)
+            for (let col = 0; col < ZONAS_COLS && !bestKey; col++) {
               const key = `${row}-${col}`;
-              const zonaCount = conteoZonas.get(key) || 0;
-              if (zonaCount === 0) { bestKey = { key, cx: (col+0.5)*zW, cy: MARGEN_TOP+(row+0.5)*zH }; break; }
+              if ((conteoZonas.get(key) || 0) === 0)
+                bestKey = { key, cx: (col+0.5)*zW, cy: MARGEN_TOP+(row+0.5)*zH, row };
             }
-            if (bestKey) break;
-          }
         }
 
         if (bestKey) {
           conteoZonas.set(bestKey.key, (conteoZonas.get(bestKey.key) || 0) + 1);
-          // Jitter orgánico: desplazamiento dentro de la zona para evitar cuadrícula
-          const jitterX = (Math.random() - 0.5) * zW * 0.5;
-          const jitterY = (Math.random() - 0.5) * zH * 0.4;
-          n.x = Math.max(n.wBase / 2 + SEPARACION_MINIMA, 
-                Math.min(ancho - n.wBase / 2 - SEPARACION_MINIMA, 
-                bestKey.cx + jitterX));
-          n.y = Math.max(MARGEN_TOP + n.hBase / 2,
-                Math.min(alto - MARGEN_BOT - n.hBase / 2,
-                bestKey.cy + jitterY));
+          if (esNarrador) filasNarrador.add(bestKey.row);
+          const jitterX = (Math.random() - 0.5) * zW * 0.28;
+          const jitterY = (Math.random() - 0.5) * zH * 0.28;
+          n.x = Math.max(n.wBase/2 + SEPARACION_MINIMA,
+                Math.min(ancho - n.wBase/2 - SEPARACION_MINIMA, bestKey.cx + jitterX));
+          n.y = Math.max(MARGEN_TOP + n.hBase/2,
+                Math.min(alto - MARGEN_BOT - n.hBase/2, bestKey.cy + jitterY));
         }
-
       });  // end ordenados.forEach
 
       // Separación mínima post-zonas — solo 2 iteraciones para no destruir la composición
