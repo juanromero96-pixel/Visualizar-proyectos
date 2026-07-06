@@ -76,26 +76,45 @@ const Lector = (() => {
   let posUA   = 0;    // posición actual en el grupo
 
   /**
-   * Construye el grupo de navegación a partir del elemento actualmente abierto.
-   * Incluye todos los elementos visibles y no-ocultos del mismo UA en el
-   * escenario, ordenados por ordenNarrativo (dato en el DOM como data-orden).
+   * Construye el grupo de navegación (hilo conductor) a partir del elemento
+   * actualmente abierto. El recorrido va de lo específico a lo general:
+   *
+   *   1. Todos los elementos visibles de la misma UA (registro-ua, testimonios
+   *      propios, registros conceptuales vinculados), ordenados por ordenNarrativo.
+   *   2. Al final del hilo: las autoridades de alcance UNaM que estén visibles
+   *      en esa sede (las que no fueron descartadas por el sorteo de autoridades).
+   *      Así el visitante puede, desde cualquier tarjeta de FCF o EAE, navegar
+   *      naturalmente hasta la voz del Vicerrector o del Secretario General
+   *      sin necesidad de cerrar el lector y buscarlos en el mural.
+   *
+   * Si el elemento abierto ya pertenece a UNaM, su hilo es solo él mismo
+   * (las autoridades generales siguen siendo de acceso individual).
    */
   function construirGrupoUA(elementoOrigen, registroActual) {
     const ua = elementoOrigen.dataset.ua;
     const escenario = elementoOrigen.closest('.escenario');
     if (!ua || ua === 'unam' || !escenario) {
-      // Las autoridades UNaM no tienen grupo propio (aparecen en todas las sedes)
+      // Las autoridades UNaM no tienen hilo UA propio — solo ellas mismas.
       grupoUA = [{ el: elementoOrigen, registro: registroActual }];
       posUA = 0;
       return;
     }
-    const hermanos = Array.from(
+
+    // 1. Elementos de la UA propia (narrador + satélites), por ordenNarrativo.
+    const propios = Array.from(
       escenario.querySelectorAll(`.elemento[data-ua="${ua}"]:not(.elemento--oculto-autoridad):not(.elemento--rotacion-espera)`)
     ).sort((a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0));
 
-    grupoUA = hermanos.map((el) => ({
+    // 2. Autoridades UNaM visibles en esta sede (no descartadas por el sorteo).
+    const autoridadesUnam = Array.from(
+      escenario.querySelectorAll('.elemento--testimonio-institucional:not(.elemento--oculto-autoridad):not(.elemento--rotacion-espera)')
+    ).sort((a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0));
+
+    const todos = [...propios, ...autoridadesUnam];
+
+    grupoUA = todos.map((el) => ({
       el,
-      registro: el === elementoOrigen ? registroActual : null, // se resuelve al navegar
+      registro: el === elementoOrigen ? registroActual : null,
     }));
     posUA = grupoUA.findIndex((e) => e.el === elementoOrigen);
     if (posUA < 0) posUA = 0;
@@ -106,8 +125,12 @@ const Lector = (() => {
     const etiqueta = superposicion.querySelector('.lector-nav-ua-etiqueta');
     if (grupoUA.length < 2) { navUA.hidden = true; return; }
     navUA.hidden = false;
-    const ua = grupoUA[posUA]?.el?.dataset?.ua?.toUpperCase() || '';
-    etiqueta.textContent = `${ua}  ·  ${posUA + 1} / ${grupoUA.length}`;
+    const uaActual = grupoUA[posUA]?.el?.dataset?.ua || '';
+    // Si estamos en la sección de autoridades UNaM del hilo, mostrarlo
+    const etiquetaUA = uaActual === 'unam'
+      ? 'UNaM'
+      : (uaActual.toUpperCase() || '');
+    etiqueta.textContent = `${etiquetaUA}  ·  ${posUA + 1} / ${grupoUA.length}`;
   }
 
   function navegarUA(delta) {
@@ -195,10 +218,11 @@ const Lector = (() => {
     if (grupoUA.length > 1) {
       const navEl = document.createElement('div');
       navEl.className = 'lector-nav-ua';
-      const ua = (elementoOrigen.dataset.ua || '').toUpperCase();
+      const uaActualMobile = elementoOrigen.dataset.ua || '';
+      const etiquetaMobile = uaActualMobile === 'unam' ? 'UNaM' : uaActualMobile.toUpperCase();
       navEl.innerHTML = `
         <button class="lector-nav-ant" aria-label="Documento anterior">←</button>
-        <span class="lector-nav-ua-etiqueta">\${ua} · \${posUA + 1}/\${grupoUA.length}</span>
+        <span class="lector-nav-ua-etiqueta">${etiquetaMobile} · ${posUA + 1}/${grupoUA.length}</span>
         <button class="lector-nav-sig" aria-label="Documento siguiente">→</button>
       `;
       navEl.querySelector('.lector-nav-ant').addEventListener('click', () => navegarUAMobile(-1, sheet));
@@ -237,8 +261,9 @@ const Lector = (() => {
     if (iframe) iframe.src = '';
     const nodo = construirNodoParaTipo(el, reg);
     const navEl = sheet.body.querySelector('.lector-nav-ua');
-    const ua = (el.dataset.ua || '').toUpperCase();
-    if (navEl) navEl.querySelector('.lector-nav-ua-etiqueta').textContent = `\${ua} · \${posUA + 1}/\${grupoUA.length}`;
+    const uaMobile = el.dataset.ua || '';
+    const etiquetaNavMobile = uaMobile === 'unam' ? 'UNaM' : uaMobile.toUpperCase();
+    if (navEl) navEl.querySelector('.lector-nav-ua-etiqueta').textContent = `${etiquetaNavMobile} · ${posUA + 1}/${grupoUA.length}`;
     const oldNode = sheet.body.querySelector('.lector-mobile-wrapper > *:not(.lector-nav-ua)');
     if (oldNode) oldNode.remove();
     if (nodo) {
@@ -273,15 +298,26 @@ const Lector = (() => {
   }
 
   /**
-   * Registro Institucional de Unidad Académica: badge de la sigla, título,
-   * el cuerpo completo (no el resumen recortado del mural) en párrafos,
-   * la lista de proyectos reales mencionados en la fuente, y una cita de
-   * respaldo con atribución completa.
+   * Registro Institucional de Unidad Académica: portada fotográfica (si existe),
+   * badge de la sigla, título, el cuerpo completo en párrafos, la lista de
+   * proyectos reales mencionados en la fuente, y una cita de respaldo con
+   * atribución completa.
+   *
+   * La portada coexiste con el texto: aparece como cabecera del lector, por
+   * encima del badge y el título, igual que en la tarjeta del mural.
    */
   function construirContenidoRegistroUA(registro, elementoOrigen) {
     const colorUA = obtenerColorUADe(elementoOrigen);
     const envoltorio = document.createElement('div');
     envoltorio.className = 'lector-registro';
+
+    const portadaHTML = registro.imagenPortada
+      ? `<div class="lector-registro-portada">
+           <img src="${escaparHTMLLector(registro.imagenPortada)}"
+                alt="${escaparHTMLLector(registro.unidadAcademica || '')} — sede"
+                loading="eager">
+         </div>`
+      : '';
 
     const parrafos = String(registro.cuerpo || '')
       .split(/\n{2,}/)
@@ -305,9 +341,12 @@ const Lector = (() => {
       : '';
 
     envoltorio.innerHTML = `
-      <span class="lector-registro-badge" style="--color-ua:${colorUA}">${escaparHTMLLector(registro.unidadAcademica || '')}</span>
-      <p class="lector-registro-completa">${escaparHTMLLector(registro.unidadAcademicaCompleta || '')}</p>
-      <h2 class="lector-registro-titulo">${escaparHTMLLector(registro.titulo)}</h2>
+      ${portadaHTML}
+      <div class="lector-registro-meta">
+        <span class="lector-registro-badge" style="--color-ua:${colorUA}">${escaparHTMLLector(registro.unidadAcademica || '')}</span>
+        <p class="lector-registro-completa">${escaparHTMLLector(registro.unidadAcademicaCompleta || '')}</p>
+        <h2 class="lector-registro-titulo">${escaparHTMLLector(registro.titulo)}</h2>
+      </div>
       <div class="lector-registro-cuerpo">${parrafos}</div>
       ${proyectosHTML}
       ${citaHTML}

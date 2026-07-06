@@ -264,7 +264,7 @@ function crearElemento(item) {
   const UA_ORDER = {
     fhycs:0, fceqyn:1, fce:2,           // Posadas
     fayd:3,  fi:4,                        // Oberá
-    fcf:5,   escuelaagrotecnicaeldorado:6,// Eldorado
+    fcf:5,   escuelaagrotecnicaeldorado:6, eae:6,// Eldorado (eae = alias)
     general:7,
     unam:9,                               // Autoridades UNaM siempre al final
   };
@@ -474,6 +474,7 @@ const PALETA_UNIDAD_ACADEMICA = {
   fcf: '#462b14',
   fceqyn: '#006084',
   escuelaagrotecnicaeldorado: '#d59f6f',
+  eae: '#d59f6f',  // alias de sigla para Escuela Agrotécnica Eldorado
 };
 
 function colorDeUnidadAcademica(textoLibre = '') {

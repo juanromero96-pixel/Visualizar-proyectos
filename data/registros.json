@@ -123,7 +123,8 @@
     "animacion": "float",
     "duracion": 700,
     "ordenNarrativo": 6,
-    "visible": true
+    "visible": true,
+    "imagenPortada": "assets/ua/fce.jpg"
   },
   {
     "id": "r-fayd-ua",
@@ -167,7 +168,8 @@
     "animacion": "fade",
     "duracion": 700,
     "ordenNarrativo": 3,
-    "visible": true
+    "visible": true,
+    "imagenPortada": "assets/ua/fayd.jpg"
   },
   {
     "id": "r-fi-ua",
@@ -276,6 +278,116 @@
     "animacion": "float",
     "duracion": 700,
     "ordenNarrativo": 12,
+    "visible": true
+  },
+  {
+    "id": "r-fcf-ua",
+    "tipo": "experiencia_ua",
+    "sede": "eldorado",
+    "unidadAcademica": "FCF",
+    "unidadAcademicaCompleta": "Facultad de Ciencias Forestales",
+    "titulo": "La biblioteca como centro de una semana en el bosque",
+    "resumen": "La Facultad de Ciencias Forestales fue la sede física de la Semana Regional en Eldorado, y su Aula Magna y Biblioteca Regional el corazón compartido del evento.",
+    "cuerpo": "La Facultad de Ciencias Forestales fue el escenario institucional de la Semana Regional de Extensión en Eldorado. Sus instalaciones —el Aula Magna, la Biblioteca Regional y los espacios comunes— funcionaron como sede compartida entre la FCF y la Escuela Agrotécnica Eldorado, dando lugar a una jornada que reunió a docentes, no docentes, estudiantes y graduados de ambas unidades académicas.\n\nEl Aula Magna de la FCF albergó la apertura oficial de la jornada, con presencia de autoridades de la UNaM —entre ellas el Vicerrector Sergio Katogui y la Secretaria Académica Gisela Spasiuk— y representantes de las unidades académicas de la sede. Fue también el espacio donde los equipos extensionistas expusieron sus experiencias ante la comunidad reunida, en un formato de presentación con tiempo acotado y preguntas del público.\n\nLa Biblioteca Regional Eldorado —un espacio de uso conjunto entre la FCF y la EAE— fue el punto de cierre de la jornada: allí se realizó la exposición de 19 trabajos de extensión, en un recorrido abierto donde cada equipo presentó su proyecto de forma directa ante visitantes e interlocutores. El espacio generó dinámicas de intercambio no previstas formalmente: docentes que descubrieron proyectos que desconocían, estudiantes que decidieron sumarse a iniciativas en curso, graduados que retomaron vínculos con sus unidades de origen.\n\nLa FCF tiene una identidad extensionista orientada al territorio forestal de Misiones: el trabajo con productores locales, las prácticas de manejo sostenible y la vinculación con organizaciones del sector forestal constituyen el eje de su proyección comunitaria, articulada con la especificidad disciplinar de sus carreras.",
+    "proyectos": [
+      {
+        "nombre": "Exposición colectiva en la Biblioteca Regional Eldorado",
+        "sintesis": "19 proyectos de extensión presentados en espacio compartido FCF-EAE; instancia de socialización, intercambio e incentivo a nuevas propuestas."
+      },
+      {
+        "nombre": "Jornada en el Aula Magna FCF",
+        "sintesis": "Apertura y presentaciones institucionales; espacio de reflexión colectiva sobre la extensión en la regional Eldorado."
+      }
+    ],
+    "cita": "Queríamos felicitar a todo el equipo de los secretarios de extensión, al secretario general que han organizado esta actividad coordinada entre las diferentes unidades académicas, y felicitar a todos los docentes y estudiantes que han presentado trabajos en esta convocatoria.",
+    "citaAutor": "Silvina Berger",
+    "citaCargo": "Secretaria de Vinculación Tecnológica, FCF",
+    "x": 28,
+    "y": 40,
+    "escala": 1.12,
+    "rotacion": -2,
+    "profundidad": 4,
+    "animacion": "fade",
+    "duracion": 700,
+    "ordenNarrativo": 1,
+    "visible": true,
+    "imagenPortada": "assets/ua/fcf.jpg"
+  },
+  {
+    "id": "r-eae-ua",
+    "tipo": "experiencia_ua",
+    "sede": "eldorado",
+    "unidadAcademica": "EAE",
+    "unidadAcademicaCompleta": "Escuela Agrotécnica Eldorado",
+    "titulo": "Diecinueve proyectos y una biblioteca viva",
+    "resumen": "La Escuela Agrotécnica Eldorado presentó su experiencia extensionista propia en la Semana Regional: el area organizada, los proyectos activos y la voz de los propios estudiantes como protagonistas de la extension en territorio.",
+    "cuerpo": "La Escuela Agrotécnica Eldorado llegó a la Semana Regional con una agenda propia. No como unidad subordinada al evento de la Facultad de Ciencias Forestales —con quien comparte instalaciones y la Biblioteca Regional—, sino como institución con identidad extensionista consolidada y con proyectos en marcha que la anteceden por años.\n\nDesde el Área de Extensión de la Escuela, a cargo del Téc. Lucas Rodríguez de Lima, se presentó la evolución del trabajo extensionista de los últimos años: la estructuración de circuitos de trabajo más claros, la organización del área y la forma en que eso permite acompañar mejor tanto a los proyectos como a los actores del territorio. La EAE no describió sus actividades de extensión como algo que se hace al margen del proceso educativo: las presentó como parte constitutiva de la formación de sus estudiantes de nivel secundario.\n\nEl proyecto emblema de la jornada fue la Biblioteca Viva Arandú Rekové —el saber que regresa, en guaraní—, activo desde 2022 y presentado en este formato público expandido. El proyecto articula a docentes, personal no docente y estudiantes en torno a la recuperación, sistematización y preservación de variedades nativas de semillas: plantas alimenticias y medicinales propias de la región, en riesgo de pérdida por el avance de la producción agroindustrial homogénea. El trabajo se ancla en comunidades locales —la Comunidad Yvyty, la EFA San Miguel— y en organismos como el INTA y la RAOM. Los estudiantes realizan salidas al territorio, registran saberes de los agricultores, construyen el muestrario de semillas y presentan los resultados ante distintos públicos.\n\nUno de los momentos más significativos de la jornada fue el de las voces estudiantiles. En las instancias de intercambio, los propios alumnos de la EAE expresaron lo que significa salir de la escuela, ir al territorio, encontrarse con actores y comunidades reales, y formar parte de algo que excede el aula. Ese intercambio fue señalado por el área de extensión como el de mayor impacto formativo de la jornada.\n\nLa Semana también conectó hacia afuera: en esos mismos días, más de veinte estudiantes de la Escuela estaban regresando de un intercambio en Brasil, en el marco de otra iniciativa de extensión internacional que la institución sostiene activamente. La EAE hace extensión hacia el territorio local y hacia la región fronteriza.\n\nEl cierre fue en la Biblioteca Regional Eldorado, donde se expusieron 19 trabajos en total —de la EAE y de la FCF—, en un espacio que generó contagio: el contacto entre equipos incentivó a docentes y estudiantes a presentar nuevas propuestas o sumarse a las ya existentes.",
+    "proyectos": [
+      {
+        "nombre": "Biblioteca Viva Arandú Rekové",
+        "sintesis": "Proyecto activo desde 2022: recuperación y preservación de semillas nativas con docentes, no docentes, estudiantes y comunidades locales. Articulación con Comunidad Yvyty, EFA San Miguel, INTA y RAOM."
+      },
+      {
+        "nombre": "Intercambio estudiantil con Brasil",
+        "sintesis": "Más de 20 estudiantes de la EAE en intercambio internacional durante la misma semana; extensión hacia la región fronteriza como práctica sostenida."
+      },
+      {
+        "nombre": "REDFI — Red de Formación Integral",
+        "sintesis": "Articulación interfacultad con FCEQyN, FHyCS y FCE sobre salud integral y diversidad de género."
+      },
+      {
+        "nombre": "Orientación integral ante emergencias escolares",
+        "sintesis": "Capacitación en primeros auxilios y protección para la comunidad educativa de la EAE."
+      }
+    ],
+    "cita": "El valor que tiene, en nuestro caso, es que trabajamos con estudiantes secundarios que están en plena formación profesional, académica y también como personas: el poder vincularse con la comunidad, no solamente desde las unidades académicas sembrar comunidad, sino también lo que ese vínculo siembra en cada uno de nuestros estudiantes.",
+    "citaAutor": "Téc. Lucas Rodríguez de Lima",
+    "citaCargo": "Responsable del Área de Extensión, Escuela Agrotécnica Eldorado",
+    "x": 70,
+    "y": 42,
+    "escala": 1.1,
+    "rotacion": 2,
+    "profundidad": 4,
+    "animacion": "slide",
+    "duracion": 700,
+    "ordenNarrativo": 2,
+    "visible": true,
+    "imagenPortada": "assets/ua/eae.jpg"
+  },
+  {
+    "id": "r-conceptual-eldorado-semillas",
+    "tipo": "conceptual",
+    "sede": "eldorado",
+    "unidadAcademica": null,
+    "titulo": "Guardar semillas es hacer memoria",
+    "resumen": "La extensión en Eldorado trabaja con lo que puede perderse: variedades nativas, saberes locales, prácticas de producción que el monocultivo fue desplazando.",
+    "cuerpo": "Cuando la Escuela Agrotécnica Eldorado presenta la Biblioteca Viva Arandú Rekové, no está mostrando un proyecto de agronomía en el sentido convencional del término. Está mostrando una práctica de archivo vivo: la recuperación sistemática de variedades de semillas nativas —alimenticias, medicinales, adaptadas al suelo misionero— que el avance de la producción homogénea fue marginando hasta el riesgo de extinción local.\n\nEn ese sentido, el proyecto se emparenta más con la lógica del archivo y la memoria que con la de la transferencia tecnológica. Las semillas no solo se recogen: se nombran, se documentan los usos que las comunidades tenían para ellas, se registran las redes de personas que todavía las conservan. El muestrario que los estudiantes construyeron contiene más de cien variedades identificadas. Cada sobre es también una historia de quién la cultivó y qué sabía sobre ella.\n\nLa extensión en Eldorado, entonces, no solo sale al territorio a llevar conocimiento universitario: va a rescatar el conocimiento que el territorio ya tiene, antes de que desaparezca.",
+    "x": 48,
+    "y": 72,
+    "escala": 0.83,
+    "rotacion": -2,
+    "profundidad": 2,
+    "animacion": "float",
+    "duracion": 700,
+    "ordenNarrativo": 5,
+    "visible": true
+  },
+  {
+    "id": "r-conceptual-eldorado-territorio",
+    "tipo": "conceptual",
+    "sede": "eldorado",
+    "unidadAcademica": null,
+    "titulo": "El mismo espacio, dos experiencias propias",
+    "resumen": "FCF y EAE compartieron instalaciones durante la Semana Regional, pero cada una desarrolló su experiencia institucional con identidad y proyectos propios.",
+    "cuerpo": "La sede Eldorado de la Semana Regional de Extensión no tiene un único relato, sino dos. La Facultad de Ciencias Forestales fue la sede física del evento: sus espacios —el Aula Magna, la Biblioteca Regional— funcionaron como marco común para las presentaciones y la exposición de trabajos. La Escuela Agrotécnica Eldorado fue una institución participante activa, con proyectos propios y una propuesta de extensión específica que respondía a su naturaleza de institución de nivel secundario universitario.\n\nEsa doble pertenencia —al mismo evento, pero con identidades institucionales diferenciadas— es lo que hace singular a la sede Eldorado dentro del compendio. No hay una sola voz que hable por la regional: hay una institución universitaria con carreras forestales y una escuela que forma técnicos agrotécnicos, conviviendo en el mismo espacio pero con lógicas de extensión propias, destinatarios distintos y formas diferentes de relacionarse con el territorio.\n\nCompartir una biblioteca y un aula magna no produce automáticamente una experiencia común. Lo que produce, cuando funciona bien, es la posibilidad de que cada institución se vea reflejada en la otra: de que los proyectos de la escuela tengan interlocutores universitarios, y de que la facultad encuentre en la escuela secundaria un aliado estratégico para llegar a comunidades rurales más jóvenes.",
+    "x": 20,
+    "y": 68,
+    "escala": 0.82,
+    "rotacion": 3,
+    "profundidad": 2,
+    "animacion": "zoom",
+    "duracion": 750,
+    "ordenNarrativo": 6,
     "visible": true
   }
 ]

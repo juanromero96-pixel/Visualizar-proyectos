@@ -395,7 +395,7 @@
     "nombreCompleto": "Lucas de Lima",
     "cargo": "Secretario de Extensión",
     "institucion": "Escuela Agrotécnica Eldorado",
-    "foto": null,
+    "foto": "assets/photos/eae-lucas-delima.jpg",
     "citas": [
       "También el valor que tiene, en nuestro caso, que trabajamos con estudiantes secundarios que están en plena formación profesional, académica y también como personas: el poder vincularse con la comunidad, no solamente desde las unidades académicas sembrar comunidad, sino también lo que ese vínculo siembra en cada uno de nuestros estudiantes.",
       "Esta semana en la escuela tuvimos el regreso de más de 20 estudiantes que estuvieron haciendo un intercambio en Brasil, también haciendo extensión."
@@ -518,6 +518,28 @@
     "animacion": "float",
     "duracion": 700,
     "ordenNarrativo": 7,
+    "visible": true
+  },
+  {
+    "id": "t-rivaldi-eldorado",
+    "sede": "eldorado",
+    "nombreCompleto": "Noelia Rivaldi",
+    "cargo": "Directora",
+    "institucion": "Escuela Agrotécnica Eldorado",
+    "foto": "assets/photos/eae-noelia-rivaldi.jpg",
+    "citas": [
+      "Desde el primer momento, tanto desde la Escuela Agrotécnica Eldorado como desde la Facultad de Ciencias Forestales, nos pusimos a trabajar juntos para que saliera bien.",
+      "Hubo participación de todos los claustros y el clima durante toda la jornada fue excelente.",
+      "Celebramos y valoramos estas instancias. Agradecemos a las autoridades de la UNaM y a la Secretaría General de Extensión por el acompañamiento a través de convocatorias y el respaldo administrativo que hacen posible que estos proyectos se ejecuten en el territorio."
+    ],
+    "x": 82,
+    "y": 60,
+    "escala": 0.85,
+    "rotacion": -3,
+    "profundidad": 3,
+    "animacion": "slide",
+    "duracion": 700,
+    "ordenNarrativo": 3,
     "visible": true
   }
 ]
