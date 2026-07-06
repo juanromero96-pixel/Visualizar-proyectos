@@ -111,48 +111,95 @@ const Distribuidor = (() => {
     const factor = ubicarPorBusqueda(nodos, ancho, alto, zonas);
 
     // ── Distribución editorial en zonas para mobile ──────────────────────────
-    // En un viewport vertical de 375×812px, el algoritmo general de búsqueda
-    // tiende a concentrar elementos en la zona superior (donde los anclas de
-    // datos los atraen). Para mobile se aplica una asignación previa por zonas
-    // editoriales que garantiza cobertura del lienzo completo — simulando la
-    // distribución curada de un mural, no la optimización local de un grid.
+    // La asignación previa por zonas incorpora peso narrativo:
+    // elementos de mayor jerarquía documental (UA narradores, registros)
+    // se asignan a zonas centrales; autoridades y voces se distribuyen
+    // en la periferia. Esto crea constelaciones narrativas, no nubes uniformes.
     if (window.esMobile?.()) {
       const ZONAS_COLS = 2;
-      const ZONAS_ROWS = 5;  // 5 franjas verticales = composición zig-zag
+      const ZONAS_ROWS = 5;
       const zW = ancho / ZONAS_COLS;
-      const zH = (alto - SEPARACION_MINIMA * 2) / ZONAS_ROWS;
+      const MARGEN_TOP = 100;  // px — zona protegida bajo el header
+      const MARGEN_BOT = 70;   // px — zona protegida sobre el nav
+      const altUtil = alto - MARGEN_TOP - MARGEN_BOT;
+      const zH = altUtil / ZONAS_ROWS;
       const conteoZonas = new Map();
 
-      // Ordenar: permanentes primero → mantienen sus anclas originales
+      // Peso narrativo por tipo — menor número = mayor jerarquía documental
+      const PESO_NARRATIVO = {
+        'registro-ua':        0,  // narrador de capítulo — zona más prominente
+        'registro-conceptual':1,  // reflexión editorial
+        'video':              2,  // registro audiovisual
+        'testimonio':         3,  // voz de extensionista
+        // UNaM autoridades y genérico
+        'default':            4,
+      };
+
+      // Ordenar por peso narrativo: los más importantes eligen zona primero.
+      // Dentro del mismo peso: permanentes primero (van al centro).
       const ordenados = [...nodos].sort((a, b) => {
+        const pa = PESO_NARRATIVO[a.el.dataset.tipo] ?? PESO_NARRATIVO.default;
+        const pb = PESO_NARRATIVO[b.el.dataset.tipo] ?? PESO_NARRATIVO.default;
+        if (pa !== pb) return pa - pb;
         const ap = a.el.dataset.permanente === 'true' ? 0 : 1;
         const bp = b.el.dataset.permanente === 'true' ? 0 : 1;
         return ap - bp;
       });
 
+      // Zonas preferenciales por peso narrativo:
+      // UA narradores → filas centrales (2-3 de 5) — el corazón del mural
+      // Conceptuales/videos → filas 1-4 — alrededor del núcleo
+      // Testimonios/autoridades → toda la altura, alternando columnas
+      const preferenciaFilas = (peso) => {
+        if (peso === 0) return [1, 2];             // centro del mural
+        if (peso === 1) return [0, 1, 2, 3];       // alrededor
+        if (peso === 2) return [0, 1, 2, 3, 4];    // todo el espacio
+        return [0, 1, 2, 3, 4];                    // sin restricción
+      };
+
       ordenados.forEach((n) => {
-        // Encontrar la zona con menor ocupación más cercana al ancla del elemento
+        const peso = PESO_NARRATIVO[n.el.dataset.tipo] ?? PESO_NARRATIVO.default;
+        const filasPref = preferenciaFilas(peso);
+
+        // Buscar la mejor zona libre dentro de las filas preferidas,
+        // ponderando por distancia al ancla para mantener coherencia con los datos.
         let bestKey = null, bestScore = Infinity;
-        for (let row = 0; row < ZONAS_ROWS; row++) {
+        for (const row of filasPref) {
           for (let col = 0; col < ZONAS_COLS; col++) {
             const key = `${row}-${col}`;
             const zonaCount = conteoZonas.get(key) || 0;
-            // Penalizar zonas ya ocupadas (evitar clustering)
-            const ocupacion = zonaCount * 1e6;
-            // Distancia al ancla del elemento
+            const ocupacion = zonaCount * 5e5;
             const zonaCX = (col + 0.5) * zW;
-            const zonaCY = SEPARACION_MINIMA + (row + 0.5) * zH;
+            const zonaCY = MARGEN_TOP + (row + 0.5) * zH;
             const dist = Math.hypot(zonaCX - n.x, zonaCY - n.y);
             const score = dist + ocupacion;
             if (score < bestScore) { bestScore = score; bestKey = { key, cx: zonaCX, cy: zonaCY }; }
           }
         }
+
+        if (!bestKey) {
+          // Fallback: cualquier zona libre
+          for (let row = 0; row < ZONAS_ROWS; row++) {
+            for (let col = 0; col < ZONAS_COLS; col++) {
+              const key = `${row}-${col}`;
+              const zonaCount = conteoZonas.get(key) || 0;
+              if (zonaCount === 0) { bestKey = { key, cx: (col+0.5)*zW, cy: MARGEN_TOP+(row+0.5)*zH }; break; }
+            }
+            if (bestKey) break;
+          }
+        }
+
         if (bestKey) {
           conteoZonas.set(bestKey.key, (conteoZonas.get(bestKey.key) || 0) + 1);
-          // Desplazamiento orgánico dentro de la zona para no alinear en cuadrícula
-          const jitter = SEPARACION_MINIMA * 0.6;
-          n.x = bestKey.cx + (Math.random() - 0.5) * jitter;
-          n.y = bestKey.cy + (Math.random() - 0.5) * jitter;
+          // Jitter orgánico: desplazamiento dentro de la zona para evitar cuadrícula
+          const jitterX = (Math.random() - 0.5) * zW * 0.5;
+          const jitterY = (Math.random() - 0.5) * zH * 0.4;
+          n.x = Math.max(n.wBase / 2 + SEPARACION_MINIMA, 
+                Math.min(ancho - n.wBase / 2 - SEPARACION_MINIMA, 
+                bestKey.cx + jitterX));
+          n.y = Math.max(MARGEN_TOP + n.hBase / 2,
+                Math.min(alto - MARGEN_BOT - n.hBase / 2,
+                bestKey.cy + jitterY));
         }
       });
     }

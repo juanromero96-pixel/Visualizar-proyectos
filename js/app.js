@@ -384,27 +384,33 @@ function crearTarjetaTestimonio(item, interior) {
   const figura = document.createElement('figure');
   figura.className = 'testimonio-foto';
 
-  // Color del monograma derivado de la UA de la persona, no de un hash aleatorio.
-  const uaKey = resolverUA(item.unidadAcademica || item.institucion || '');
+  const uaKey          = resolverUA(item.unidadAcademica || item.institucion || '');
   const colorMonograma = colorDeUnidadAcademica(uaKey) || '#00a3e0';
-  const iniciales = inicialesDe(item.nombreCompleto);
-
-  // En mobile: siempre monograma documental (cuadrado), nunca foto circular.
-  // Manejado en JS para evitar dependencias de media query con viewport inflado.
-  // En desktop: foto si existe, monograma como fallback.
-  const esMobileNow = window.esMobile?.();
+  const iniciales      = inicialesDe(item.nombreCompleto);
+  const esMobileNow    = window.esMobile?.();
 
   if (item.foto && !esMobileNow) {
-    // Desktop con foto
-    figura.innerHTML = `
-      <img class="testimonio-foto-img" src="${item.foto}" alt="${escaparHTML(item.nombreCompleto)}" loading="lazy">
-      <div class="testimonio-monograma testimonio-monograma--alt" style="--color-monograma:${colorMonograma}">${iniciales}</div>
-    `;
-    figura.querySelector('.testimonio-foto-img')
-          .addEventListener('error', () => figura.classList.add('testimonio-foto--rota'));
+    // DESKTOP con foto: solo la imagen — el monograma nunca se construye.
+    // Antes se generaba junto al img un div de iniciales, causando el bug C-01.
+    // El fallback se inyecta dinámicamente SOLO si la imagen falla.
+    const img = document.createElement('img');
+    img.className = 'testimonio-foto-img';
+    img.src = item.foto;
+    img.alt = item.nombreCompleto;
+    img.loading = 'lazy';
+    img.addEventListener('error', () => {
+      // Foto rota: reemplazar con monograma (DOM swap, no display:none)
+      figura.innerHTML = `<div class="testimonio-monograma" style="--color-monograma:${colorMonograma}">${iniciales}</div>`;
+    });
+    figura.appendChild(img);
   } else {
-    // Mobile (siempre monograma) o desktop sin foto
-    figura.innerHTML = `<div class="testimonio-monograma" style="--color-monograma:${colorMonograma}">${iniciales}</div>`;
+    // MOBILE (siempre) o DESKTOP sin foto: solo el monograma documental.
+    // Nunca se construye la img → imposible que ambos coexistan.
+    const mono = document.createElement('div');
+    mono.className = 'testimonio-monograma';
+    mono.style.setProperty('--color-monograma', colorMonograma);
+    mono.textContent = iniciales;
+    figura.appendChild(mono);
   }
 
   const cuerpo = document.createElement('div');
@@ -926,13 +932,13 @@ const Rotacion = (() => {
   let generacion    = 0;
 
   function calcularCapacidad() {
-    // En mobile el viewport es ~375px de ancho.
-    // Con 3 UA permanentes + 2 UNaM K=2 = 5 fijos.
-    // La fórmula permite 2-4 satélites UA adicionales (videos, testimonios).
-    // Máximo 9 para evitar saturación; mínimo 7 para que el mural no se vea vacío.
+    // En mobile: densidad editorial media — abundancia documental sin caos.
+    // Con 3 UA permanentes + K=2 (2 UNaM) = 5 fijos.
+    // Fórmula: 3-5 satélites UA adicionales (videos, testimonios, conceptuales).
+    // Mínimo 8 para que el mural no parezca vacío; máximo 11 para evitar saturación.
     if (window.esMobile?.()) {
       const area = window.innerWidth * window.innerHeight;
-      return Math.max(7, Math.min(9, Math.round(area / 35000)));
+      return Math.max(8, Math.min(11, Math.round(area / 28000)));
     }
     return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
   }
