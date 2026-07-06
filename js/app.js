@@ -35,9 +35,6 @@
   // → En mobile sale solo. El posicionamiento mobile lo resuelve mobile.css.
   // → No hay fork JS, no hay segundo motor, no hay condición de carrera.
   const recalcular = () => {
-    console.log('[App.recalcular] innerWidth=' + window.innerWidth +
-                ' esMobile=' + (window.esMobile?.() ?? '—') +
-                ' es-mobile=' + document.documentElement.classList.contains('es-mobile'));
     secciones.forEach((s) => Distribuidor.distribuir(s));
   };
 
@@ -929,12 +926,13 @@ const Rotacion = (() => {
   let generacion    = 0;
 
   function calcularCapacidad() {
-    // En mobile el viewport es ~375px — el mismo número de elementos que
-    // en desktop (8-22) causa superposiciones inevitables. Se usa una
-    // fórmula separada que limita a 5-7 elementos simultáneos, dando
-    // más espacio de respiración a cada anotación del mural.
+    // En mobile el viewport es ~375px de ancho.
+    // Con 3 UA permanentes + 2 UNaM K=2 = 5 fijos.
+    // La fórmula permite 2-4 satélites UA adicionales (videos, testimonios).
+    // Máximo 9 para evitar saturación; mínimo 7 para que el mural no se vea vacío.
     if (window.esMobile?.()) {
-      return Math.max(5, Math.min(7, Math.round(window.innerWidth * window.innerHeight / 50000)));
+      const area = window.innerWidth * window.innerHeight;
+      return Math.max(7, Math.min(9, Math.round(area / 35000)));
     }
     return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
   }

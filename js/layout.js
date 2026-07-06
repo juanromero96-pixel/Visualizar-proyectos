@@ -59,8 +59,8 @@ const Distribuidor = (() => {
     if (!escenario) return;
 
     // En mobile el viewport es ~375px de ancho: los elementos necesitan más
-    // separación para que el texto no se superpon­ga entre tarjetas adyacentes.
-    SEPARACION_MINIMA = (window.esMobile?.() ? 64 : 16);
+    // separación para que el texto no se superponga entre tarjetas adyacentes.
+    SEPARACION_MINIMA = (window.esMobile?.() ? 56 : 16);
 
     // El motor de layout corre tanto en Desktop como en Mobile.
     // En Mobile los elementos siguen flotando sobre la ciudad — el mural
@@ -109,6 +109,53 @@ const Distribuidor = (() => {
     });
 
     const factor = ubicarPorBusqueda(nodos, ancho, alto, zonas);
+
+    // ── Distribución editorial en zonas para mobile ──────────────────────────
+    // En un viewport vertical de 375×812px, el algoritmo general de búsqueda
+    // tiende a concentrar elementos en la zona superior (donde los anclas de
+    // datos los atraen). Para mobile se aplica una asignación previa por zonas
+    // editoriales que garantiza cobertura del lienzo completo — simulando la
+    // distribución curada de un mural, no la optimización local de un grid.
+    if (window.esMobile?.()) {
+      const ZONAS_COLS = 2;
+      const ZONAS_ROWS = 5;  // 5 franjas verticales = composición zig-zag
+      const zW = ancho / ZONAS_COLS;
+      const zH = (alto - SEPARACION_MINIMA * 2) / ZONAS_ROWS;
+      const conteoZonas = new Map();
+
+      // Ordenar: permanentes primero → mantienen sus anclas originales
+      const ordenados = [...nodos].sort((a, b) => {
+        const ap = a.el.dataset.permanente === 'true' ? 0 : 1;
+        const bp = b.el.dataset.permanente === 'true' ? 0 : 1;
+        return ap - bp;
+      });
+
+      ordenados.forEach((n) => {
+        // Encontrar la zona con menor ocupación más cercana al ancla del elemento
+        let bestKey = null, bestScore = Infinity;
+        for (let row = 0; row < ZONAS_ROWS; row++) {
+          for (let col = 0; col < ZONAS_COLS; col++) {
+            const key = `${row}-${col}`;
+            const zonaCount = conteoZonas.get(key) || 0;
+            // Penalizar zonas ya ocupadas (evitar clustering)
+            const ocupacion = zonaCount * 1e6;
+            // Distancia al ancla del elemento
+            const zonaCX = (col + 0.5) * zW;
+            const zonaCY = SEPARACION_MINIMA + (row + 0.5) * zH;
+            const dist = Math.hypot(zonaCX - n.x, zonaCY - n.y);
+            const score = dist + ocupacion;
+            if (score < bestScore) { bestScore = score; bestKey = { key, cx: zonaCX, cy: zonaCY }; }
+          }
+        }
+        if (bestKey) {
+          conteoZonas.set(bestKey.key, (conteoZonas.get(bestKey.key) || 0) + 1);
+          // Desplazamiento orgánico dentro de la zona para no alinear en cuadrícula
+          const jitter = SEPARACION_MINIMA * 0.6;
+          n.x = bestKey.cx + (Math.random() - 0.5) * jitter;
+          n.y = bestKey.cy + (Math.random() - 0.5) * jitter;
+        }
+      });
+    }
 
     nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
     empujarFueraDeZonas(nodos, zonas);

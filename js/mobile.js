@@ -49,7 +49,8 @@ const esMobile = () => {
 
 window.esMobile = esMobile;
 
-const _diag = (msg) => console.log('[Mobile]', msg);
+// Diagnóstico desactivado en producción — cambiar a console.log('[Mobile]', msg) para depurar
+const _diag = (msg) => {}; // eslint-disable-line no-unused-vars
 _diag(`Cargado. matchMedia=${mqMobile.matches} innerWidth=${window.innerWidth}`);
 
 // Clase es-mobile en el <html> — ANTES de cualquier render
