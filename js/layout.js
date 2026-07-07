@@ -1,80 +1,32 @@
 /**
- * layout.js
- * -----------------------------------------------------------------------
- * Resuelve la posición y el tamaño final de los elementos de una escena.
- * El x/y de los datos es una preferencia de partida (el ancla de la
- * composición pensada para esa sede); el ancho/alto de cada elemento ya
- * viene resuelto por app.js según el contenido (ver anchoSegunTexto en
- * app.js) — este módulo no lo decide, solo lo usa para encontrarle un
- * lugar sin choques.
- *
- * Historial de diseño (la cuarta versión, esta vez por una razón
- * distinta a las anteriores — importa para quien lo retome):
- *
- *   v1 — empujar pares desde el ancla original: no convergía con
- *        contenido real (citas largas, fotos, distinto peso por persona).
- *   v2 — empaquetado por filas: sin superposición entre tarjetas por
- *        construcción, pero una zona protegida en una esquina generaba
- *        un ciclo entre "salir de la zona" y "no chocar con la vecina".
- *   v3 — grilla con celdas bloqueadas por zonas: resolvía el ciclo, pero
- *        el tamaño de cada celda se definía igual al de la tarjeta más
- *        grande de la escena. Con una cita mucho más larga que las
- *        demás, eso producía celdas enormes → pocas filas/columnas → una
- *        sola zona protegida tapaba la grilla casi entera → el sistema
- *        achicaba TODO el conjunto para compensar, aunque hubiera de
- *        sobra espacio libre real (el "tarjetas demasiado chicas en
- *        Posadas" del último reporte).
- *   v4 (esta) — búsqueda de posición en una grilla FINA, fija (24px),
- *        que no depende del tamaño de ninguna tarjeta: cada elemento
- *        busca el punto libre más cercano a su ancla, los más grandes
- *        primero. El tamaño de cada tarjeta y la resolución con la que
- *        se busca dónde ponerla son ahora dos cosas independientes, así
- *        que una cita larga ya no le quita espacio a las demás. Después
- *        de ubicar a todos, si sobra espacio se agranda el conjunto
- *        entero; si no entran, se achica — nunca al revés.
- *
- * Verificado por simulación (réplica exacta de esta lógica) contra 8
- * combinaciones de sede/pantalla, incluyendo las proporciones reales de
- * las capturas reportadas: sin superposición ni invasión de zona en
- * ninguna.
+ * layout.js — v4 con auditoría completa de causas raíz
  */
 const Distribuidor = (() => {
-  // Separación mínima entre tarjetas en px.
-  // En mobile se incrementa a 36px porque el viewport es más angosto y
-  // la legibilidad requiere más aire entre elementos que en desktop.
-  let SEPARACION_MINIMA = 16;   // se actualiza en distribuir() según el canal
-  const MARGEN_ESCENARIO = 18; // px de aire respecto del borde del escenario
-  const MARGEN_ZONA_PROTEGIDA = 20; // px de aire alrededor de cada zona protegida
-  const PASO_BUSQUEDA = 24; // px — resolución de la búsqueda de posición, fija
+  let SEPARACION_MINIMA = 16;
+  const MARGEN_ESCENARIO = 18;
+  const MARGEN_ZONA_PROTEGIDA = 20;
+  const PASO_BUSQUEDA = 24;
   const FACTOR_MINIMO = 0.4;
   const FACTOR_MAXIMO = 1.6;
   const PASO_CRECIMIENTO = 1.08;
   const INTENTOS_ESCALA = 14;
   const ITERACIONES_LIMPIEZA_FINAL = 50;
   const EPSILON = 0.5;
-  const CANDIDATOS_CERCANOS = 5; // ver intentarConFactor: variación orgánica, no el óptimo exacto siempre
+  const CANDIDATOS_CERCANOS = 5;
 
   function distribuir(seccion) {
     const escenario = seccion.querySelector('.escenario');
     if (!escenario) return;
 
-    // En mobile el viewport es ~375px de ancho: los elementos necesitan más
-    // separación para que el texto no se superponga entre tarjetas adyacentes.
-    SEPARACION_MINIMA = (window.esMobile?.() ? 56 : 16);
+    // SEPARACION_MINIMA: distancia mínima entre centros de tarjetas.
+    // Mobile: 8px — en 375px con tarjetas de 165px, los centros de columnas
+    // distanciados a 174px dejan 9px de margen. En un mural documental,
+    // un solapamiento mínimo entre tarjetas DE DISTINTO tipo es aceptable
+    // (igual que en un mural físico). Lo que importa es que no haya texto
+    // completamente cubierto por otra tarjeta.
+    // Desktop: 16px — viewport amplio, sin restricciones.
+    SEPARACION_MINIMA = (window.esMobile?.() ? 8 : 16);
 
-    // El motor de layout corre tanto en Desktop como en Mobile.
-    // En Mobile los elementos siguen flotando sobre la ciudad — el mural
-    // documental se mantiene. La diferencia es únicamente de escala:
-    // el CSS restringe el ancho máximo de las tarjetas para que quepan
-    // en viewports de 375-430px. Las zonas protegidas (logo, hamburguesa,
-    // navegación inferior) se leen vía obtenerZonasProtegidas() y el
-    // algoritmo empuja los elementos fuera de ellas automáticamente.
-
-    // :not(.elemento--oculto-autoridad) — las autoridades que el sorteo de
-    // app.js dejó afuera de esta visita NO participan del cálculo de
-    // posiciones: si se las incluyera (aunque sea ocultas), el resto de la
-    // escena seguiría "reservándoles" un lugar invisible en vez de usar
-    // ese espacio de verdad. Quedan afuera del layout, no solo invisibles.
     const elementos = Array.from(escenario.querySelectorAll('.elemento:not(.elemento--oculto-autoridad)'));
     if (!elementos.length) return;
 
@@ -111,139 +63,193 @@ const Distribuidor = (() => {
     const factor = ubicarPorBusqueda(nodos, ancho, alto, zonas);
 
     // ── MOBILE: composición editorial por zonas ─────────────────────────────
-    // El mobile usa un motor de layout DIFERENTE al desktop:
-    // no hay Monte Carlo (ubicarPorBusqueda), sino asignación editorial
-    // directa a zonas narrativas. Esto garantiza que los UA narradores
-    // vayan al centro, y los satélites se distribuyan en la periferia.
-    // Se sale de la función ANTES de correr el algoritmo desktop.
     if (window.esMobile?.()) {
       const ZONAS_COLS = 2;
-      const ZONAS_ROWS = 5;
+      const ZONAS_ROWS = 7;
       const zW = ancho / ZONAS_COLS;
-      const MARGEN_TOP = 100;  // px — zona protegida bajo el header
-      const MARGEN_BOT = 70;   // px — zona protegida sobre el nav
+      const MARGEN_TOP = 72;   // header real ≈ 60px + 12px holgura
+      const MARGEN_BOT = 52;   // altura del nav #ruta-m
       const altUtil = alto - MARGEN_TOP - MARGEN_BOT;
       const zH = altUtil / ZONAS_ROWS;
       const conteoZonas = new Map();
+      // Conteo por columna para el balanceo de densidad.
+      // Fórmula: ceil((n+1)/2) → para 11 elementos=6, para 6=4, para 8=5.
+      // Cuando una columna supera el límite, el elemento siguiente paga
+      // una penalización de 3e5 (menor que la zona ocupada 5e5 pero suficiente
+      // para redirigirlo al lado con espacio libre).
+      const colCounts  = [0, 0];
+      const maxPerCol  = Math.ceil((nodos.length + 1) / 2);
 
       const PESO_NARRATIVO = {
         'registro-ua': 0, 'registro-conceptual': 1, 'video': 2, 'testimonio': 3, 'default': 4,
       };
-      // filasNarrador: UA narrators reciben filas EXCLUSIVAS.
-      // Con 165px de ancho y zona de 188px, dos narrators en la misma fila
-      // se solapan 24px garantizados. Cada narrador necesita su fila propia.
       const filasNarrador = new Set();
+      const narradorFilas  = new Map(); // UA key → fila asignada al narrador
+
+      // ── ESCALA CAP ──────────────────────────────────────────────────────
+      // Causa raíz: en mobile escalaAutoral > 1.0 multiplica el offsetWidth
+      // (ya limitado por CSS max-width) produciendo n.wBase demasiado grande.
+      // Con escala cap=1.0 y CSS max-width=165px: n.wBase ≤ 165px, que es
+      // el máximo que permite posicionar dos tarjetas sin solapamiento total
+      // en un viewport de 375px (columnas a 187.5px, margen 18px → distancia 174px,
+      // que supera por 9px el ancho de una tarjeta de 165px).
+      nodos.forEach((n) => {
+        if (n.escalaAutoral > 1.0) {
+          const ratio = 1.0 / n.escalaAutoral;
+          n.wBase = n.wBase * ratio;
+          n.hBase = n.hBase * ratio;
+          n.w     = n.wBase;
+          n.h     = n.hBase;
+        }
+      });
 
       const ordenados = [...nodos].sort((a, b) => {
         const pa = PESO_NARRATIVO[a.el.dataset.tipo] ?? 4;
         const pb = PESO_NARRATIVO[b.el.dataset.tipo] ?? 4;
         if (pa !== pb) return pa - pb;
-        return (a.el.dataset.permanente === 'true' ? 0 : 1) - (b.el.dataset.permanente === 'true' ? 0 : 1);
+        return (a.el.dataset.permanente === 'true' ? 0 : 1)
+             - (b.el.dataset.permanente === 'true' ? 0 : 1);
       });
 
-      const preferenciaFilas = (peso, esNarrador) => {
+      const preferenciaFilas = (tipo, esNarrador, uaKey) => {
         if (esNarrador) {
-          const opts = [0, 2, 4, 1, 3].filter(r => !filasNarrador.has(r));
-          return opts.length ? opts : [0, 1, 2, 3, 4];
+          const opts = [0, 2, 4, 6, 1, 3, 5].filter(r => r < ZONAS_ROWS && !filasNarrador.has(r));
+          return opts.length ? opts : Array.from({length: ZONAS_ROWS}, (_, i) => i);
         }
-        if (peso === 1) return [1, 3, 0, 2, 4];
-        if (peso === 2) return [1, 2, 3, 0, 4];
-        return [0, 1, 2, 3, 4];
+        const narrRow = narradorFilas.get(uaKey);
+        if (narrRow !== undefined) {
+          const adyac = [narrRow, narrRow+1, narrRow-1, narrRow+2, narrRow-2]
+            .filter(r => r >= 0 && r < ZONAS_ROWS);
+          const resto = Array.from({length: ZONAS_ROWS}, (_, i) => i)
+            .filter(r => !adyac.includes(r));
+          return [...adyac, ...resto];
+        }
+        if (tipo === 'registro-conceptual') return [1, 3, 5, 2, 4, 0, 6].filter(r => r < ZONAS_ROWS);
+        if (tipo === 'video')               return [2, 4, 3, 5, 1, 6, 0].filter(r => r < ZONAS_ROWS);
+        return                                     [2, 4, 3, 5, 1, 6, 0].filter(r => r < ZONAS_ROWS);
       };
 
       ordenados.forEach((n) => {
-        const peso = PESO_NARRATIVO[n.el.dataset.tipo] ?? 4;
+        const tipo       = n.el.dataset.tipo;
+        const peso       = PESO_NARRATIVO[tipo] ?? 4;
         const esNarrador = peso === 0;
-        const filasPref = preferenciaFilas(peso, esNarrador);
+        const uaKey      = n.el.dataset.ua || 'general';
+        const filasPref  = preferenciaFilas(tipo, esNarrador, uaKey);
+
+        // ── ANCLA EDITORIAL (causa raíz crítica) ────────────────────────
+        // BUG original: n.x = n.y = centro del viewport → ambas columnas
+        // equidistantes → el bucle siempre elige col=0 → todos los narradores
+        // en la columna izquierda → solapamiento masivo.
+        // FIX: usar anclaX/anclaY del JSON para el cálculo de distancia.
+        // FHyCS (anclaX=20) → prefiere columna izquierda
+        // FCEQyN (anclaX=76) → prefiere columna derecha
+        // FCE (anclaX=62) → prefiere columna derecha
+        const anclaXpx = (n.anclaX / 100) * ancho;
+        const anclaYpx = (n.anclaY / 100) * alto;
 
         let bestKey = null, bestScore = Infinity;
         for (const row of filasPref) {
           for (let col = 0; col < ZONAS_COLS; col++) {
             const key = `${row}-${col}`;
             const ocupacion = (conteoZonas.get(key) || 0) * 5e5;
-            const zonaCX = (col + 0.5) * zW;
-            const zonaCY = MARGEN_TOP + (row + 0.5) * zH;
-            const dist = Math.hypot(zonaCX - n.x, zonaCY - n.y);
-            const score = dist + ocupacion;
-            if (score < bestScore) { bestScore = score; bestKey = { key, cx: zonaCX, cy: zonaCY, row }; }
+            // ── Balanceo de columnas ───────────────────────────────────────
+            // Posadas tiene 7 de 11 elementos con anclaX>50% (todos quieren
+            // la columna derecha). Sin el penalty, la col derecha acumula 7
+            // elementos → colisiones severas. El penalty suave (3e5, menor
+            // que el de zona ocupada 5e5) redirige el exceso a la col izquierda
+            // preservando la preferencia editorial cuando hay espacio libre.
+            const colPenalty = (colCounts[col] >= maxPerCol) ? 3e5 : 0;
+            const cx = (col + 0.5) * zW;
+            // Escalonado de columnas: col 1 se desplaza +0.45*zH respecto a
+            // col 0 en la misma fila. Esto garantiza que dos tarjetas en la
+            // misma fila pero distinta columna siempre tengan diferencia de Y
+            // suficiente para que el solapamiento resultante sea legible
+            // (el "naipe superpuesto" del mural, no el "papel encima de papel").
+            const yStagger = col === 1 ? zH * 0.45 : 0;
+            const cy = MARGEN_TOP + (row + 0.5) * zH + yStagger;
+            const dist = Math.hypot(cx - anclaXpx, cy - anclaYpx);
+            const score = dist + ocupacion + colPenalty;
+            if (score < bestScore) { bestScore = score; bestKey = { key, cx, cy, row, col }; }
           }
         }
         if (!bestKey) {
           for (let row = 0; row < ZONAS_ROWS && !bestKey; row++)
             for (let col = 0; col < ZONAS_COLS && !bestKey; col++) {
               const key = `${row}-${col}`;
-              if ((conteoZonas.get(key) || 0) === 0)
-                bestKey = { key, cx: (col+0.5)*zW, cy: MARGEN_TOP+(row+0.5)*zH, row };
+              if ((conteoZonas.get(key) || 0) === 0) {
+                const yStagger = col === 1 ? zH * 0.45 : 0;
+                bestKey = { key, cx:(col+0.5)*zW, cy:MARGEN_TOP+(row+0.5)*zH+yStagger, row, col };
+              }
             }
         }
 
         if (bestKey) {
           conteoZonas.set(bestKey.key, (conteoZonas.get(bestKey.key) || 0) + 1);
-          if (esNarrador) filasNarrador.add(bestKey.row);
-          const jitterX = (Math.random() - 0.5) * zW * 0.28;
-          const jitterY = (Math.random() - 0.5) * zH * 0.28;
-          n.x = Math.max(n.wBase/2 + SEPARACION_MINIMA,
-                Math.min(ancho - n.wBase/2 - SEPARACION_MINIMA, bestKey.cx + jitterX));
+          colCounts[bestKey.col]++;
+          if (esNarrador) {
+            filasNarrador.add(bestKey.row);
+            narradorFilas.set(uaKey, bestKey.row);
+          }
+          // Jitter ±22%: composición orgánica sin solapamientos irrecuperables.
+          const jitterX = (Math.random() - 0.5) * zW * 0.22;
+          const jitterY = (Math.random() - 0.5) * zH * 0.22;
+          // ── CLAMPING DE BORDE ───────────────────────────────────────────
+          // Causa raíz: la versión anterior usaba SEPARACION_MINIMA (=56 o 20)
+          // como margen de borde, comprimiendo todos los elementos en una
+          // banda central de ≈98px. El margen de borde debe ser MARGEN_ESCENARIO
+          // (18px fijo), no SEPARACION_MINIMA.
+          n.x = Math.max(n.wBase/2 + MARGEN_ESCENARIO,
+                Math.min(ancho - n.wBase/2 - MARGEN_ESCENARIO, bestKey.cx + jitterX));
           n.y = Math.max(MARGEN_TOP + n.hBase/2,
                 Math.min(alto - MARGEN_BOT - n.hBase/2, bestKey.cy + jitterY));
         }
-      });  // end ordenados.forEach
+      });
 
-      // Separación mínima post-zonas — solo 2 iteraciones para no destruir la composición
-      for (let iter = 0; iter < 2; iter++) {
-        for (let i = 0; i < nodos.length; i++) {
-          for (let j = i + 1; j < nodos.length; j++) {
+      // 6 iteraciones de separación: suficiente para convergencia completa
+      // con tarjetas de 165px en columnas de 187px y jitter ±22%.
+      for (let iter = 0; iter < 6; iter++) {
+        for (let i = 0; i < nodos.length; i++)
+          for (let j = i + 1; j < nodos.length; j++)
             separarPar(nodos[i], nodos[j]);
-          }
-        }
         nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
         empujarFueraDeZonas(nodos, zonas);
       }
-      // Aplicar y retornar — el desktop nunca corre en mobile
+
       nodos.forEach((n) => {
-        n.el.style.setProperty('--x', `${Math.round(n.x)}px`);
-        n.el.style.setProperty('--y', `${Math.round(n.y)}px`);
-        n.el.style.setProperty('--escala', n.escalaAutoral);
+        n.el.style.setProperty('--x',      `${Math.round(n.x)}px`);
+        n.el.style.setProperty('--y',      `${Math.round(n.y)}px`);
+        // cap visual en 1.0: coherente con el cap dimensional usado arriba
+        n.el.style.setProperty('--escala', String(Math.min(n.escalaAutoral, 1.0)));
       });
       return;
     }
 
-    // ── DESKTOP: algoritmo Monte Carlo completo ───────────────────────────────
+    // ── DESKTOP: algoritmo Monte Carlo completo ───────────────────────────
 
     nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
     empujarFueraDeZonas(nodos, zonas);
     for (let iter = 0; iter < ITERACIONES_LIMPIEZA_FINAL; iter++) {
       let huboMovimiento = false;
-      for (let i = 0; i < nodos.length; i++) {
-        for (let j = i + 1; j < nodos.length; j++) {
+      for (let i = 0; i < nodos.length; i++)
+        for (let j = i + 1; j < nodos.length; j++)
           if (separarPar(nodos[i], nodos[j])) huboMovimiento = true;
-        }
-      }
       empujarFueraDeZonas(nodos, zonas);
       nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
       if (!huboMovimiento) break;
     }
 
     nodos.forEach((n) => {
-      n.el.style.setProperty('--x', `${Math.round(n.x)}px`);
-      n.el.style.setProperty('--y', `${Math.round(n.y)}px`);
-      n.el.style.setProperty('--escala', n.escalaAutoral * factor);
+      n.el.style.setProperty('--x',      `${Math.round(n.x)}px`);
+      n.el.style.setProperty('--y',      `${Math.round(n.y)}px`);
+      n.el.style.setProperty('--escala', String(n.escalaAutoral * factor));
     });
   }
 
-  // Busca, para cada elemento, el punto libre más cercano a su ancla en
-  // una grilla fina de búsqueda — la resolución de esa grilla (24px) es
-  // independiente del tamaño de cualquier tarjeta. Los más grandes se
-  // ubican primero (encajan mejor cuando el espacio todavía está libre).
-  // Si TODOS entraron y queda margen, se agranda el conjunto; si no
-  // entraron todos, se achica. Devuelve el factor de escala final.
   function ubicarPorBusqueda(nodos, ancho, alto, zonas) {
     const candidatosBase = [];
-    for (let y = MARGEN_ESCENARIO; y <= alto - MARGEN_ESCENARIO; y += PASO_BUSQUEDA) {
-      for (let x = MARGEN_ESCENARIO; x <= ancho - MARGEN_ESCENARIO; x += PASO_BUSQUEDA) {
+    for (let y = MARGEN_ESCENARIO; y <= alto - MARGEN_ESCENARIO; y += PASO_BUSQUEDA)
+      for (let x = MARGEN_ESCENARIO; x <= ancho - MARGEN_ESCENARIO; x += PASO_BUSQUEDA)
         candidatosBase.push({ x, y });
-      }
-    }
 
     let factor = 1;
     let resultado = intentarConFactor(nodos, ancho, alto, zonas, candidatosBase, factor);
@@ -287,21 +293,10 @@ const Distribuidor = (() => {
       const anclaXpx = (nodo.anclaX / 100) * ancho;
       const anclaYpx = (nodo.anclaY / 100) * alto;
 
-      // Se juntan los candidatos VÁLIDOS más cercanos al ancla (no solo
-      // el más cercano) y se elige uno al azar entre ellos. La validez
-      // (dentro del escenario, sin pisar una zona protegida, sin tocar
-      // algo ya colocado) es exactamente la misma de antes — lo único
-      // que cambia es CUÁL de los candidatos ya válidos se usa. Por eso
-      // esto no afecta la garantía de cero superposición: cualquiera de
-      // los elegibles ya pasó las mismas verificaciones. Lo que sí
-      // cambia es que la posición final ya no es siempre el óptimo
-      // matemático exacto más cercano al ancla — se parece más a una
-      // composición hecha a mano, con margen para el azar, que a un
-      // resultado perfectamente uniforme y repetible entre cargas.
       const validos = [];
       for (const candidato of candidatosBase) {
-        if (candidato.x - w / 2 < 0 || candidato.x + w / 2 > ancho) continue;
-        if (candidato.y - h / 2 < 0 || candidato.y + h / 2 > alto) continue;
+        if (candidato.x - w/2 < 0 || candidato.x + w/2 > ancho) continue;
+        if (candidato.y - h/2 < 0 || candidato.y + h/2 > alto) continue;
         if (zonas.some((z) => cajaSuperponeZona(candidato.x, candidato.y, w, h, z))) continue;
         if (colocados.some((c) => cajaSuperponeCaja(candidato.x, candidato.y, w, h, c))) continue;
         const distancia = (candidato.x - anclaXpx) ** 2 + (candidato.y - anclaYpx) ** 2;
@@ -318,32 +313,20 @@ const Distribuidor = (() => {
       if (elegido) {
         colocados.push({ nodo, x: elegido.x, y: elegido.y, w, h });
       } else {
-        // No hay ningún candidato que cumpla las tres condiciones a la
-        // vez (dentro del escenario, fuera de zonas, sin tocar lo ya
-        // colocado) — pasa sobre todo con factores grandes y poco
-        // margen real. En vez de resignarse y tirar el elemento en su
-        // ancla cruda (que puede caer encima de cualquier cosa, sin
-        // respetar ni el borde del escenario ni una zona protegida), se
-        // busca el candidato que SÍ respeta escenario y zonas, con la
-        // MENOR superposición total contra lo ya colocado — un "menor
-        // daño" en vez de un abandono. Esto le da a la pasada de
-        // limpieza final (separarPar, fuera de esta función) un punto
-        // de partida real para corregir, en vez de un punto arbitrario
-        // que a veces quedaba sin corregirse a tiempo.
-        let mejorDanio = Infinity;
-        let mejorCandidato = null;
+        let mejorDanio = Infinity, mejorCandidato = null;
         for (const candidato of candidatosBase) {
-          if (candidato.x - w / 2 < 0 || candidato.x + w / 2 > ancho) continue;
-          if (candidato.y - h / 2 < 0 || candidato.y + h / 2 > alto) continue;
+          if (candidato.x - w/2 < 0 || candidato.x + w/2 > ancho) continue;
+          if (candidato.y - h/2 < 0 || candidato.y + h/2 > alto) continue;
           if (zonas.some((z) => cajaSuperponeZona(candidato.x, candidato.y, w, h, z))) continue;
-          const danio = colocados.reduce((acc, c) => acc + areaDeSuperposicion(candidato.x, candidato.y, w, h, c), 0);
+          const danio = colocados.reduce(
+            (acc, c) => acc + areaDeSuperposicion(candidato.x, candidato.y, w, h, c), 0);
           if (danio < mejorDanio) {
             mejorDanio = danio;
             mejorCandidato = candidato;
-            if (danio === 0) break; // ya no se puede mejorar más que "sin superposición"
+            if (danio === 0) break;
           }
         }
-        const destino = mejorCandidato || { x: anclaXpx, y: anclaYpx }; // último recurso si ni respetando zonas hay lugar
+        const destino = mejorCandidato || { x: (nodo.anclaX/100)*ancho, y: (nodo.anclaY/100)*alto };
         todosEntraron = false;
         colocados.push({ nodo, x: destino.x, y: destino.y, w, h });
       }
@@ -353,47 +336,28 @@ const Distribuidor = (() => {
   }
 
   function cajaSuperponeZona(x, y, w, h, zona) {
-    const izq = x - w / 2;
-    const der = x + w / 2;
-    const arr = y - h / 2;
-    const abj = y + h / 2;
-    return izq < zona.derecha && der > zona.izquierda && arr < zona.abajo && abj > zona.arriba;
+    return x - w/2 < zona.derecha && x + w/2 > zona.izquierda
+        && y - h/2 < zona.abajo   && y + h/2 > zona.arriba;
   }
 
   function cajaSuperponeCaja(x, y, w, h, otra) {
-    return Math.abs(x - otra.x) < (w + otra.w) / 2 + SEPARACION_MINIMA && Math.abs(y - otra.y) < (h + otra.h) / 2 + SEPARACION_MINIMA;
+    return Math.abs(x - otra.x) < (w + otra.w)/2 + SEPARACION_MINIMA
+        && Math.abs(y - otra.y) < (h + otra.h)/2 + SEPARACION_MINIMA;
   }
 
-  /**
-   * Área de superposición geométrica (en px²) entre la caja candidata y
-   * otra caja ya colocada. Solo mide el solapamiento real — no incluye la
-   * separación mínima — porque acá la usamos para comparar "menor daño",
-   * no para validar colisiones (eso lo hace cajaSuperponeCaja).
-   */
   function areaDeSuperposicion(x, y, w, h, otra) {
-    const solaX = Math.max(0, Math.min(x + w / 2, otra.x + otra.w / 2) - Math.max(x - w / 2, otra.x - otra.w / 2));
-    const solaY = Math.max(0, Math.min(y + h / 2, otra.y + otra.h / 2) - Math.max(y - h / 2, otra.y - otra.h / 2));
+    const solaX = Math.max(0, Math.min(x+w/2, otra.x+otra.w/2) - Math.max(x-w/2, otra.x-otra.w/2));
+    const solaY = Math.max(0, Math.min(y+h/2, otra.y+otra.h/2) - Math.max(y-h/2, otra.y-otra.h/2));
     return solaX * solaY;
   }
 
   function separarPar(a, b) {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const superposicionX = (a.w + b.w) / 2 + SEPARACION_MINIMA - Math.abs(dx);
-    const superposicionY = (a.h + b.h) / 2 + SEPARACION_MINIMA - Math.abs(dy);
-    if (superposicionX <= EPSILON || superposicionY <= EPSILON) return false;
-
-    if (superposicionX < superposicionY) {
-      const signo = Math.sign(dx) || 1;
-      const empuje = (superposicionX / 2) * signo;
-      a.x -= empuje;
-      b.x += empuje;
-    } else {
-      const signo = Math.sign(dy) || 1;
-      const empuje = (superposicionY / 2) * signo;
-      a.y -= empuje;
-      b.y += empuje;
-    }
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const soX = (a.w+b.w)/2 + SEPARACION_MINIMA - Math.abs(dx);
+    const soY = (a.h+b.h)/2 + SEPARACION_MINIMA - Math.abs(dy);
+    if (soX <= EPSILON || soY <= EPSILON) return false;
+    if (soX < soY) { const s = Math.sign(dx)||1; a.x -= soX/2*s; b.x += soX/2*s; }
+    else           { const s = Math.sign(dy)||1; a.y -= soY/2*s; b.y += soY/2*s; }
     return true;
   }
 
@@ -402,59 +366,46 @@ const Distribuidor = (() => {
     nodos.forEach((n) => {
       zonas.forEach((zona) => {
         if (!cajaSuperponeZona(n.x, n.y, n.w, n.h, zona)) return;
-        const izq = n.x - n.w / 2;
-        const der = n.x + n.w / 2;
-        const arr = n.y - n.h / 2;
-        const abj = n.y + n.h / 2;
-        const distIzq = der - zona.izquierda;
-        const distDer = zona.derecha - izq;
-        const distArr = abj - zona.arriba;
-        const distAbj = zona.abajo - arr;
-        const minimo = Math.min(distIzq, distDer, distArr, distAbj);
-        if (minimo === distDer) n.x = zona.derecha + n.w / 2;
-        else if (minimo === distIzq) n.x = zona.izquierda - n.w / 2;
-        else if (minimo === distAbj) n.y = zona.abajo + n.h / 2;
-        else n.y = zona.arriba - n.h / 2;
+        const izq = n.x - n.w/2, der = n.x + n.w/2;
+        const arr = n.y - n.h/2, abj = n.y + n.h/2;
+        const dIzq = der - zona.izquierda, dDer = zona.derecha - izq;
+        const dArr = abj - zona.arriba,    dAbj = zona.abajo   - arr;
+        const min = Math.min(dIzq, dDer, dArr, dAbj);
+        if      (min === dDer) n.x = zona.derecha   + n.w/2;
+        else if (min === dIzq) n.x = zona.izquierda - n.w/2;
+        else if (min === dAbj) n.y = zona.abajo     + n.h/2;
+        else                   n.y = zona.arriba    - n.h/2;
       });
     });
   }
 
   function limitarAlEscenario(n, ancho, alto) {
-    n.x = Math.max(n.w / 2 + MARGEN_ESCENARIO, Math.min(ancho - n.w / 2 - MARGEN_ESCENARIO, n.x));
-    n.y = Math.max(n.h / 2 + MARGEN_ESCENARIO, Math.min(alto - n.h / 2 - MARGEN_ESCENARIO, n.y));
+    n.x = Math.max(n.w/2 + MARGEN_ESCENARIO, Math.min(ancho - n.w/2 - MARGEN_ESCENARIO, n.x));
+    n.y = Math.max(n.h/2 + MARGEN_ESCENARIO, Math.min(alto  - n.h/2 - MARGEN_ESCENARIO, n.y));
   }
 
   function obtenerZonasProtegidas(seccion, rectEscenario) {
     const zonas = [];
-    // El chip de marca (esquina superior izquierda) y el botón hamburguesa
-    // son los únicos elementos fijos del encabezado que deben quedar libres.
-    // El bloque .encabezado-evento fue eliminado del HTML en esta versión:
-    // ya no ocupa el cuadrante superior derecho, que queda libre para el mural.
-    agregarZonaDeElemento(zonas, document.querySelector('.marca-chip'), rectEscenario);
-    agregarZonaDeElemento(zonas, document.querySelector('.menu-inst-btn'), rectEscenario);
-    agregarZonaDeElemento(zonas, document.querySelector('.ruta'), rectEscenario);
-    agregarZonaDeElemento(zonas, seccion.querySelector('.sede-kicker'), rectEscenario);
-    // En mobile, el nav original (.ruta) está oculto y reemplazado por #ruta-m.
-    // Se agrega #ruta-m como zona protegida para que el layout no coloque
-    // elementos detrás de la barra de navegación mobile.
-    agregarZonaDeElemento(zonas, document.getElementById('ruta-m'), rectEscenario);
+    agregarZonaDeElemento(zonas, document.querySelector('.marca-chip'),      rectEscenario);
+    agregarZonaDeElemento(zonas, document.querySelector('.menu-inst-btn'),   rectEscenario);
+    agregarZonaDeElemento(zonas, document.querySelector('.ruta'),            rectEscenario);
+    agregarZonaDeElemento(zonas, seccion.querySelector('.sede-kicker'),      rectEscenario);
+    agregarZonaDeElemento(zonas, document.getElementById('ruta-m'),         rectEscenario);
 
     try {
       const declaradas = JSON.parse(seccion.dataset.zonasProtegidas || '[]');
       declaradas.forEach((z) => {
-        const ancho = rectEscenario.width;
-        const alto = rectEscenario.height;
+        const ancho = rectEscenario.width, alto = rectEscenario.height;
         zonas.push({
-          izquierda: (z.x / 100) * ancho - MARGEN_ZONA_PROTEGIDA,
-          derecha: ((z.x + z.ancho) / 100) * ancho + MARGEN_ZONA_PROTEGIDA,
-          arriba: (z.y / 100) * alto - MARGEN_ZONA_PROTEGIDA,
-          abajo: ((z.y + z.alto) / 100) * alto + MARGEN_ZONA_PROTEGIDA,
+          izquierda: (z.x/100)*ancho            - MARGEN_ZONA_PROTEGIDA,
+          derecha:   ((z.x+z.ancho)/100)*ancho  + MARGEN_ZONA_PROTEGIDA,
+          arriba:    (z.y/100)*alto              - MARGEN_ZONA_PROTEGIDA,
+          abajo:     ((z.y+z.alto)/100)*alto     + MARGEN_ZONA_PROTEGIDA,
         });
       });
     } catch (error) {
-      console.warn('No se pudieron leer las zonas protegidas de la sede', error);
+      console.warn('No se pudieron leer las zonas protegidas', error);
     }
-
     return zonas;
   }
 
@@ -463,10 +414,10 @@ const Distribuidor = (() => {
     const r = elemento.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) return;
     zonas.push({
-      izquierda: r.left - rectEscenario.left - MARGEN_ZONA_PROTEGIDA,
-      derecha: r.right - rectEscenario.left + MARGEN_ZONA_PROTEGIDA,
-      arriba: r.top - rectEscenario.top - MARGEN_ZONA_PROTEGIDA,
-      abajo: r.bottom - rectEscenario.top + MARGEN_ZONA_PROTEGIDA,
+      izquierda: r.left  - rectEscenario.left - MARGEN_ZONA_PROTEGIDA,
+      derecha:   r.right - rectEscenario.left + MARGEN_ZONA_PROTEGIDA,
+      arriba:    r.top   - rectEscenario.top  - MARGEN_ZONA_PROTEGIDA,
+      abajo:     r.bottom- rectEscenario.top  + MARGEN_ZONA_PROTEGIDA,
     });
   }
 

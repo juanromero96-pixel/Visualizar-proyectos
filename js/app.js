@@ -1083,11 +1083,51 @@ const Rotacion = (() => {
     const entrante = poolEspera[iEntrante];
     const uaEntrante = entrante.dataset.ua;
 
-    let iSaliente = poolActivo.findIndex((el) => el.dataset.ua === uaEntrante && el.dataset.permanente !== 'true');
+    // ── Selección del saliente con garantía de constelación mínima ─────────
+    // Prioridades:
+    //   1ª → mismo UA que el entrante (intercambio limpio)
+    //   2ª → UA con MÁS de 1 satélite (richest-first: roba de quien puede)
+    //   3ª → cualquier UA con >1 satélite (igual que 2ª pero sin elegir richest)
+    //   SKIP → si nadie puede ceder sin dejar a su UA en 0: no rotar,
+    //          avanzar el cursor para el próximo ciclo.
+    const satelitesPorUA = {};
+    poolActivo.forEach((el) => {
+      if (el.dataset.permanente === 'true' || el.dataset.ua === 'unam') return;
+      satelitesPorUA[el.dataset.ua] = (satelitesPorUA[el.dataset.ua] || 0) + 1;
+    });
+
+    let iSaliente = -1;
+
+    // 1ª: mismo UA que el entrante
+    iSaliente = poolActivo.findIndex(
+      (el) => el.dataset.ua === uaEntrante && el.dataset.permanente !== 'true'
+    );
+
+    // 2ª: richest UA (cnt > 1, elige el máximo)
     if (iSaliente < 0) {
-      iSaliente = poolActivo.findIndex((el) => el.dataset.ua !== 'unam' && el.dataset.permanente !== 'true');
+      let maxSat = 1;
+      poolActivo.forEach((el, i) => {
+        if (el.dataset.permanente === 'true' || el.dataset.ua === 'unam') return;
+        const cnt = satelitesPorUA[el.dataset.ua] || 0;
+        if (cnt > maxSat) { maxSat = cnt; iSaliente = i; }
+      });
     }
-    if (iSaliente < 0) iSaliente = 0;
+
+    // 3ª: cualquier UA con >1 satélite (safety net por si la 2ª falla en orden)
+    if (iSaliente < 0) {
+      iSaliente = poolActivo.findIndex(
+        (el) => el.dataset.ua !== 'unam'
+             && el.dataset.permanente !== 'true'
+             && (satelitesPorUA[el.dataset.ua] || 0) > 1
+      );
+    }
+
+    // SKIP: si ninguna UA puede ceder sin quedar en 0, proteger constelación
+    if (iSaliente < 0) {
+      // Avanzar el cursor para no quedar trabado en el mismo elemento
+      if (cursorEspera >= poolEspera.length) cursorEspera = 0;
+      return;
+    }
 
     const saliente = poolActivo[iSaliente];
     ocultarConFade(saliente);
