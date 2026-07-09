@@ -143,6 +143,9 @@ function hoja(sheet) {
     sheet.setAttribute('aria-hidden', 'true');
     telon?.classList.remove('bottom-sheet-telon--visible');
     document.body.classList.remove('lector-bloqueando-scroll');
+    // H-08: reanudar rotación al cerrar cualquier bottom sheet (lector o cajero).
+    // Rotacion.reanudar() es idempotente — si el intervalo ya corría, no hace nada.
+    window.Rotacion?.reanudar();
   }
 
   return { abrir, cerrar, el: sheet, body };

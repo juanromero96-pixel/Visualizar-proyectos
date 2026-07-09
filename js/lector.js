@@ -171,6 +171,9 @@ const Lector = (() => {
    */
   function abrir(elementoOrigen, registro = null) {
     elementoActivador = elementoOrigen;
+    // H-08: congelar el mural mientras el visitante lee un documento.
+    // La tarjeta de origen permanece visible; al cerrar se reanuda.
+    window.Rotacion?.pausar();
 
     // En mobile: usar el bottom sheet en vez del modal centrado de desktop
     if (window.esMobile && window.esMobile()) {
@@ -452,6 +455,8 @@ const Lector = (() => {
     elementoActivador?.setAttribute('aria-expanded', 'false');
     elementoActivador?.focus();
     elementoActivador = null;
+    // H-08: reanudar la rotación del mural al cerrar el documento.
+    window.Rotacion?.reanudar();
   }
 
   return { iniciar, abrir };

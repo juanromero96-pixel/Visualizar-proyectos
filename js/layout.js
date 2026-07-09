@@ -60,7 +60,10 @@ const Distribuidor = (() => {
       };
     });
 
-    const factor = ubicarPorBusqueda(nodos, ancho, alto, zonas);
+    // O-3: el guard mobile está ANTES de ubicarPorBusqueda para evitar correr
+    // el algoritmo Monte Carlo (2.200 candidatos × n × escalas) innecesariamente
+    // en mobile — su resultado sería descartado de todas formas por el bloque
+    // mobile que sobreescribe n.x/n.y con el sistema de zonas.
 
     // ── MOBILE: composición editorial por zonas ─────────────────────────────
     if (window.esMobile?.()) {
@@ -79,6 +82,19 @@ const Distribuidor = (() => {
       // para redirigirlo al lado con espacio libre).
       const colCounts  = [0, 0];
       const maxPerCol  = Math.ceil((nodos.length + 1) / 2);
+
+      // ── SANGRADO HORIZONTAL (auditoría visual, FASE 1-2) ─────────────────
+      // Causa raíz del "efecto feed": con tarjetas de 155-165px en 375px,
+      // el rango de centros permitido por el clamp [w/2+18, ancho-w/2-18]
+      // ≈ [95..100, 274..280] deja FUERA a los centros de zona (93.75/281.25)
+      // ± jitter (±41px) → cada tarjeta colapsaba al mismo x extremo →
+      // bordes perfectamente alineados → dos columnas rígidas de feed.
+      // El sangrado permite que un documento se corte levemente con el marco
+      // (26px máx), exactamente como en un mural físico donde los papeles
+      // continúan más allá del encuadre. Con él, el rango de centros se
+      // amplía a [56..318] y el jitter se expresa por completo.
+      // Solo horizontal: los límites verticales (header/nav) siguen estrictos.
+      const SANGRADO_X = 26;
 
       const PESO_NARRATIVO = {
         'registro-ua': 0, 'registro-conceptual': 1, 'video': 2, 'testimonio': 3, 'default': 4,
@@ -160,12 +176,11 @@ const Distribuidor = (() => {
             // preservando la preferencia editorial cuando hay espacio libre.
             const colPenalty = (colCounts[col] >= maxPerCol) ? 3e5 : 0;
             const cx = (col + 0.5) * zW;
-            // Escalonado de columnas: col 1 se desplaza +0.45*zH respecto a
-            // col 0 en la misma fila. Esto garantiza que dos tarjetas en la
-            // misma fila pero distinta columna siempre tengan diferencia de Y
-            // suficiente para que el solapamiento resultante sea legible
-            // (el "naipe superpuesto" del mural, no el "papel encima de papel").
-            const yStagger = col === 1 ? zH * 0.45 : 0;
+            // Escalonado de col 1: +0.45·zH da el efecto "naipe superpuesto".
+            // H-12: en la última fila el stagger se anula (0); de lo contrario
+            // cy = MARGEN_TOP + (ZONAS_ROWS-0.55)·zH + 0.45·zH excedería
+            // alto−MARGEN_BOT empujando tarjetas dentro del nav de sedes.
+            const yStagger = (col === 1 && row < ZONAS_ROWS - 1) ? zH * 0.45 : 0;
             const cy = MARGEN_TOP + (row + 0.5) * zH + yStagger;
             const dist = Math.hypot(cx - anclaXpx, cy - anclaYpx);
             const score = dist + ocupacion + colPenalty;
@@ -177,7 +192,7 @@ const Distribuidor = (() => {
             for (let col = 0; col < ZONAS_COLS && !bestKey; col++) {
               const key = `${row}-${col}`;
               if ((conteoZonas.get(key) || 0) === 0) {
-                const yStagger = col === 1 ? zH * 0.45 : 0;
+                const yStagger = (col === 1 && row < ZONAS_ROWS - 1) ? zH * 0.45 : 0;
                 bestKey = { key, cx:(col+0.5)*zW, cy:MARGEN_TOP+(row+0.5)*zH+yStagger, row, col };
               }
             }
@@ -198,20 +213,29 @@ const Distribuidor = (() => {
           // como margen de borde, comprimiendo todos los elementos en una
           // banda central de ≈98px. El margen de borde debe ser MARGEN_ESCENARIO
           // (18px fijo), no SEPARACION_MINIMA.
-          n.x = Math.max(n.wBase/2 + MARGEN_ESCENARIO,
-                Math.min(ancho - n.wBase/2 - MARGEN_ESCENARIO, bestKey.cx + jitterX));
+          n.x = Math.max(n.wBase/2 + MARGEN_ESCENARIO - SANGRADO_X,
+                Math.min(ancho - n.wBase/2 - MARGEN_ESCENARIO + SANGRADO_X, bestKey.cx + jitterX));
           n.y = Math.max(MARGEN_TOP + n.hBase/2,
                 Math.min(alto - MARGEN_BOT - n.hBase/2, bestKey.cy + jitterY));
         }
       });
 
-      // 6 iteraciones de separación: suficiente para convergencia completa
-      // con tarjetas de 165px en columnas de 187px y jitter ±22%.
+      // 6 iteraciones de separación.
+      // H-04: la fase de separación usaba limitarAlEscenario (MARGEN_ESCENARIO=18px
+      // en los 4 bordes), permitiendo que separarPar empujara tarjetas bajo el
+      // logo (y<18) o sobre el nav (y>alto-18). Ahora se usa un limitador mobile
+      // que respeta MARGEN_TOP (72px) y MARGEN_BOT (52px) en los bordes verticales
+      // y admite el SANGRADO_X en los horizontales (coherente con la colocación).
       for (let iter = 0; iter < 6; iter++) {
         for (let i = 0; i < nodos.length; i++)
           for (let j = i + 1; j < nodos.length; j++)
             separarPar(nodos[i], nodos[j]);
-        nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
+        // Limitar con márgenes correctos para mobile (header + nav)
+        nodos.forEach((n) => {
+          n.x = Math.max(n.w/2 + MARGEN_ESCENARIO - SANGRADO_X,
+                Math.min(ancho - n.w/2 - MARGEN_ESCENARIO + SANGRADO_X, n.x));
+          n.y = Math.max(MARGEN_TOP + n.h/2, Math.min(alto - MARGEN_BOT - n.h/2, n.y));
+        });
         empujarFueraDeZonas(nodos, zonas);
       }
 
@@ -225,6 +249,9 @@ const Distribuidor = (() => {
     }
 
     // ── DESKTOP: algoritmo Monte Carlo completo ───────────────────────────
+    // O-3: ubicarPorBusqueda solo corre para desktop (el guard mobile anterior
+    // ya retornó). Evita el cálculo de ~2.200 candidatos × n en mobile.
+    const factor = ubicarPorBusqueda(nodos, ancho, alto, zonas);
 
     nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
     empujarFueraDeZonas(nodos, zonas);

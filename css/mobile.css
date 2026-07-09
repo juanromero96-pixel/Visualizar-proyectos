@@ -317,6 +317,23 @@
   }
 
   /* =============================================================================
+     G. SAFE AREAS — notch, Dynamic Island (iOS) y gesture nav (Android)
+     Con viewport-fit=cover el contenido se extiende bajo el notch.
+     env(safe-area-inset-*) devuelve el inset real del dispositivo.
+     · top: protege el logo del Dynamic Island/notch
+     · bottom: ya implementado en #ruta-m y #sede-info-toast
+     ========================================================================== */
+
+  /* El chip (logo + hamburguesa) necesita respetar el notch en la parte superior */
+  .marca-chip {
+    top: calc(var(--modulo) * 1.2 + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  /* El cuerpo del carrusel ocupa 100dvh; en iPhone el safe-area-top
+     empuja el fondo pero el velo ya cubre la zona del notch. No se necesita
+     padding adicional — el .marca-chip flotante es el único elemento a proteger. */
+
+  /* =============================================================================
      H. LOGO + HAMBURGUESA COMPACT
      ========================================================================== */
   .marca-chip {

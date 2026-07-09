@@ -37,6 +37,23 @@ const Secuenciador = (() => {
     }
 
     fondo?.classList.add('sede-bg--visible');
+
+    if (window.esMobile?.()) {
+      // MOBILE: todas las anotaciones aparecen juntas tras la aparición del fondo.
+      // El comportamiento requerido es: "visualizarse todos de una y después
+      // empezar el juego de animaciones (desaparecer de a una y cambiar por otras)".
+      // Rotacion.iniciar tiene delay=INICIO_DELAY_MS (2500ms) — da tiempo suficiente
+      // para que el visitante vea el mural completo antes de que comience la
+      // rotación de satélites.
+      const PAUSA_MOBILE = 320; // ms — tiempo mínimo para que el fondo sea visible
+      window.setTimeout(() => {
+        kicker?.classList.add('sede-kicker--visible');
+        elementos.forEach((el) => el.classList.add('elemento--visible'));
+      }, PAUSA_MOBILE);
+      return;
+    }
+
+    // DESKTOP: reveal escalonado por orden narrativo (sin cambios)
     window.setTimeout(() => kicker?.classList.add('sede-kicker--visible'), PAUSA_ANTES_DEL_TITULO);
 
     elementos.forEach((el, indice) => {

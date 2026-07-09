@@ -68,8 +68,18 @@
     }
   });
 
+  // H-05: en mobile, el browser dispara resize al mostrar/ocultar la barra de URL
+  // al hacer scroll o tocar la pantalla (solo cambia la altura, ~50-80px).
+  // Ese mini-resize re-barajaba el mural mientras el usuario lo leía, destruyendo
+  // la memoria espacial. La guardia ignora cambios de altura < 120px en mobile
+  // cuando el ancho no cambió — cubre la barra de URL y el teclado en pantalla
+  // (Δh grande, >120px) sí dispara recalcular (es un cambio real de viewport).
   let pendienteResize = null;
+  let _lastW = window.innerWidth, _lastH = window.innerHeight;
   window.addEventListener('resize', () => {
+    const w = window.innerWidth, h = window.innerHeight;
+    if (window.esMobile?.() && w === _lastW && Math.abs(h - _lastH) < 120) return;
+    _lastW = w; _lastH = h;
     clearTimeout(pendienteResize);
     pendienteResize = setTimeout(recalcular, 180);
   });
@@ -649,19 +659,16 @@ function aplicarSubconjuntoDeAutoridades(seccion, testimonios) {
     if (debeMostrarse === estabaOculto) huboCambios = true;
   });
 
-  // Solo vale la pena recalcular el layout si el conjunto visible
-  // realmente cambió (la primera vez que se llama, antes de la primera
-  // distribución general, igual conviene dejar que el recalcular() de
-  // iniciarSitio() se encargue una sola vez para las tres sedes juntas).
+  // Recalcular solo si el conjunto visible cambió y la sede ya fue distribuida
+  // al menos una vez (la primera vez se delega al recalcular() de iniciarSitio).
+  // H-03: la guardia esMobile que aquí existía fue eliminada. Era un vestigio
+  // de la arquitectura anterior (capítulos CSS verticales), que ya no existe.
+  // Hoy layout.js posiciona los elementos en mobile exactamente igual que en
+  // desktop: con --x/--y en px. Sin la guardia, las autoridades que cambian
+  // en cada visita a la sede reciben posición real y no quedan con las
+  // coordenadas porcentuales del JSON (pensadas para desktop).
   if (huboCambios && seccion.dataset.yaDistribuidoUnaVez === 'true') {
-    // En mobile el layout es CSS vertical con capítulos UA — el motor de
-    // distribución espacial (Distribuidor) posicionaría absolutamente todos
-    // los elementos, destruyendo la reorganización editorial ya construida.
-    // La guardia esMobile() previene que aplicarSubconjuntoDeAutoridades,
-    // llamada en cada cambio de sede desde el Carrusel, sobrescriba el layout.
-    if (!(window.esMobile && window.esMobile())) {
-      Distribuidor.distribuir(seccion);
-    }
+    Distribuidor.distribuir(seccion);
   }
   seccion.dataset.yaDistribuidoUnaVez = 'true';
 }
@@ -734,16 +741,26 @@ function normalizarClave(texto = '') {
  * de data-ua entre UA registros (uaTexto='FAyD') y testimonios UA
  * (uaTexto='Facultad de Arte y Diseño (FAyD)').
  */
+// Mapa de alias para UAs cuyos datos usan nombre largo sin sigla entre paréntesis.
+// Cuando el sistema de testemionos usa "Escuela Agrotécnica Eldorado" (sin "(EAE)"),
+// normalizarClave produce 'escuelaagrotecnicaeldorado' mientras el narrador r-eae-ua
+// usa unidadAcademica:"EAE" → 'eae'. Los ALIAS_UA normalizan esa divergencia
+// sin depender de correcciones en los datos.
+const ALIAS_UA = {
+  escuelaagrotecnicaeldorado: 'eae',
+};
+
 function resolverUA(texto) {
   if (!texto) return 'general';
   if (texto === 'UNaM') return 'unam';
   // Extraer sigla del paréntesis final: "... (FAyD)" → "fayd"
   const m = texto.match(/\(([A-Za-z]+(?:[A-Za-z]|\d)*)\)\s*$/);
   if (m) return normalizarClave(m[1]);
-  // Si el texto ya es corto (sigla directa como "FAyD", "FI")
+  // Si el texto ya es corto (sigla directa como "FAyD", "FI", "EAE")
   if (texto.length <= 12 && !/\s{2,}/.test(texto)) return normalizarClave(texto);
-  // Nombre largo sin paréntesis: EAE, nombres completos sin sigla
-  return normalizarClave(texto);
+  // Nombre largo sin paréntesis: aplicar alias antes de devolver
+  const clave = normalizarClave(texto);
+  return ALIAS_UA[clave] || clave;
 }
 
 /**
@@ -917,7 +934,7 @@ const Rotacion = (() => {
   const PRIORIDAD_TIPO = { 'video': 0, 'testimonio': 1, 'registro-conceptual': 2 };
 
   // UA en orden narrativo para la rotación round-robin
-  const ORDEN_UA = ['fhycs','fceqyn','fce','fayd','fi','fcf','escuelaagrotecnicaeldorado','unam','general'];
+  const ORDEN_UA = ['fhycs','fceqyn','fce','fayd','fi','fcf','eae','unam','general'];
 
   let intervalId    = null;
   let timeoutId     = null;
@@ -933,13 +950,20 @@ const Rotacion = (() => {
   let generacion    = 0;
 
   function calcularCapacidad() {
-    // En mobile: densidad editorial media — abundancia documental sin caos.
-    // Con 3 UA permanentes + K=2 (2 UNaM) = 5 fijos.
-    // Fórmula: 3-5 satélites UA adicionales (videos, testimonios, conceptuales).
-    // Mínimo 8 para que el mural no parezca vacío; máximo 11 para evitar saturación.
+    // MOBILE — auditoría museográfica (FASE 4, respiración del mural):
+    // La simulación de cobertura demostró que con 11 visibles el mural cubre
+    // 82-85% del lienzo (territorio reducido a 15-18%, 6-7 solapamientos
+    // graves texto-sobre-texto). Con 8 visibles: 80% de cobertura, 1 solape
+    // grave, y el territorio respira por los canales entre columnas.
+    // Nota técnica: configurar() produce saltos discretos de visibilidad
+    // (SLOTS=floor((cap-perm)/UAs)): cap=8 → 8 visibles; cap=9..11 → 11.
+    // Por eso el máximo correcto es 8, no un valor intermedio.
+    // Trade-off documentado: en Posadas los 2 registros conceptuales quedan
+    // en poolEspera y el SKIP protector les impide entrar (todas las UA
+    // tienen exactamente 1 satélite). Se exhiben solo en desktop.
     if (window.esMobile?.()) {
       const area = window.innerWidth * window.innerHeight;
-      return Math.max(8, Math.min(11, Math.round(area / 28000)));
+      return Math.max(7, Math.min(8, Math.round(area / 34000)));
     }
     return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
   }
@@ -1036,25 +1060,17 @@ const Rotacion = (() => {
 
     // Mostrar los seleccionados (sin transición — ya deberían estar visibles)
     poolActivo.forEach((el) => {
-      el.style.transition = '';
+      el.style.transition = '';  // quitar cualquier transition residual de ciclos anteriores
       el.classList.remove('elemento--rotacion-espera');
     });
 
-    // Ocultar los demás.
-    // En mobile: instantáneo (sin stagger ni fade) — los elementos deben
-    // estar ocultos ANTES de que el Secuenciador agregue .elemento--visible.
-    // Con el delay=0 de iniciar(), este código corre antes de los setTimeouts
-    // del Secuenciador, así que la clase rotacion-espera ya está cuando
-    // el Secuenciador intenta revelar, y el CSS !important la mantiene oculta.
-    // En desktop: fade escalonado de 80ms por elemento para suavidad visual.
-    const esMovil = window.esMobile?.();
+    // Ocultar los que no caben en el mural ahora — fade escalonado para ambas
+    // plataformas. En mobile con el nuevo comportamiento (delay=2500ms), cuando
+    // configurar() corre los elementos ya son visibles; un fade gradual los
+    // retira uno a uno en lugar de hacerlos desaparecer instantáneamente.
+    // El 1er elemento empieza a desvanecer a los 300ms, cada siguiente +80ms.
     poolEspera.forEach((el, i) => {
-      if (esMovil) {
-        el.style.transition = '';
-        el.classList.add('elemento--rotacion-espera');  // instantáneo
-      } else {
-        window.setTimeout(() => ocultarConFade(el), i * 80 + 300);  // escalonado
-      }
+      window.setTimeout(() => ocultarConFade(el), i * 80 + 300);
     });
   }
 
@@ -1160,6 +1176,32 @@ const Rotacion = (() => {
         if (uaA !== uaB) return (uaA < 0 ? 99 : uaA) - (uaB < 0 ? 99 : uaB);
         return tipoPrioridad(a) - tipoPrioridad(b);
       });
+
+      // ── HERENCIA DE POSICIÓN (solo mobile) ─────────────────────────────
+      // Museográficamente: se cambia el documento, no el clavo. El entrante
+      // ocupa exactamente el lugar del saliente, así la composición del mural
+      // permanece estable durante toda la rotación (sin huecos errantes ni
+      // saltos de densidad). Sin esto, cada tarjeta entrante aparecía en SU
+      // posición precalculada — que podía estar en cualquier otra zona —
+      // mutando la composición cada 10s y dejando vacío el lugar del saliente.
+      // Desktop conserva el comportamiento original (posiciones precalculadas):
+      // su lienzo amplio absorbe la variación sin degradar la composición.
+      if (window.esMobile?.()) {
+        const xSal = saliente.style.getPropertyValue('--x');
+        const ySal = saliente.style.getPropertyValue('--y');
+        if (xSal && ySal) {
+          entrante.style.setProperty('--x', xSal);
+          // Clamp vertical: si el entrante es más alto que el saliente, evitar
+          // que sobresalga bajo el nav (52px) o sobre el header (72px).
+          const hEnt = (entrante.querySelector('.elemento-interior')?.offsetHeight || 140);
+          const yNum = parseFloat(ySal);
+          const yMin = 72 + hEnt / 2;
+          const yMax = window.innerHeight - 52 - hEnt / 2;
+          const yFinal = Math.max(yMin, Math.min(yMax, yNum));
+          entrante.style.setProperty('--y', `${Math.round(yFinal)}px`);
+        }
+      }
+
       mostrarConFade(entrante);
     }, FADE_SALIDA_MS + 80);
   }
@@ -1167,12 +1209,18 @@ const Rotacion = (() => {
   function iniciar(seccion) {
     detener();
     if (!seccion) return;
-    // En mobile: delay=0 — configurar() debe correr ANTES de que los
-    // setTimeouts del Secuenciador agreguen .elemento--visible.
-    // Con delay=0, nuestro setTimeout se encola primero (fue llamado antes
-    // de Secuenciador.entrar()) y dispara antes de los setTimeouts del stagger.
-    // En desktop: 2500ms para esperar el reveal animado más lento.
-    const delay = window.esMobile?.() ? 0 : INICIO_DELAY_MS;
+    // Delay unificado para mobile y desktop: 2500ms.
+    //
+    // Mobile — COMPORTAMIENTO NUEVO (requerido):
+    //   El Secuenciador muestra TODAS las tarjetas juntas al instante (320ms).
+    //   Rotacion arranca 2500ms después: el visitante ve el mural completo
+    //   antes de que comience el "juego de animaciones" (desapariciones/reemplazos
+    //   de a uno). El viejo delay=0 ocultaba tarjetas ANTES de que aparecieran,
+    //   produciendo los huecos permanentes reportados como bug.
+    //
+    // Desktop — sin cambio: sigue esperando 2500ms para que el reveal escalonado
+    //   esté avanzado antes de que comience la rotación.
+    const delay = INICIO_DELAY_MS;
     timeoutId = window.setTimeout(() => {
       configurar(seccion);
       if (poolEspera.length > 0) {
@@ -1203,5 +1251,20 @@ const Rotacion = (() => {
     cursorEspera = 0;
   }
 
-  return { iniciar, detener };
+  // H-08: Pausa y reanuda la rotación sin vaciar los pools.
+  // Se invoca desde el Lector al abrir/cerrar un documento:
+  //   · Al abrir: el mural se congela — la tarjeta de origen permanece visible.
+  //   · Al cerrar: la rotación continúa desde donde quedó.
+  function pausar() {
+    if (intervalId) { window.clearInterval(intervalId); intervalId = null; }
+  }
+
+  function reanudar() {
+    // Solo reanuda si hay elementos que rotar y la rotación no está ya corriendo
+    if (!intervalId && poolEspera.length > 0) {
+      intervalId = window.setInterval(rotarUno, INTERVALO_MS);
+    }
+  }
+
+  return { iniciar, detener, pausar, reanudar };
 })();
