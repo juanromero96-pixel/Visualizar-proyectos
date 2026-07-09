@@ -83,6 +83,20 @@ const Distribuidor = (() => {
       const colCounts  = [0, 0];
       const maxPerCol  = Math.ceil((nodos.length + 1) / 2);
 
+      // ── BALANCE VERTICAL POR BANDAS (FASE 3-4 de la auditoría visual) ────
+      // Gemelo del balanceo de columnas, en el eje Y. Causa raíz del
+      // desequilibrio: las anclas autorales fueron pensadas para el lienzo
+      // apaisado desktop — las autoridades UNaM viven en y=9-14% — y en
+      // mobile eso satura la banda superior mientras la inferior queda vacía.
+      // Tres bandas (filas 0-1 / 2-4 / 5-6) con cupo proporcional: cuando una
+      // banda se llena, el siguiente elemento paga 2e5 (menos que columna 3e5
+      // y que zona 5e5: el orden de prioridades queda zona > columna > banda
+      // > ancla) y se redirige a la banda con espacio.
+      const BANDAS_FILAS = [2, 3, 2];
+      const bandaDe = (row) => (row < 2 ? 0 : (row < 5 ? 1 : 2));
+      const bandCounts  = [0, 0, 0];
+      const maxPerBanda = BANDAS_FILAS.map(f => Math.ceil(nodos.length * f / ZONAS_ROWS));
+
       // ── SANGRADO HORIZONTAL (auditoría visual, FASE 1-2) ─────────────────
       // Causa raíz del "efecto feed": con tarjetas de 155-165px en 375px,
       // el rango de centros permitido por el clamp [w/2+18, ancho-w/2-18]
@@ -175,6 +189,7 @@ const Distribuidor = (() => {
             // que el de zona ocupada 5e5) redirige el exceso a la col izquierda
             // preservando la preferencia editorial cuando hay espacio libre.
             const colPenalty = (colCounts[col] >= maxPerCol) ? 3e5 : 0;
+            const bandPenalty = (bandCounts[bandaDe(row)] >= maxPerBanda[bandaDe(row)]) ? 2e5 : 0;
             const cx = (col + 0.5) * zW;
             // Escalonado de col 1: +0.45·zH da el efecto "naipe superpuesto".
             // H-12: en la última fila el stagger se anula (0); de lo contrario
@@ -183,7 +198,7 @@ const Distribuidor = (() => {
             const yStagger = (col === 1 && row < ZONAS_ROWS - 1) ? zH * 0.45 : 0;
             const cy = MARGEN_TOP + (row + 0.5) * zH + yStagger;
             const dist = Math.hypot(cx - anclaXpx, cy - anclaYpx);
-            const score = dist + ocupacion + colPenalty;
+            const score = dist + ocupacion + colPenalty + bandPenalty;
             if (score < bestScore) { bestScore = score; bestKey = { key, cx, cy, row, col }; }
           }
         }
@@ -201,6 +216,7 @@ const Distribuidor = (() => {
         if (bestKey) {
           conteoZonas.set(bestKey.key, (conteoZonas.get(bestKey.key) || 0) + 1);
           colCounts[bestKey.col]++;
+          bandCounts[bandaDe(bestKey.row)]++;
           if (esNarrador) {
             filasNarrador.add(bestKey.row);
             narradorFilas.set(uaKey, bestKey.row);
@@ -238,6 +254,35 @@ const Distribuidor = (() => {
         });
         empujarFueraDeZonas(nodos, zonas);
       }
+
+      // ── PASE DE LEGIBILIDAD (FASE 2) ────────────────────────────────────
+      // Caso detectado en validación visual: narrador y su video comparten
+      // columna en filas adyacentes; la separación intenta resolver en Y
+      // (soY < soX) pero los clamps verticales la bloquean → solape profundo
+      // que entierra el título del documento de abajo. Este pase detecta los
+      // pares que quedaron con solape > 55% del ancho y > 35% del alto de la
+      // tarjeta menor, y los resuelve por el eje horizontal — donde el
+      // sangrado dejó holgura — dejando como máximo un naipe del 30% (los
+      // títulos, alineados al borde, quedan siempre legibles).
+      for (let i = 0; i < nodos.length; i++) {
+        for (let j = i + 1; j < nodos.length; j++) {
+          const a = nodos[i], b = nodos[j];
+          const soX = (a.w + b.w) / 2 - Math.abs(a.x - b.x);
+          const soY = (a.h + b.h) / 2 - Math.abs(a.y - b.y);
+          const minW = Math.min(a.w, b.w), minH = Math.min(a.h, b.h);
+          if (soX > minW * 0.55 && soY > minH * 0.35) {
+            const empuje = (soX - minW * 0.30) / 2;
+            const s = Math.sign(b.x - a.x) || 1;
+            a.x -= empuje * s;
+            b.x += empuje * s;
+          }
+        }
+      }
+      nodos.forEach((n) => {
+        n.x = Math.max(n.w/2 + MARGEN_ESCENARIO - SANGRADO_X,
+              Math.min(ancho - n.w/2 - MARGEN_ESCENARIO + SANGRADO_X, n.x));
+        n.y = Math.max(MARGEN_TOP + n.h/2, Math.min(alto - MARGEN_BOT - n.h/2, n.y));
+      });
 
       nodos.forEach((n) => {
         n.el.style.setProperty('--x',      `${Math.round(n.x)}px`);
