@@ -12,9 +12,9 @@
  * LO QUE ESTE ARCHIVO NO HACE:
  *   · NO restructura el DOM (no más innerHTML="", no ua-capitulo)
  *   · NO tiene un motor de render propio
- *   · NO tiene condiciones de carrera con layout.js
- *   → El posicionamiento mobile lo resuelve CSS en mobile.css
- *   → El motor de escritorio (layout.js) ya tiene su propio guard en L60
+ *   · NO posiciona elementos — el posicionamiento mobile lo resuelve
+ *     layout.js (bloque de zonas editoriales dentro de distribuir(),
+ *     que escribe --x/--y en px). mobile.css solo dimensiona y estiliza.
  */
 
 'use strict';

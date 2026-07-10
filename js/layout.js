@@ -222,8 +222,29 @@ const Distribuidor = (() => {
             narradorFilas.set(uaKey, bestKey.row);
           }
           // Jitter ±22%: composición orgánica sin solapamientos irrecuperables.
-          const jitterX = (Math.random() - 0.5) * zW * 0.22;
-          const jitterY = (Math.random() - 0.5) * zH * 0.22;
+          // ── JITTER DETERMINISTA (auditoría forense, FASE 3) ─────────────
+          // Math.random() convertía cada llamada a distribuir() en una
+          // autoridad NUEVA sobre --x/--y: el recálculo de fonts.ready, el
+          // resize y las revisitas con re-sorteo K re-barajaban el mural,
+          // sobrescribiendo posiciones ya establecidas. Con el hash de la
+          // identidad editorial (ancla + UA + tipo), distribuir() es
+          // idempotente: mismo elemento → mismo jitter → misma posición,
+          // en cada ejecución. Única autoridad efectiva en el tiempo.
+          let hseed = 0;
+          const hkey = `${n.anclaX}:${n.anclaY}:${uaKey}:${n.el.dataset.tipo}`;
+          for (let hi = 0; hi < hkey.length; hi++) {
+            hseed = ((hseed << 5) - hseed + hkey.charCodeAt(hi)) | 0;
+          }
+          // Avalancha xorshift: garantiza que claves parecidas produzcan
+          // jitters lejanos (el paso lineal solo no dispersaba lo suficiente).
+          let hx = hseed | 0;
+          hx ^= hx << 13; hx ^= hx >>> 17; hx ^= hx << 5;
+          let hy = (hseed ^ 0x9e3779b9) | 0;
+          hy ^= hy << 13; hy ^= hy >>> 17; hy ^= hy << 5;
+          const h1 = (hx >>> 0) / 4294967296;
+          const h2 = (hy >>> 0) / 4294967296;
+          const jitterX = (h1 - 0.5) * zW * 0.22;
+          const jitterY = (h2 - 0.5) * zH * 0.22;
           // ── CLAMPING DE BORDE ───────────────────────────────────────────
           // Causa raíz: la versión anterior usaba SEPARACION_MINIMA (=56 o 20)
           // como margen de borde, comprimiendo todos los elementos en una

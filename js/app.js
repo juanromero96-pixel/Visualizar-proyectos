@@ -30,10 +30,11 @@
   const secciones = Array.from(contenedor.querySelectorAll('.sede'));
 
   // Motor único adaptativo (Arquitectura B):
-  // Distribuidor.distribuir(s) tiene su propio guard en layout.js L60:
-  //   if (!window.matchMedia('(min-width: 821px)').matches) return;
-  // → En mobile sale solo. El posicionamiento mobile lo resuelve mobile.css.
-  // → No hay fork JS, no hay segundo motor, no hay condición de carrera.
+  // Distribuidor.distribuir(s) atiende AMBAS plataformas dentro de layout.js:
+  //   · mobile  → sistema de zonas editoriales (bloque con return temprano)
+  //   · desktop → Monte Carlo (ubicarPorBusqueda)
+  // La bifurcación vive DENTRO de distribuir(); desde aquí se llama igual
+  // para las dos. No hay fork JS externo ni segundo motor.
   const recalcular = () => {
     secciones.forEach((s) => Distribuidor.distribuir(s));
   };
@@ -264,23 +265,12 @@ function crearElemento(item) {
   el.dataset.ua   = ua;
   el.dataset.tipo = item._tipo;
 
-  // --ua-order: permite que CSS (propiedad `order` en flex column) agrupe
-  // los elementos por UA en mobile SIN mover ningún nodo del DOM.
-  // Esquema multiplicado: uaBase*2 + tipoOffset.
-  //   tipoOffset=0 → narrador UA (registro-ua) va PRIMERO dentro de su UA
-  //   tipoOffset=1 → todos los satélites van después del narrador
-  // Ejemplo Posadas: FHyCS-narrador→order=0, FHyCS-videos/testi→order=1,
-  //                  FCEQyN-narrador→order=2, FCEQyN-sat→order=3, etc.
-  const UA_ORDER = {
-    fhycs:0, fceqyn:1, fce:2,           // Posadas
-    fayd:3,  fi:4,                        // Oberá
-    fcf:5,   escuelaagrotecnicaeldorado:6, eae:6,// Eldorado (eae = alias)
-    general:7,
-    unam:9,                               // Autoridades UNaM siempre al final
-  };
-  const uaBase      = UA_ORDER[ua] ?? 8;
-  const tipoOffset  = item._tipo === 'registro-ua' ? 0 : 1;
-  el.style.setProperty('--ua-order', uaBase * 2 + tipoOffset);
+  // NOTA FORENSE: aquí existía el sistema --ua-order (order de flex column
+  // para los "capítulos UA" de la arquitectura mobile anterior). Fue eliminado:
+  // la variable se escribía en cada tarjeta pero ningún CSS la consumía
+  // (verificado por grep en css/, js/ e index.html) — código muerto puro.
+  // El agrupamiento por UA hoy lo resuelve el motor de zonas de layout.js
+  // (narradorFilas + filas adyacentes), no el orden del DOM.
 
   el.style.setProperty('--escala', item.escala ?? 1);
   el.style.setProperty('--rot', `${item.rotacion ?? 0}deg`);

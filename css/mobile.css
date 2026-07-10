@@ -86,33 +86,38 @@
     -webkit-backdrop-filter: none !important;
   }
 
+  /* ── ANCHO DE TARJETAS: única autoridad ──────────────────────────────────
+     Los max-width viven EXCLUSIVAMENTE en el bloque `.es-mobile` (final de
+     este archivo). Aquí estaban duplicados: dos autoridades sobre la misma
+     propiedad significaban que editar un bloque podía no reflejarse si el
+     dispositivo matcheaba por el otro mecanismo de detección. La clase
+     es-mobile se agrega sincrónicamente al parsear mobile.js (antes del
+     primer paint), así que cubre todos los dispositivos, incluido el caso
+     del layout-viewport de 980px donde esta media query jamás matchea.
+     Este bloque conserva solo padding y detalles no dimensionales. */
+
   /* Experiencias UA — protagonistas del relato */
   .elemento--registro-ua .elemento-interior {
-    max-width: min(165px, 44vw) !important;
     padding: 14px 16px 12px !important;
   }
 
   /* Registros conceptuales */
   .elemento--registro-conceptual .elemento-interior {
-    max-width: min(158px, 42vw) !important;
     padding: 12px 14px 10px !important;
   }
 
   /* Testimonios UA */
   .elemento--testimonio .elemento-interior {
-    max-width: min(155px, 41vw) !important;
     padding: 11px 13px 9px !important;
   }
 
   /* Autoridades institucionales UNaM */
   .elemento--testimonio-institucional .elemento-interior {
-    max-width: min(165px, 44vw) !important;
     padding: 10px 12px 8px !important;
   }
 
   /* Videos: miniatura compacta */
   .elemento--video .elemento-interior {
-    max-width: min(162px, 43vw) !important;
     padding: 0 !important;
     overflow: hidden;
   }
