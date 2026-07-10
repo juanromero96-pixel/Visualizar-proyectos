@@ -33,7 +33,16 @@
     scroll-snap-type: x mandatory !important;
     overflow-x: scroll;
     overflow-y: hidden;
+    /* AUDITORÍA DE SINCRONIZACIÓN: 100dvh es DINÁMICO — al ocultarse la barra
+       de URL el lienzo crecía ~60px SIN atravesar el filtro de resize (Δh<120)
+       → distribuir() podía medir un alto distinto del que finalmente se
+       renderiza (p.ej. rotación de dispositivo con barra oculta → layout con
+       alto grande → barra reaparece → tarjetas inferiores bajo el nav).
+       100svh (small viewport = línea base con barra visible) es ESTÁTICO:
+       el lienzo medido es idéntico al renderizado en cualquier estado de la
+       barra. El dvh queda como fallback para browsers sin svh. */
     height: 100dvh;
+    height: 100svh;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -44,6 +53,7 @@
     scroll-snap-align: start;
     overflow: hidden;
     height: 100dvh;
+    height: 100svh;
   }
 
   /* =============================================================================

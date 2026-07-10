@@ -338,6 +338,13 @@ button { font-family: inherit; cursor: pointer; }
 .elemento--foto img,
 .elemento--video video {
   border-radius: 3px;
+  /* SINCRONIZACIÓN DEL PIPELINE: sin altura reservada, la tarjeta 'foto'
+     medía ~0px de imagen al momento de distribuir() (loading=lazy, sin
+     width/height) y crecía hasta 220px DESPUÉS — exactamente la
+     desincronización buscada por la auditoría forense. aspect-ratio reserva
+     el espacio antes de la carga: medición == render. (El corpus actual no
+     tiene elementos 'foto'; esto cierra el vector de forma permanente.) */
+  aspect-ratio: 4 / 3;
   max-height: 220px;
   object-fit: cover;
   width: 100%;
