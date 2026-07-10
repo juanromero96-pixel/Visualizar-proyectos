@@ -27,6 +27,11 @@
                && !el.classList.contains('elemento--oculto-autoridad'))
     .map(el => {
       const cs = getComputedStyle(el);
+      // DETECTOR DEL SECUESTRO (H-1/H-10): si computed position es 'relative'
+      // o left es 'auto', el elemento fue capturado por la Arquitectura A
+      // legacy de styles.css @media(max-width:820px) L1146 — que descarta
+      // con !important todo lo que layout.js calculó.
+      const capturado = cs.position !== 'absolute' || cs.left === 'auto';
       const xCalc = parseFloat(el.style.getPropertyValue('--x'));
       const yCalc = parseFloat(el.style.getPropertyValue('--y'));
       const r = el.getBoundingClientRect();
@@ -40,22 +45,29 @@
         id: (el.dataset.ua || '?') + '/' + (interior?.querySelector('.registro-titulo, .testimonio-nombre, .video-titulo')?.textContent.trim().slice(0, 18) || el.dataset.tipo),
         tipo: el.dataset.tipo,
         ua: el.dataset.ua,
+        ancla: `${el.dataset.anclaX}%, ${el.dataset.anclaY}%`,
+        motor: capturado ? '❌ CAPTURADO (styles L1146)' : '✓ layout.js',
+        posicion_css: `${cs.position} / left:${cs.left}`,
         calc: `${xCalc}, ${yCalc}`,
-        aplicada: `${cs.left}, ${cs.top}`,
         renderizada: `${cx.toFixed(1)}, ${cy.toFixed(1)}`,
-        delta: `${dx.toFixed(1)}, ${dy.toFixed(1)} ${dx <= 1 && dy <= 1 ? '✓' : '❌ DESYNC'}`,
+        delta: `${dx.toFixed(1)}, ${dy.toFixed(1)} ${!capturado && dx <= 1 && dy <= 1 ? '✓' : '❌'}`,
         offsetWH: `${interior?.offsetWidth}×${interior?.offsetHeight}`,
         rectWH: `${r.width.toFixed(0)}×${r.height.toFixed(0)}`,
-        transform: cs.transform.slice(0, 40),
         escala: el.style.getPropertyValue('--escala'),
         rot: el.style.getPropertyValue('--rot'),
         zona: `${row}-${col}`,
       };
     });
   console.table(filas);
+  const capturados = filas.filter(f => f.motor.includes('❌'));
   const desync = filas.filter(f => f.delta.includes('❌'));
-  console.log(desync.length === 0
-    ? '✓ SINCRONIZADO: el navegador renderiza exactamente las posiciones calculadas por layout.js'
-    : `❌ ${desync.length} tarjeta(s) desincronizada(s) — revisar columna delta`);
+  if (capturados.length) {
+    console.log(`❌ HIPÓTESIS CONFIRMADA EN ESTE DISPOSITIVO: ${capturados.length}/${filas.length} tarjetas capturadas por la Arquitectura A legacy (styles.css @media≤820px L1146: left/top:auto !important). El motor de layout calcula; el CSS descarta.`);
+  } else {
+    console.log(desync.length === 0
+      ? '✓ SINCRONIZADO: este dispositivo renderiza exactamente las posiciones de layout.js (la media query legacy no matchea aquí — bug del layout-viewport 980px)'
+      : `⚠ ${desync.length} tarjeta(s) con delta — revisar columna delta`);
+  }
+  console.log(`Media (max-width:820px) matchea: ${matchMedia('(max-width: 820px)').matches} | es-mobile: ${document.documentElement.classList.contains('es-mobile')} | innerWidth: ${window.innerWidth}`);
   console.log(`Lienzo: ${escR.width.toFixed(0)}×${escR.height.toFixed(0)} | innerHeight: ${window.innerHeight} | dif (barra URL): ${(window.innerHeight - escR.height).toFixed(0)}px`);
 })();
