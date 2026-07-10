@@ -387,12 +387,12 @@ function crearTarjetaTestimonio(item, interior) {
   const uaKey          = resolverUA(item.unidadAcademica || item.institucion || '');
   const colorMonograma = colorDeUnidadAcademica(uaKey) || '#00a3e0';
   const iniciales      = inicialesDe(item.nombreCompleto);
-  const esMobileNow    = window.esMobile?.();
 
-  if (item.foto && !esMobileNow) {
-    // DESKTOP con foto: solo la imagen — el monograma nunca se construye.
-    // Antes se generaba junto al img un div de iniciales, causando el bug C-01.
-    // El fallback se inyecta dinámicamente SOLO si la imagen falla.
+  if (item.foto) {
+    // CON FOTO (desktop Y mobile): solo la imagen — el monograma nunca se
+    // construye junto a ella (bug C-01 histórico). El fallback se inyecta
+    // dinámicamente SOLO si la imagen falla. Sin riesgo de layout-shift:
+    // el avatar tiene tamaño fijo por CSS (64px desktop, 34px mobile).
     const img = document.createElement('img');
     img.className = 'testimonio-foto-img';
     img.src = item.foto;
@@ -404,7 +404,7 @@ function crearTarjetaTestimonio(item, interior) {
     });
     figura.appendChild(img);
   } else {
-    // MOBILE (siempre) o DESKTOP sin foto: solo el monograma documental.
+    // SIN foto: monograma documental.
     // Nunca se construye la img → imposible que ambos coexistan.
     const mono = document.createElement('div');
     mono.className = 'testimonio-monograma';

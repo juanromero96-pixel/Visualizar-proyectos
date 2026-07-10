@@ -260,15 +260,19 @@ let toastTimer = null;
 function mostrarInfoSede(seccion) {
   if (!seccion) return;
 
-  // Limpiar toast anterior
+  const nombre  = seccion.querySelector('.sede-kicker-titulo')?.textContent?.trim()    || '';
+
+  // TOGGLE (punto 11): si el toast de ESTA MISMA sede ya está abierto,
+  // tocar la sede otra vez lo cierra en lugar de recrearlo. Las otras dos
+  // vías de cierre ya existían: tocar el panel y el auto-descarte a los 5s.
   const anterior = document.getElementById('sede-info-toast');
   if (anterior) {
+    const eraLaMisma = anterior.dataset.sede === nombre;
     clearTimeout(toastTimer);
     anterior.remove();
+    if (eraLaMisma) return;
   }
-
   // Leer datos del kicker oculto (siempre en el DOM, solo invisible en mobile)
-  const nombre  = seccion.querySelector('.sede-kicker-titulo')?.textContent?.trim()    || '';
   const subtit  = seccion.querySelector('.sede-kicker-subtitulo')?.textContent?.trim() || '';
   const orient  = seccion.querySelector('.sede-kicker-orientacion')?.textContent?.trim() || '';
   const uasEls  = seccion.querySelectorAll('.sede-kicker-unidades li');
@@ -280,6 +284,7 @@ function mostrarInfoSede(seccion) {
 
   const toast = document.createElement('div');
   toast.id = 'sede-info-toast';
+  toast.dataset.sede = nombre;  // identidad para el toggle
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
   toast.innerHTML = `

@@ -225,32 +225,18 @@
 
   /* ==========================================================================
      AUTORIDADES — MATERIALIDAD DOCUMENTAL (C-02)
-     En el mural mobile las autoridades UNaM son fragmentos textuales.
-     NO son perfiles de red social. La fotografía circular (avatar) es el
-     gesto visual más característico de Material Design y redes sociales —
-     se oculta en el mural. Solo aparece en el lector expandido.
-     El monograma-alt (generado siempre que hay foto) toma su lugar:
-     un gesto tipográfico que evoca fichas de archivo, no aplicaciones UI.
+     En el mural mobile las autoridades UNaM muestran su fotografía a
+     escala de ficha documental (34px, reglas en sección D) — no el avatar
+     circular grande de red social. Si la foto falla, el fallback es el
+     monograma tipográfico.
      ======================================================================= */
-  /* Todos los testimonios en mobile usan monograma documental (cuadrado),
-     no fotografía circular. El avatar circular es el gesto de Material Design.
-     La foto sólo aparece en el lector expandido. */
-  .testimonio-foto-img {
-    display: none !important;
-  }
-  .testimonio-monograma--alt {
-    display: grid !important;
-    place-items: center;
-    /* Mismo estilo que .testimonio-monograma estándar */
-    width: 36px; height: 36px; min-width: 36px; min-height: 36px;
-    border-radius: 4px;  /* cuadrado, no círculo — lenguaje documental */
-    background: var(--color-monograma, var(--unam-cian));
-    color: #fff;
-    font-weight: 700;
-    font-size: 0.82rem;
-    letter-spacing: 0.03em;
-    flex-shrink: 0;
-  }
+  /* FOTOS DE AUTORIDADES EN MOBILE (pedido explícito):
+     Antes este bloque ocultaba .testimonio-foto-img con display:none
+     !important — una SEGUNDA autoridad (además del guard JS, también
+     eliminado) que impedía las fotos en el mural mobile. Ambas fueron
+     retiradas. El bloque .testimonio-monograma--alt que la reemplazaba
+     era código muerto (ningún JS lo genera desde el fix C-01): eliminado. */
+
   /* En UA testimonios también: monograma rectangular, no circular */
   .elemento--testimonio .testimonio-monograma {
     border-radius: 4px !important;  /* ficha, no burbuja */
@@ -575,13 +561,12 @@
 
 /* Quitar backdrop-filter en todos los dispositivos táctiles (performance) */
 
-/* Foto oculta, monograma documental visible — fallback sin media query */
-.es-mobile .testimonio-foto-img { display: none !important; }
-.es-mobile .testimonio-monograma--alt {
-  display: grid !important;
-  place-items: center;
-  border-radius: 4px !important;
-}
+/* Fotos de autoridades VISIBLES también en mobile (pedido explícito).
+   Aquí vivía el duplicado del ocultamiento (.testimonio-foto-img
+   display:none + .testimonio-monograma--alt) — la segunda autoridad que
+   habría mantenido las fotos ocultas en todo dispositivo real aunque el
+   bloque @media ya estuviera corregido. Eliminado: la foto renderiza a
+   34px (sección D) con fallback a monograma solo si la carga falla. */
 .es-mobile .elemento-interior {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -817,6 +802,11 @@
   left: 12px;
   right: 12px;
   z-index: 88;  /* debajo del nav (#ruta-m z=90) */
+  /* Punto 12: el panel nunca debe tapar gran parte del mural —
+     tope de un tercio de pantalla con scroll interno para el excedente. */
+  max-height: 32svh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: rgba(8, 12, 16, 0.96);
   border: 1px solid rgba(0, 163, 224, 0.28);
   border-left: 3px solid var(--unam-cian, #00a3e0);
