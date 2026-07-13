@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Semana Regional de la Extensión UNaM</title>
   <meta name="description" content="Compendio digital de la Primera Semana Regional de la Extensión Universitaria de la Universidad Nacional de Misiones. Posadas · Oberá · Eldorado, mayo 2026." />
-  <meta name="build" content="v3.7-2026-07-10-fotos-mobile" />
+  <meta name="build" content="v3.8-2026-07-10-cachebust" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/animations.css" />
-  <link rel="stylesheet" href="css/intro.css" />
+  <link rel="stylesheet" href="css/styles.css?v=3.8" />
+  <link rel="stylesheet" href="css/animations.css?v=3.8" />
+  <link rel="stylesheet" href="css/intro.css?v=3.8" />
   <!-- mobile.css: reinterpretación de la experiencia para ≤820px.
        No modifica nada en desktop — solo sobreescribe bajo media query
        y clases específicas (.es-mobile, .escenario--mobile, etc.) -->
-  <link rel="stylesheet" href="css/mobile.css" />
+  <link rel="stylesheet" href="css/mobile.css?v=3.8" />
 </head>
 <body>
 
@@ -391,15 +391,25 @@
 
   </div><!-- /#intro-overlay -->
 
-  <script src="js/storage.js"></script>
-  <script src="js/carousel.js"></script>
-  <script src="js/animations.js"></script>
-  <script src="js/layout.js"></script>
-  <script src="js/lector.js"></script>
-  <script src="js/intro.js"></script>
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PROCEDIMIENTO DE PUBLICACIÓN (pipeline de entrega):
+       Los assets llevan ?v=X.Y — el navegador cachea por URL, así que sin
+       subir la versión, un deploy nuevo puede seguir ejecutando js/css
+       viejos aunque el HTML sea nuevo (causa raíz de semanas de cambios
+       invisibles). En cada release: subir ?v= en TODAS las referencias y
+       el sello <meta name="build"> + window.__BUILD__ (app.js) JUNTOS.
+       Verificación en dispositivo: la consola debe mostrar el banner cian
+       con el build nuevo — HTML nuevo SIN banner = assets viejos en caché.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <script src="js/storage.js?v=3.8"></script>
+  <script src="js/carousel.js?v=3.8"></script>
+  <script src="js/animations.js?v=3.8"></script>
+  <script src="js/layout.js?v=3.8"></script>
+  <script src="js/lector.js?v=3.8"></script>
+  <script src="js/intro.js?v=3.8"></script>
   <!-- mobile.js carga antes de app.js para que window.Mobile esté disponible
        en el momento en que iniciarSitio() comienza a ejecutarse -->
-  <script src="js/mobile.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/mobile.js?v=3.8"></script>
+  <script src="js/app.js?v=3.8"></script>
 </body>
 </html>
