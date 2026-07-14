@@ -11,7 +11,7 @@
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v3.8-2026-07-10-cachebust';
+  window.__BUILD__ = 'v3.9-2026-07-11-h2h7';
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
 
@@ -961,8 +961,20 @@ const Rotacion = (() => {
     // en poolEspera y el SKIP protector les impide entrar (todas las UA
     // tienen exactamente 1 satélite). Se exhiben solo en desktop.
     if (window.esMobile?.()) {
-      const area = window.innerWidth * window.innerHeight;
-      return Math.max(7, Math.min(8, Math.round(area / 34000)));
+      // H7 (auditoría geométrica): la capacidad NO debe derivarse solo del área
+      // total, sino contrastarse contra la altura real de las tarjetas del
+      // corpus. Medición: altura promedio ponderada del corpus = 213 px
+      // (registro-ua 280, video 241, testimonio 164, conceptual 166). Con
+      // altUtil = 596 px y 2 columnas, el máximo físico SIN solapamientos es
+      // floor((596+8)/(213+8)) × 2 = 4 tarjetas. La capacidad 8 producía 115%
+      // de ocupación (matemáticamente imposible sin solapes). El cap 6 admite
+      // el solape leve que el pase de legibilidad de layout.js puede resolver.
+      // H2: usar la altura del ESCENARIO (100svh, estático) — misma fuente
+      // que layout.js L33 y que rotarUno tras el fix anterior.
+      const primerEscenario = document.querySelector('.escenario');
+      const altoEsc = primerEscenario?.getBoundingClientRect().height || window.innerHeight;
+      const area = window.innerWidth * altoEsc;
+      return Math.max(5, Math.min(6, Math.round(area / 45000)));
     }
     return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
   }
@@ -1195,7 +1207,16 @@ const Rotacion = (() => {
           const hEnt = (entrante.querySelector('.elemento-interior')?.offsetHeight || 140);
           const yNum = parseFloat(ySal);
           const yMin = 72 + hEnt / 2;
-          const yMax = window.innerHeight - 52 - hEnt / 2;
+          // H2 (auditoría de coordenadas): usar la MISMA fuente vertical que
+          // layout.js L33 (rectEscenario.height = 100svh, ESTÁTICO). Antes usaba
+          // window.innerHeight (DINÁMICO — cambia con la barra URL), lo que
+          // producía yMax distintos entre el layout inicial y cada rotación:
+          // la tarjeta entrante se movía verticalmente respecto al clavo del
+          // saliente cuando la barra se mostraba/ocultaba, rompiendo el
+          // principio "se cambia el documento, no el clavo".
+          const rectEsc = entrante.closest('.escenario')?.getBoundingClientRect();
+          const altoEscenario = rectEsc?.height || window.innerHeight;
+          const yMax = altoEscenario - 52 - hEnt / 2;
           const yFinal = Math.max(yMin, Math.min(yMax, yNum));
           entrante.style.setProperty('--y', `${Math.round(yFinal)}px`);
         }
