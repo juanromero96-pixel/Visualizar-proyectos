@@ -11,7 +11,7 @@
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v3.9-2026-07-11-h2h7';
+  window.__BUILD__ = 'v4.0-2026-07-11-slots';
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
 
@@ -1016,9 +1016,26 @@ const Rotacion = (() => {
     const uasConNarradores = [...new Set(permanentes.map((el) => el.dataset.ua))];
     const capacidad = calcularCapacidad();
 
-    // Para cada UA con un narrador, seleccionar sus mejores satélites
-    const SLOTS_POR_UA = Math.max(1, Math.min(3,
-      Math.floor((capacidad - permanentes.length) / Math.max(1, uasConNarradores.length))
+    // Cuántas autoridades UNaM van a ocupar slot (el sistema K=2 ya eligió cuáles)
+    const KUNaM = candidatos.filter(
+      (el) => el.dataset.ua === 'unam' && el.dataset.permanente !== 'true'
+    ).length;
+
+    // SLOTS_POR_UA: cuántos satélites recibe cada UA con narrador.
+    // AUDITORÍA DE CAPACIDAD REAL: la fórmula anterior era
+    //   Math.max(1, floor((cap - permanentes) / uas))
+    // que ignoraba las UNaM sumadas después, produciendo TOTAL > cap
+    // (Posadas: 3 perm + 3 sat + 2 UNaM = 8 con cap=6).
+    // Ahora se descuenta KUNaM ANTES de dividir, y el piso baja a 0 para
+    // no forzar satélites cuando la capacidad ya está ocupada por
+    // permanentes + UNaM. En Posadas (perm=3, uas=3, K=2, cap=6):
+    //   floor((6-3-2)/3) = 0 → total = 3+0+2 = 5, respeta el cap.
+    // En Oberá  (perm=2, uas=2, K=2, cap=6):
+    //   floor((6-2-2)/2) = 1 → total = 2+2+2 = 6.
+    // En Eldorado (perm=0, uas=0, K=2, cap=6): SLOTS irrelevante,
+    //   el relleno por capacidad completa hasta 6.
+    const SLOTS_POR_UA = Math.max(0, Math.min(3,
+      Math.floor((capacidad - permanentes.length - KUNaM) / Math.max(1, uasConNarradores.length))
     ));
     const satelitesIniciales = new Set();
 
