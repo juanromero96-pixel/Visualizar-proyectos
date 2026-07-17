@@ -159,7 +159,7 @@ const Distribuidor = (() => {
         return                                     [2, 4, 3, 5, 1, 6, 0].filter(r => r < ZONAS_ROWS);
       };
 
-      ordenados.forEach((n) => {
+      ordenados.forEach((n, idx) => {
         const tipo       = n.el.dataset.tipo;
         const peso       = PESO_NARRATIVO[tipo] ?? 4;
         const esNarrador = peso === 0;
@@ -198,7 +198,22 @@ const Distribuidor = (() => {
             const yStagger = (col === 1 && row < ZONAS_ROWS - 1) ? zH * 0.45 : 0;
             const cy = MARGEN_TOP + (row + 0.5) * zH + yStagger;
             const dist = Math.hypot(cx - anclaXpx, cy - anclaYpx);
-            const score = dist + ocupacion + colPenalty + bandPenalty;
+            // ── PENALIDAD DE COLISIÓN ESPERADA (P1 — auditoría geométrica) ──
+            // El greedy elegía zonas sin ver si colisionaría con los ya colocados.
+            // Este término hace que el greedy "vea" la colisión antes de confirmar
+            // la asignación — sin backtracking, sin cambiar la arquitectura.
+            // Peso 0.1: una colisión de 100.000 px² vale 10.000 pts
+            // (mayor que dist típica ~700, menor que penalidad zona 5e5).
+            // Validación experimental: modelo vs browser = ×1.16 (solo rotación CSS).
+            let colisionEsperada = 0;
+            for (let k = 0; k < idx; k++) {
+              const ya = ordenados[k];
+              if (ya.x == null) continue;
+              const soX = Math.max(0, (n.wBase + ya.wBase) / 2 - Math.abs(cx - ya.x));
+              const soY = Math.max(0, (n.hBase + ya.hBase) / 2 - Math.abs(cy - ya.y));
+              colisionEsperada += soX * soY;
+            }
+            const score = dist + ocupacion + colPenalty + bandPenalty + colisionEsperada * 0.1;
             if (score < bestScore) { bestScore = score; bestKey = { key, cx, cy, row, col }; }
           }
         }
