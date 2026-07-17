@@ -110,11 +110,14 @@
   .elemento--registro-ua .elemento-interior {
     padding: 10px 14px 10px !important;  /* P2: -4px top/bot = -8px offH */
   }
-  /* P2a — portada compacta mobile: 16/7 (desktop) → 16/5 mobile.
-     Reduce el alto de la portada de ~73px a ~52px (-21px por tarjeta UA).
-     El lector bottom-sheet conserva la portada en tamaño completo. */
+  /* P2a — portada oculta en el mural mobile.
+     Las tarjetas de UA son demasiado altas (321-341px) para caber 3 en 740px.
+     La portada (52-73px) es el elemento más prescindible en el mural:
+     el territorio se comunica por el fondo del escenario. Se preserva íntegra
+     en el lector bottom-sheet (CSS del lector no está en este bloque).
+     Reducción: -52px por tarjeta → offH objetivo ~230-250px. */
   .elemento--registro-ua .registro-ua-portada {
-    aspect-ratio: 16 / 5 !important;
+    display: none !important;
   }
 
   /* Registros conceptuales */
@@ -159,7 +162,21 @@
      ========================================================================== */
 
   .registro-titulo          { font-size: 0.95rem !important; line-height: 1.3 !important; }
+  /* P2-bis B: título UA clampea a 2 líneas en el mural (-~20px). */
+  .elemento--registro-ua .registro-titulo {
+    -webkit-line-clamp: 2 !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
   .registro-resumen         { font-size: 0.80rem !important; -webkit-line-clamp: 2 !important; }
+  /* P2-bis C: resumen UA a 1 línea en el mural (-~18px) */
+  .elemento--registro-ua .registro-resumen {
+    -webkit-line-clamp: 1 !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
   .registro-ua-badge        { font-size: 0.60rem !important; margin-bottom: 4px !important; }  /* P2d: -3px */
   /* P2c: expandir compacto (-8px) */
   .registro-expandir        { font-size: 0.72rem !important; padding: 4px 0 !important; min-height: 24px !important; }

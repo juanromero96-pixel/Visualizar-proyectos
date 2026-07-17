@@ -27,7 +27,10 @@ const Distribuidor = (() => {
     // Desktop: 16px — viewport amplio, sin restricciones.
     SEPARACION_MINIMA = (window.esMobile?.() ? 8 : 16);
 
-    const elementos = Array.from(escenario.querySelectorAll('.elemento:not(.elemento--oculto-autoridad)'));
+    // Excluir elementos ya ocultos por Rotacion.configurar() (--rotacion-espera).
+      // Cuando configurar() llama a Distribuidor.distribuir() después de seleccionar
+      // los 6 visibles, este filtro asegura que P1 solo ve esos 6 — no los 11 ocultos.
+      const elementos = Array.from(escenario.querySelectorAll('.elemento:not(.elemento--oculto-autoridad):not(.elemento--rotacion-espera)'));
     if (!elementos.length) return;
 
     const rectEscenario = escenario.getBoundingClientRect();

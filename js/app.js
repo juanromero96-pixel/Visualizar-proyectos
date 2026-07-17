@@ -11,7 +11,7 @@
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v4.1-2026-07-17-p1p2';
+  window.__BUILD__ = 'v4.2-2026-07-17-p3arch';
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
 
@@ -1100,6 +1100,24 @@ const Rotacion = (() => {
     poolEspera.forEach((el, i) => {
       window.setTimeout(() => ocultarConFade(el), i * 80 + 300);
     });
+
+    // ── RE-LAYOUT POST-CONFIGURAR (fix arquitectónico P3) ──────────────────────
+    // El layout inicial (recalcular en iniciarSitio) distribuye TODOS los
+    // elementos visibles (hasta 17 en Posadas). Rotacion.configurar() oculta 11
+    // con --rotacion-espera, pero sus posiciones ya están "gastadas" — P1 las
+    // tuvo en cuenta para colocar los 6 restantes. Al re-ejecutar distribuir()
+    // DESPUÉS de que todos los fades terminen, layout.js solo ve los 6 finales
+    // (filtro :not(.elemento--rotacion-espera) en layout.js) y P1 puede
+    // optimizar su distribución exclusivamente para esos 6.
+    // Delay: último fade empieza a los (N-1)×80+300ms y dura 580ms → +50ms buffer.
+    if (window.esMobile?.() && poolEspera.length > 0) {
+      const reLayoutDelay = (poolEspera.length - 1) * 80 + 300 + 580 + 100;
+      window.setTimeout(() => {
+        if (seccion && seccion.isConnected) {
+          Distribuidor.distribuir(seccion);
+        }
+      }, reLayoutDelay);
+    }
   }
 
   /**
