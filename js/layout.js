@@ -294,26 +294,27 @@ const Distribuidor = (() => {
         empujarFueraDeZonas(nodos, zonas);
       }
 
-      // ── PASE DE LEGIBILIDAD (FASE 2) ────────────────────────────────────
-      // Caso detectado en validación visual: narrador y su video comparten
-      // columna en filas adyacentes; la separación intenta resolver en Y
-      // (soY < soX) pero los clamps verticales la bloquean → solape profundo
-      // que entierra el título del documento de abajo. Este pase detecta los
-      // pares que quedaron con solape > 55% del ancho y > 35% del alto de la
-      // tarjeta menor, y los resuelve por el eje horizontal — donde el
-      // sangrado dejó holgura — dejando como máximo un naipe del 30% (los
-      // títulos, alineados al borde, quedan siempre legibles).
-      for (let i = 0; i < nodos.length; i++) {
-        for (let j = i + 1; j < nodos.length; j++) {
-          const a = nodos[i], b = nodos[j];
-          const soX = (a.w + b.w) / 2 - Math.abs(a.x - b.x);
-          const soY = (a.h + b.h) / 2 - Math.abs(a.y - b.y);
-          const minW = Math.min(a.w, b.w), minH = Math.min(a.h, b.h);
-          if (soX > minW * 0.55 && soY > minH * 0.35) {
-            const empuje = (soX - minW * 0.30) / 2;
-            const s = Math.sign(b.x - a.x) || 1;
-            a.x -= empuje * s;
-            b.x += empuje * s;
+      // ── PASE DE LEGIBILIDAD (FASE 2) — solo desktop ────────────────────
+      // Diseñado para casos de narrador + video en la misma columna (desktop).
+      // En mobile, P1 (colisionEsperada) ya garantiza posiciones separadas al
+      // momento de la asignación; el pase de legibilidad resultó
+      // contraproducente: empuja tarjetas fuera de sus columnas y crea
+      // colisiones con vecinos de la columna opuesta.
+      // Evidencia: UA1 medida en x=166 (fuera del rango de col-0 o col-1)
+      // debido exactamente a este pase. Deshabilitado en mobile.
+      if (!window.esMobile?.()) {
+        for (let i = 0; i < nodos.length; i++) {
+          for (let j = i + 1; j < nodos.length; j++) {
+            const a = nodos[i], b = nodos[j];
+            const soX = (a.w + b.w) / 2 - Math.abs(a.x - b.x);
+            const soY = (a.h + b.h) / 2 - Math.abs(a.y - b.y);
+            const minW = Math.min(a.w, b.w), minH = Math.min(a.h, b.h);
+            if (soX > minW * 0.55 && soY > minH * 0.35) {
+              const empuje = (soX - minW * 0.30) / 2;
+              const s = Math.sign(b.x - a.x) || 1;
+              a.x -= empuje * s;
+              b.x += empuje * s;
+            }
           }
         }
       }

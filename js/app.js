@@ -11,7 +11,7 @@
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v4.2-2026-07-17-p3arch';
+  window.__BUILD__ = 'v4.3-2026-07-17-final';
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
 
@@ -71,10 +71,17 @@
   // tamaño real una vez que Roboto termina de cargar — se recalcula una
   // vez más cuando eso pasa, además de en cada cambio de tamaño de ventana.
   if (document.fonts?.ready) document.fonts.ready.then(() => {
-    recalcular();
-    // Rotacion ANTES del reveal inicial — misma razón que en onCambio.
-    if (secciones[0]) {
-      Rotacion.iniciar(secciones[0]);
+    if (window.esMobile?.()) {
+      // ── MOBILE — Rotacion ANTES de recalcular ANTES de Secuenciador ────────
+      // 1. Rotacion.iniciar → configurar inmediato → poolEspera con --rotacion-espera
+      // 2. recalcular → layout.js ve solo los 6 finales (filter :not(.rotacion-espera))
+      // 3. (después, en el flujo síncrono) Secuenciador.entrar → revela 6 posicionados
+      if (secciones[0]) Rotacion.iniciar(secciones[0]);
+      recalcular();
+    } else {
+      // ── DESKTOP — orden original sin cambios ────────────────────────────────
+      recalcular();
+      if (secciones[0]) Rotacion.iniciar(secciones[0]);
     }
   });
 
@@ -105,14 +112,14 @@
     onCambio: (indice, seccionNueva) => {
       actualizarRuta(indice);
       aplicarSubconjuntoDeAutoridades(seccionNueva, testimonios);
-      // CRÍTICO: Rotacion ANTES de Secuenciador.
-      // Rotacion.iniciar() marca los elementos excedentes con .elemento--rotacion-espera
-      // (opacity:0 !important). Cuando Secuenciador.entrar() agrega .elemento--visible
-      // a continuación, los marcados siguen ocultos porque rotacion-espera tiene
-      // mayor precedencia en el CSS (!important + source order posterior).
-      // Si el orden fuera al revés, habría un flash de todos los elementos
-      // durante el tiempo entre el reveal y el ocultamiento.
+      // CRÍTICO: Rotacion ANTES de recalcular ANTES de Secuenciador.
+      // En mobile, Rotacion.iniciar() ahora configura INMEDIATAMENTE:
+      //   1. configura → marca 11 con --rotacion-espera (opacity:0 !important)
+      //   2. recalcular → layout ve solo los 6, P1 optimiza para ellos
+      //   3. Secuenciador.entrar → revela 6 en posiciones finales (11 invisibles)
+      // El mural de la nueva sede aparece ya compuesto.
       Rotacion.iniciar(seccionNueva);
+      if (window.esMobile?.()) recalcular();
       Secuenciador.entrar(seccionNueva);
       refrescarCitas(seccionNueva, testimonios);
     },
@@ -1008,8 +1015,13 @@ const Rotacion = (() => {
     const escenario = seccion.querySelector('.escenario');
     if (!escenario) return;
 
+    // C2 — query sin requisito de --visible:
+    // permite que configurar() corra ANTES de que Secuenciador.entrar() revele
+    // los elementos, marcando inmediatamente el subconjunto no-seleccionado con
+    // --rotacion-espera. Cuando Secuenciador agrega --visible, los marcados
+    // permanecen ocultos (opacity:0 !important tiene mayor especificidad).
     const candidatos = Array.from(
-      escenario.querySelectorAll('.elemento--visible:not(.elemento--oculto-autoridad)')
+      escenario.querySelectorAll('.elemento:not(.elemento--oculto-autoridad)')
     );
 
     const permanentes  = candidatos.filter((el) => el.dataset.permanente === 'true');
@@ -1092,32 +1104,22 @@ const Rotacion = (() => {
       el.classList.remove('elemento--rotacion-espera');
     });
 
-    // Ocultar los que no caben en el mural ahora — fade escalonado para ambas
-    // plataformas. En mobile con el nuevo comportamiento (delay=2500ms), cuando
-    // configurar() corre los elementos ya son visibles; un fade gradual los
-    // retira uno a uno en lugar de hacerlos desaparecer instantáneamente.
-    // El 1er elemento empieza a desvanecer a los 300ms, cada siguiente +80ms.
-    poolEspera.forEach((el, i) => {
-      window.setTimeout(() => ocultarConFade(el), i * 80 + 300);
-    });
-
-    // ── RE-LAYOUT POST-CONFIGURAR (fix arquitectónico P3) ──────────────────────
-    // El layout inicial (recalcular en iniciarSitio) distribuye TODOS los
-    // elementos visibles (hasta 17 en Posadas). Rotacion.configurar() oculta 11
-    // con --rotacion-espera, pero sus posiciones ya están "gastadas" — P1 las
-    // tuvo en cuenta para colocar los 6 restantes. Al re-ejecutar distribuir()
-    // DESPUÉS de que todos los fades terminen, layout.js solo ve los 6 finales
-    // (filtro :not(.elemento--rotacion-espera) en layout.js) y P1 puede
-    // optimizar su distribución exclusivamente para esos 6.
-    // Delay: último fade empieza a los (N-1)×80+300ms y dura 580ms → +50ms buffer.
-    if (window.esMobile?.() && poolEspera.length > 0) {
-      const reLayoutDelay = (poolEspera.length - 1) * 80 + 300 + 580 + 100;
-      window.setTimeout(() => {
-        if (seccion && seccion.isConnected) {
-          Distribuidor.distribuir(seccion);
-        }
-      }, reLayoutDelay);
+    // C3 — ocultamiento del poolEspera.
+    // Si se pasa `inmediato:true` (llamada pre-reveal desde iniciar()), los
+    // elementos se marcan síncronamente — no hay nada que "desvanecer" porque
+    // todavía no son visibles. Si es false (comportamiento legacy), se usa el
+    // fade escalonado para no interrumpir bruscamente un mural ya visible.
+    if (configurar._inmediato) {
+      poolEspera.forEach((el) => el.classList.add('elemento--rotacion-espera'));
+    } else {
+      poolEspera.forEach((el, i) => {
+        window.setTimeout(() => ocultarConFade(el), i * 80 + 300);
+      });
     }
+    // P3 re-layout: con el nuevo flujo (iniciar → configurar → recalcular →
+    // Secuenciador), layout.js ya ve exactamente los 6 elementos finales en el
+    // momento en que el motor corre. El re-layout diferido ya no es necesario
+    // y se elimina para evitar que los elementos salten de posición en t≈4s.
   }
 
   /**
@@ -1264,24 +1266,37 @@ const Rotacion = (() => {
   function iniciar(seccion) {
     detener();
     if (!seccion) return;
-    // Delay unificado para mobile y desktop: 2500ms.
-    //
-    // Mobile — COMPORTAMIENTO NUEVO (requerido):
-    //   El Secuenciador muestra TODAS las tarjetas juntas al instante (320ms).
-    //   Rotacion arranca 2500ms después: el visitante ve el mural completo
-    //   antes de que comience el "juego de animaciones" (desapariciones/reemplazos
-    //   de a uno). El viejo delay=0 ocultaba tarjetas ANTES de que aparecieran,
-    //   produciendo los huecos permanentes reportados como bug.
-    //
-    // Desktop — sin cambio: sigue esperando 2500ms para que el reveal escalonado
-    //   esté avanzado antes de que comience la rotación.
-    const delay = INICIO_DELAY_MS;
-    timeoutId = window.setTimeout(() => {
+
+    if (window.esMobile?.()) {
+      // ── MOBILE — mural pre-armado desde el primer frame ─────────────────
+      // Secuencia: iniciar() → configurar INMEDIATO → recalcular (6 elem) →
+      // Secuenciador.entrar() → reveal de 6 ya posicionados.
+      //
+      // configurar() marca los 11 excedentes con --rotacion-espera ANTES de
+      // que Secuenciador.entrar() añada --visible. Los 11 permanecen ocultos
+      // (opacity:0 !important) incluso después del reveal; el usuario ve el
+      // mural ya compuesto desde el primer frame, sin "construcción" visible.
+      //
+      // La ROTACIÓN (rotarUno) empieza recién después de INICIO_DELAY_MS,
+      // para que el visitante lea el mural estable antes de que comiencen
+      // los intercambios.
+      configurar._inmediato = true;
       configurar(seccion);
-      if (poolEspera.length > 0) {
-        intervalId = window.setInterval(rotarUno, INTERVALO_MS);
-      }
-    }, delay);
+      configurar._inmediato = false;
+      timeoutId = window.setTimeout(() => {
+        if (poolEspera.length > 0) {
+          intervalId = window.setInterval(rotarUno, INTERVALO_MS);
+        }
+      }, INICIO_DELAY_MS);
+    } else {
+      // ── DESKTOP — comportamiento original sin cambios ────────────────────
+      timeoutId = window.setTimeout(() => {
+        configurar(seccion);
+        if (poolEspera.length > 0) {
+          intervalId = window.setInterval(rotarUno, INTERVALO_MS);
+        }
+      }, INICIO_DELAY_MS);
+    }
   }
 
   function detener() {
