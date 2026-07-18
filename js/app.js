@@ -11,7 +11,22 @@
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v4.3-2026-07-17-final';
+  window.__BUILD__ = 'v4.4-2026-07-18-dti';
+// ── E0 (DTI §10): instrumentación de bajo costo, gated por flag ──────────────
+// Activación: URL con ?diag=1 o localStorage.setItem('diag','1').
+// Registra en memoria las llamadas del ciclo de vida; __DIAG__.volcar() imprime.
+const DIAG = (() => {
+  let activo = false;
+  try { activo = /[?&]diag=1/.test(location.search) || localStorage.getItem('diag') === '1'; } catch (e) {}
+  const t0 = performance.now();
+  const eventos = [];
+  return {
+    activo,
+    log(tipo, detalle) { if (activo) eventos.push({ t: Math.round(performance.now() - t0), tipo, ...detalle }); },
+    volcar() { console.table(eventos); return eventos; }
+  };
+})();
+window.__DIAG__ = DIAG;
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
 
@@ -44,9 +59,17 @@
   //   · desktop → Monte Carlo (ubicarPorBusqueda)
   // La bifurcación vive DENTRO de distribuir(); desde aquí se llama igual
   // para las dos. No hay fork JS externo ni segundo motor.
-  const recalcular = () => {
+  // E2 (DTI §6.2, defecto D2): recálculo SELECTIVO por sede.
+  // Sin argumento (global): reservado a cambios reales de viewport y al
+  // arranque desktop. Con sección: redistribuye únicamente esa sede — las
+  // demás conservan composición y estado de espera intactos.
+  const recalcular = (seccionObjetivo) => {
+    DIAG.log('recalcular', { alcance: seccionObjetivo ? (seccionObjetivo.dataset.sede || 'sede') : 'global' });
+    if (seccionObjetivo) { Distribuidor.distribuir(seccionObjetivo); return; }
     secciones.forEach((s) => Distribuidor.distribuir(s));
   };
+  const sedeActivaActual = () =>
+    secciones.find((s) => { const r = s.getBoundingClientRect(); return r.left >= -50 && r.left < 50; }) || secciones[0];
 
   // Antes de la primera distribución: se decide qué autoridades de alcance
   // UNaM se muestran en cada sede (nunca las cinco a la vez — ver
@@ -56,7 +79,10 @@
   // reservarles a las autoridades descartadas un lugar que después queda
   // invisible.
   secciones.forEach((s) => aplicarSubconjuntoDeAutoridades(s, testimonios));
-  recalcular();
+  // E2: en mobile el layout inicial correcto ocurre en fonts.ready
+  // (iniciar → marcas → recalcular(sede0)); un global previo con el corpus
+  // completo sería triple trabajo invisible. Desktop conserva el global.
+  if (!window.esMobile?.()) recalcular();
 
   // Recién ahora se sortea la cita real de cada tarjeta — la medición de
   // arriba ya midió la más larga posible, así que esta nunca puede
@@ -76,8 +102,7 @@
       // 1. Rotacion.iniciar → configurar inmediato → poolEspera con --rotacion-espera
       // 2. recalcular → layout.js ve solo los 6 finales (filter :not(.rotacion-espera))
       // 3. (después, en el flujo síncrono) Secuenciador.entrar → revela 6 posicionados
-      if (secciones[0]) Rotacion.iniciar(secciones[0]);
-      recalcular();
+      if (secciones[0]) { Rotacion.iniciar(secciones[0]); recalcular(secciones[0]); }
     } else {
       // ── DESKTOP — orden original sin cambios ────────────────────────────────
       recalcular();
@@ -97,8 +122,30 @@
     const w = window.innerWidth, h = window.innerHeight;
     if (window.esMobile?.() && w === _lastW && Math.abs(h - _lastH) < 120) return;
     _lastW = w; _lastH = h;
+    DIAG.log('resize', { dw: w - _lastW, dh: h - _lastH });
     clearTimeout(pendienteResize);
-    pendienteResize = setTimeout(recalcular, 180);
+    pendienteResize = setTimeout(() => {
+      if (window.esMobile?.()) {
+        // E2: cambio REAL de viewport — la capacidad medida puede variar.
+        // Reconfiguración ordenada: se invalidan las firmas, se reconfigura
+        // la sede activa (marcas nuevas ANTES del layout) y luego el global
+        // redistribuye; las sedes no visitadas se configuran en su visita.
+        secciones.forEach((s) => { delete s.dataset.rotConfig; });
+        const activa = sedeActivaActual();
+        if (activa) Rotacion.iniciar(activa);
+        recalcular();
+      } else {
+        recalcular();
+      }
+    }, 180);
+  });
+
+  // E4 (DTI §8): variante CHIP para videos cuando la sede tiene ≥3.
+  // La clase es inerte en desktop (solo la estiliza mobile.css); la miniatura
+  // completa permanece en el Lector.
+  secciones.forEach((sec) => {
+    const vids = sec.querySelectorAll('.elemento--video');
+    if (vids.length >= 3) vids.forEach((v) => v.classList.add('elemento--video-chip'));
   });
 
   iniciarInteraccionDeEnfoque(secciones);
@@ -118,8 +165,9 @@
       //   2. recalcular → layout ve solo los 6, P1 optimiza para ellos
       //   3. Secuenciador.entrar → revela 6 en posiciones finales (11 invisibles)
       // El mural de la nueva sede aparece ya compuesto.
+      DIAG.log('onCambio', { indice, sede: seccionNueva?.dataset?.sede });
       Rotacion.iniciar(seccionNueva);
-      if (window.esMobile?.()) recalcular();
+      if (window.esMobile?.()) recalcular(seccionNueva);
       Secuenciador.entrar(seccionNueva);
       refrescarCitas(seccionNueva, testimonios);
     },
@@ -955,7 +1003,7 @@ const Rotacion = (() => {
   // de la nueva sede.
   let generacion    = 0;
 
-  function calcularCapacidad() {
+  function calcularCapacidad(escenario, candidatos) {
     // MOBILE — auditoría museográfica (FASE 4, respiración del mural):
     // La simulación de cobertura demostró que con 11 visibles el mural cubre
     // 82-85% del lienzo (territorio reducido a 15-18%, 6-7 solapamientos
@@ -968,20 +1016,31 @@ const Rotacion = (() => {
     // en poolEspera y el SKIP protector les impide entrar (todas las UA
     // tienen exactamente 1 satélite). Se exhiben solo en desktop.
     if (window.esMobile?.()) {
-      // H7 (auditoría geométrica): la capacidad NO debe derivarse solo del área
-      // total, sino contrastarse contra la altura real de las tarjetas del
-      // corpus. Medición: altura promedio ponderada del corpus = 213 px
-      // (registro-ua 280, video 241, testimonio 164, conceptual 166). Con
-      // altUtil = 596 px y 2 columnas, el máximo físico SIN solapamientos es
-      // floor((596+8)/(213+8)) × 2 = 4 tarjetas. La capacidad 8 producía 115%
-      // de ocupación (matemáticamente imposible sin solapes). El cap 6 admite
-      // el solape leve que el pase de legibilidad de layout.js puede resolver.
-      // H2: usar la altura del ESCENARIO (100svh, estático) — misma fuente
-      // que layout.js L33 y que rotarUno tras el fix anterior.
-      const primerEscenario = document.querySelector('.escenario');
-      const altoEsc = primerEscenario?.getBoundingClientRect().height || window.innerHeight;
-      const area = window.innerWidth * altoEsc;
-      return Math.max(5, Math.min(6, Math.round(area / 45000)));
+      // E4 (DTI §7, "Capacidad"): derivada de MEDIDAS REALES, no de constantes
+      // ligadas a un corpus. altUtil = alto real del escenario − cabecera(72)
+      // − nav(52). w/h medios = promedio de offsetWidth/Height del interior
+      // × escala (cap 1.0, igual que layout.js). Ocupación objetivo ≤ 60 %
+      // (DTI §8): factor 0.65 con clamp [4, 8]. Verificación en device de
+      // referencia (393×864, corpus v4.4 con chips): cap = 8, ocupación ≈ 54 %.
+      // En pantallas compactas (≈360×640) el clamp inferior garantiza 4.
+      const esc = escenario || document.querySelector('.escenario');
+      const rEsc = esc?.getBoundingClientRect();
+      const wEsc = rEsc?.width  || window.innerWidth;
+      const altUtil = Math.max(320, (rEsc?.height || window.innerHeight) - 72 - 52);
+      const lista = (candidatos && candidatos.length) ? candidatos
+        : Array.from((esc || document).querySelectorAll('.elemento:not(.elemento--oculto-autoridad)'));
+      let sumW = 0, sumH = 0, n = 0;
+      lista.forEach((el) => {
+        const it = el.querySelector('.elemento-interior');
+        if (!it) return;
+        const e = Math.min(parseFloat(el.dataset.escala) || 1, 1);
+        sumW += (it.offsetWidth  || 150) * e;
+        sumH += (it.offsetHeight || 190) * e;
+        n++;
+      });
+      const wProm = n ? sumW / n : 150;
+      const hProm = n ? sumH / n : 190;
+      return Math.max(4, Math.min(8, Math.floor((wEsc * altUtil * 0.65) / (wProm * hProm))));
     }
     return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
   }
@@ -1026,7 +1085,35 @@ const Rotacion = (() => {
 
     const permanentes  = candidatos.filter((el) => el.dataset.permanente === 'true');
     const uasConNarradores = [...new Set(permanentes.map((el) => el.dataset.ua))];
-    const capacidad = calcularCapacidad();
+    const capacidad = calcularCapacidad(escenario, candidatos);
+
+    // ── E1 (DTI §6.2, defecto D3): configuración idempotente por sede ─────────
+    // La firma captura todo lo que determina la selección: build, corpus,
+    // subconjunto K visible y capacidad medida. Si coincide con la registrada
+    // en la sede, los pools se REHIDRATAN desde las clases actuales (preserva
+    // el estado post-rotaciones) y no se toca ninguna clase — no-op verificable.
+    const idDe = (el) => el.dataset.testimonioId ||
+      `${el.dataset.tipo || '?'}-${el.dataset.ua || '?'}-${el.dataset.orden || '?'}`;
+    const kIds = candidatos
+      .filter((el) => el.dataset.ua === 'unam' && el.dataset.permanente !== 'true')
+      .map(idDe).sort().join(',');
+    const firma = `${window.__BUILD__}|c${candidatos.length}|k[${kIds}]|cap${capacidad}`;
+    const ordenEditorial = (aEl, bEl) => {
+      const uaA = ORDEN_UA.indexOf(aEl.dataset.ua);
+      const uaB = ORDEN_UA.indexOf(bEl.dataset.ua);
+      if (uaA !== uaB) return (uaA < 0 ? 99 : uaA) - (uaB < 0 ? 99 : uaB);
+      return tipoPrioridad(aEl) - tipoPrioridad(bEl);
+    };
+    if (seccion.dataset.rotConfig === firma) {
+      const rot = candidatos.filter((el) => el.dataset.permanente !== 'true');
+      poolEspera = rot.filter((el) => el.classList.contains('elemento--rotacion-espera'));
+      poolActivo = rot.filter((el) => !el.classList.contains('elemento--rotacion-espera'));
+      poolEspera.sort(ordenEditorial);
+      cursorEspera = 0;
+      DIAG.log('configurar', { sede: seccion.dataset.sede, modo: 'rehidratar',
+        activo: poolActivo.length, espera: poolEspera.length, cap: capacidad });
+      return;
+    }
 
     // Cuántas autoridades UNaM van a ocupar slot (el sistema K=2 ya eligió cuáles)
     const KUNaM = candidatos.filter(
@@ -1117,9 +1204,12 @@ const Rotacion = (() => {
       });
     }
     // P3 re-layout: con el nuevo flujo (iniciar → configurar → recalcular →
-    // Secuenciador), layout.js ya ve exactamente los 6 elementos finales en el
-    // momento en que el motor corre. El re-layout diferido ya no es necesario
-    // y se elimina para evitar que los elementos salten de posición en t≈4s.
+    // Secuenciador), layout.js ya ve exactamente los elementos finales en el
+    // momento en que el motor corre. Sin re-layout diferido.
+    seccion.dataset.rotConfig = firma;
+    DIAG.log('configurar', { sede: seccion.dataset.sede, modo: 'full',
+      activo: poolActivo.length, espera: poolEspera.length, cap: capacidad,
+      inmediato: !!configurar._inmediato });
   }
 
   /**
@@ -1264,7 +1354,8 @@ const Rotacion = (() => {
   }
 
   function iniciar(seccion) {
-    detener();
+    DIAG.log('iniciar', { sede: seccion?.dataset?.sede, mobile: !!window.esMobile?.() });
+    detener(); // E1: sin argumento → solo timers/pools; jamás limpia clases de otras sedes
     if (!seccion) return;
 
     if (window.esMobile?.()) {
@@ -1299,26 +1390,38 @@ const Rotacion = (() => {
     }
   }
 
-  function detener() {
+  function detener(seccion) {
+    // E1 (DTI §6.2, defecto D1): alcance POR SEDE.
+    // Sin argumento: solo timers/pools (uso normal desde iniciar()) — las
+    // clases de espera de todas las sedes PERSISTEN (memoria espacial).
+    // Con sección: limpia la espera únicamente dentro de esa sede y borra su
+    // firma de configuración (reconfiguración forzada en la próxima visita).
+    // El viejo Bug 03 (elemento atrapado a mitad de fade) queda cubierto por
+    // la rehidratación de pools desde clases en configurar(): un elemento con
+    // la clase aplicada entra a poolEspera y es recuperable por rotación.
     generacion++; // invalida cualquier setTimeout pendiente de rotarUno()
     if (intervalId) { window.clearInterval(intervalId); intervalId = null; }
     if (timeoutId)  { window.clearTimeout(timeoutId);   timeoutId  = null; }
 
-    // BUG FIX CRÍTICO (Bug 03):
-    // Quitar la clase de "espera" de CUALQUIER elemento que la tenga, sin
-    // importar de qué sede o pool provenga. Si detener() se llama mientras
-    // un elemento está a mitad de su fade-out (saliente con la clase ya
-    // aplicada pero el setTimeout aún pendiente), ese elemento quedaría
-    // permanentemente oculto y excluido de todos los pools sin recuperación.
-    // Al restaurar aquí, ningún elemento puede quedar atrapado en ese estado.
-    document.querySelectorAll('.elemento--rotacion-espera').forEach((el) => {
-      el.classList.remove('elemento--rotacion-espera');
-      el.style.transition = '';
-    });
+    let limpiados = 0;
+    if (seccion) {
+      seccion.querySelectorAll('.elemento--rotacion-espera').forEach((el) => {
+        limpiados++;
+        el.classList.remove('elemento--rotacion-espera');
+        el.style.transition = '';
+      });
+      delete seccion.dataset.rotConfig;
+    }
+    DIAG.log('detener', { alcance: seccion ? (seccion.dataset.sede || 'sede') : 'timers', limpiados });
 
     poolActivo   = [];
     poolEspera   = [];
     cursorEspera = 0;
+  }
+
+  // Teardown total explícito (uso excepcional; nunca implícito en iniciar()).
+  function detenerTodo() {
+    document.querySelectorAll('.sede').forEach((s) => detener(s));
   }
 
   // H-08: Pausa y reanuda la rotación sin vaciar los pools.
@@ -1336,5 +1439,5 @@ const Rotacion = (() => {
     }
   }
 
-  return { iniciar, detener, pausar, reanudar };
+  return { iniciar, detener, detenerTodo, pausar, reanudar };
 })();

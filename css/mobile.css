@@ -915,3 +915,72 @@
   font-style: italic;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════
+   E4 (DTI §8) — Compactación final mobile · build v4.4
+   Bloque aislado al final del archivo: solo ≤820px, cero efecto desktop.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 820px) {
+
+  /* ── Video CHIP (sedes con ≥3 videos; clase asignada en app.js) ─────────
+     Miniatura y resumen fuera del mural (íntegros en el Lector).
+     Anatomía: ▶ + badge + título 2 líneas + expandir. offH objetivo ≤ 72px. */
+  .elemento--video-chip .video-miniatura-envoltorio { display: none !important; }
+  .elemento--video-chip .video-resumen              { display: none !important; }
+  .elemento--video-chip .elemento-interior {
+    padding: 8px 10px 6px 30px !important;
+    position: relative;
+  }
+  .elemento--video-chip .elemento-interior::before {
+    content: '▶';
+    position: absolute;
+    left: 10px; top: 10px;
+    font-size: 0.85rem;
+    color: var(--color-ua, #00a3e0);
+    line-height: 1;
+  }
+  .elemento--video-chip .video-badge {
+    margin-bottom: 2px !important;
+  }
+  .elemento--video-chip .video-titulo {
+    font-size: 0.84rem !important;
+    line-height: 1.25 !important;
+    -webkit-line-clamp: 2 !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin: 0 0 2px !important;
+  }
+  .elemento--video-chip .video-expandir {
+    min-height: 20px !important;
+    padding: 2px 0 !important;
+    font-size: 0.68rem !important;
+  }
+
+  /* ── Autoridades UNaM compactas: sin fotografía en el mural ─────────────
+     (fotografía y cargo completos al expandir en el Lector). ───────────── */
+  .elemento--testimonio[data-ua="unam"] .testimonio-foto { display: none !important; }
+  .elemento--testimonio[data-ua="unam"] .elemento-interior {
+    padding-top: 10px !important;
+  }
+  .elemento--testimonio[data-ua="unam"] .testimonio-nombre {
+    margin-top: 0 !important;
+  }
+
+  /* ── Registros conceptuales: tratamiento editorial sin caja ─────────────
+     Voz reflexiva intersticial; identidad por badge + cursiva. ─────────── */
+  .elemento--registro-conceptual .elemento-interior {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 8px 10px !important;
+  }
+  .elemento--registro-conceptual .registro-conceptual-resumen {
+    -webkit-line-clamp: 2 !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    font-style: italic;
+  }
+}
