@@ -1,18 +1,6 @@
-/**
- * app.js
- * -----------------------------------------------------------------------
- * Arma la escena pública a partir de los datos en /data. La posición de
- * cada elemento se resuelve en js/layout.js; la cita que muestra cada
- * tarjeta de testimonio se resuelve acá mismo, al entrar a la sede.
- */
-(async function iniciarSitio() {
-  // ── SELLO DE BUILD (FASE 1 de la auditoría de despliegue) ────────────────
-  // Permite demostrar en cualquier dispositivo qué versión está corriendo:
-  // abrir la consola y leer esta línea (o window.__BUILD__).
-  // Si la consola NO muestra este sello, el navegador está sirviendo un
-  // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v4.4-2026-07-18-dti';
 // ── E0 (DTI §10): instrumentación de bajo costo, gated por flag ──────────────
+// SCOPE: nivel de archivo — accesible desde iniciarSitio Y desde el módulo
+// Rotacion (v4.4 lo definía dentro del IIFE async → ReferenceError en iniciar).
 // Activación: URL con ?diag=1 o localStorage.setItem('diag','1').
 // Registra en memoria las llamadas del ciclo de vida; __DIAG__.volcar() imprime.
 const DIAG = (() => {
@@ -27,6 +15,22 @@ const DIAG = (() => {
   };
 })();
 window.__DIAG__ = DIAG;
+
+/**
+ * app.js
+ * -----------------------------------------------------------------------
+ * Arma la escena pública a partir de los datos en /data. La posición de
+ * cada elemento se resuelve en js/layout.js; la cita que muestra cada
+ * tarjeta de testimonio se resuelve acá mismo, al entrar a la sede.
+ */
+(async function iniciarSitio() {
+  // ── SELLO DE BUILD (FASE 1 de la auditoría de despliegue) ────────────────
+  // Permite demostrar en cualquier dispositivo qué versión está corriendo:
+  // abrir la consola y leer esta línea (o window.__BUILD__).
+  // Si la consola NO muestra este sello, el navegador está sirviendo un
+  // build anterior: la auditoría debe DETENERSE hasta redesplegar.
+  window.__BUILD__ = 'v4.5-2026-07-18-e0fix';
+
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
 
