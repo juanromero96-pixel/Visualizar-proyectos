@@ -29,7 +29,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v4.5-2026-07-18-e0fix';
+  window.__BUILD__ = 'v4.7-2026-07-19-editorial';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -1050,7 +1050,17 @@ const Rotacion = (() => {
   }
 
   function tipoPrioridad(el) {
-    return PRIORIDAD_TIPO[el.dataset.tipo] ?? 99;
+    const t = el.dataset.tipo;
+    // v4.7 (solo mobile) · Prioridad testimonial: en el primer frame, la VOZ
+    // (cita con nombre propio) precede a la evidencia audiovisual como
+    // satélite de cada UA. Los videos entran igualmente por rotación (10 s).
+    // Desktop conserva PRIORIDAD_TIPO intacta. Reversible: quitar el guard.
+    if (window.esMobile?.()) {
+      if (t === 'testimonio') return 1;
+      if (t === 'video')      return 2;
+      return 10 + (PRIORIDAD_TIPO[t] ?? 89);
+    }
+    return PRIORIDAD_TIPO[t] ?? 99;
   }
 
   function ocultarConFade(el) {

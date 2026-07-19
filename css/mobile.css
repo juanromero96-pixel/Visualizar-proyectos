@@ -984,3 +984,20 @@
     font-style: italic;
   }
 }
+
+/* ── v4.6 · Gancho editorial (invitación a la lectura) ──────────────────
+   Principio: en el estado compacto sobrevive lo que INVITA; el detalle
+   vive en el Lector. Cambios neutros en altura (±2-4px por tarjeta). */
+@media (max-width: 820px) {
+  /* UA: el título completo es el gancho → 3 líneas; el resumen sale del
+     mural (−18px compensa la 3ª línea del título). Íntegro en el Lector. */
+  .elemento--registro-ua .registro-titulo  { -webkit-line-clamp: 3 !important; }
+  .elemento--registro-ua .registro-resumen { display: none !important; }
+
+  /* Testimonios (UA y autoridades): la CITA es la invitación → 2 líneas.
+     La línea "institución" sale del mural: la UA ya habla por el badge de
+     color y el contexto; en autoridades, el cargo incluye UNaM. (−16px
+     compensa la 2ª línea de cita.) */
+  .testimonio-cita        { -webkit-line-clamp: 2 !important; }
+  .testimonio-institucion { display: none !important; }
+}

@@ -324,6 +324,13 @@ const Distribuidor = (() => {
         n.y = Math.max(MARGEN_TOP + n.h/2, Math.min(alto - MARGEN_BOT - n.h/2, n.y));
       });
 
+      // v4.6 · Naipe cabecera-visible (solo mobile): si dos tarjetas se
+      // solapan, la de ABAJO pisa por encima → el naipe tapa el pie de la
+      // superior (enlace, recuperable por tap) y nunca la cabecera de la
+      // inferior (badge + título = zona de identificación e invitación).
+      [...nodos].sort((p, q) => p.y - q.y)
+        .forEach((n, iz) => { n.el.style.zIndex = String(10 + iz); });
+
       nodos.forEach((n) => {
         n.el.style.setProperty('--x',      `${Math.round(n.x)}px`);
         n.el.style.setProperty('--y',      `${Math.round(n.y)}px`);
