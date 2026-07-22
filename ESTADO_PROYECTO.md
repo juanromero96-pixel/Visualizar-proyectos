@@ -472,3 +472,39 @@ Batería jsdom sobre el arranque completo real (index + 8 scripts + corpus): **2
 ### 14.5 Fuera de alcance de este build
 
 Eldorado sigue **sin videos en el corpus** (0 en multimedia.json — faltante documental, no bug). La sesión F5 con lectores reales continúa pendiente (dependencia humana).
+
+---
+
+## 15 · Plan Maestro — Fase 0 (cerrada parcialmente) + Fase A en curso (build v5.1)
+
+> Ejecución del Documento Técnico de Implementación (Plan Maestro). Metodología: evidencia antes de código en cada verificación; ninguna mejora se implementó sin localizar archivo/función/línea y analizar regresión.
+
+### 15.1 Fase 0 — Verificaciones bloqueantes
+
+| # | Resultado | Evidencia |
+|---|---|---|
+| **V-1** (color del cargo) | ✅ Resuelta — sin bug | Telemetría en dispositivo: `rgba(245,243,238,0.85)`, exactamente el papel esperado. El hallazgo de auditoría (cargo en color de UA) queda revertido — la cascada v5.0 ya aplicaba correctamente |
+| **V-2** (nav de sedes) | ✅ Resuelta — mecanismo funciona | Tres ejes verificados en dispositivo: existencia (`display:flex`), geometría (`rect.bottom = innerH`, sin divergencia de viewport) y **pintado real** (`elementFromPoint` devuelve el propio botón del nav — nada lo cubre) |
+| **V-3** (invasión del kicker en Eldorado desktop) | ⚪ **Sin evidencia de dispositivo** | Descartada la hipótesis de orden de pasadas (código verificado: `empujarFueraDeZonas` sí corre en escritorio, L349/L355). Instrumentado el check exacto (paso 1d del validador); **falta la corrida en escritorio con Eldorado activo** |
+
+**M-03 permanece bloqueada** hasta que V-3 tenga evidencia real. No se implementó ninguna corrección especulativa.
+
+### 15.2 Fase A — mejoras sin dependencia de V-3 (implementadas, build `v5.1-2026-07-22-faseA`)
+
+**M-01 · Brújula con enunciación territorial.** `#ruta-m` gana una etiqueta persistente `01/03` (mismo lenguaje que `sede-kicker-num` en escritorio), dentro de la misma franja de 52px — no crece la zona reservada. Actualizada en ambas ramas de creación (normal y fallback) y en `actualizarNavMobile()`. Archivos: `js/mobile.js`, `css/mobile.css`.
+
+**M-32 · Zona de respeto de cabecera.** Evidencia aritmética, no estimada: el chip institucional mobile mide top `32.4px` (`--modulo·1.2`) + alto `48px` (botón 38px + padding 5+5) = borde inferior real **80.4px** — el viejo `MARGEN_TOP=72` quedaba corto incluso sin `env(safe-area-inset-top)`, que en dispositivos con notch lo empeora. Nuevo valor: **92** (80.4 + ~12px de holgura, mismo criterio que el comentario original "60+12"). Sincronizado en las **tres** copias que deben moverse juntas: `js/layout.js` (reserva de zona), `js/app.js::calcularCapacidad()` (cálculo de `altUtil`), `tools/diagnostico-pipeline.js` (diagnóstico). Verificado con la simulación geométrica: solape sigue en **0px²** con tarjetas compactas.
+
+**M-02 · Temperamento único del vidrio.** Causa raíz confirmada (no descartada como V-1): `--niebla` es un tinte de solo 10% de opacidad — la "claridad" de la tarjeta terminaba dependiendo de lo que hay detrás, no del material. Evidencia con matemática WCAG real: el velo diagonal de Oberá cae a opacidad `.2` en su punto más transparente → contraste tarjeta/texto calculado = **2.00:1** (bajo AA). Fix: nuevo token `--niebla-piso: rgba(8,12,16,.62)`, compuesto **debajo** de `--niebla` (que se conserva intacta encima, como brillo de vidrio) vía `background: linear-gradient(var(--niebla),var(--niebla)), var(--niebla-piso)`. Mismo cálculo tras el fix: **5.27:1** (AA superado con margen). Aplicado a los tres tipos que comparten `--niebla` (testimonio, registro-ua, video); `registro-conceptual` no lo necesitaba (ya tenía fondo sólido propio). Cambio de **solo** `background` — sin tocar dimensiones de caja: cero riesgo para el motor de layout (offsetWidth/Height intactos). Archivo: `css/styles.css` (bajo Protocolo de descongelamiento §7 del Plan Maestro — diff mínimo, un solo tipo de propiedad, sin tocar Monte Carlo).
+
+### 15.3 Verificación
+
+- `node --check` en los 4 archivos JS tocados: OK.
+- Batería jsdom (arranque completo real, ambos canales): **30/30 PASS**.
+- Simulación geométrica con `MARGEN_TOP=92`: solape 0px² sostenido (Oberá y Eldorado, tarjetas compactas).
+- Validador de dispositivo extendido con 4 checks nuevos (2d, 2e, 2f + el 1c/1d de V-2/V-3) para que la próxima corrida en device confirme M-01/M-32/M-02 con telemetría real, no solo con jsdom.
+- Render de evidencia `tools/evidencia-faseA-v5.1.png`: contraste antes/después con muestreo de píxel (163,165,168 → 81,85,88), brújula con posición, despeje de cabecera a escala real.
+
+### 15.4 Estado de Fase A
+
+**No cerrada.** M-01, M-32 y M-02 implementadas y verificadas. M-03 sigue dentro de esta fase y sigue bloqueada por V-3. La fase no se declara terminada hasta que las cuatro mejoras (M-01, M-02, M-03, M-32) estén implementadas y verificadas — tal como exige el Plan Maestro.

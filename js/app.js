@@ -29,7 +29,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v5.0-2026-07-21-informe1';
+  window.__BUILD__ = 'v5.1-2026-07-22-faseA';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -1050,7 +1050,7 @@ const Rotacion = (() => {
       const esc = escenario || document.querySelector('.escenario');
       const rEsc = esc?.getBoundingClientRect();
       const wEsc = rEsc?.width  || window.innerWidth;
-      const altUtil = Math.max(320, (rEsc?.height || window.innerHeight) - 72 - 52);
+      const altUtil = Math.max(320, (rEsc?.height || window.innerHeight) - 92 - 52);   // M-32: 72→92, ver layout.js
       const lista = (candidatos && candidatos.length) ? candidatos
         : Array.from((esc || document).querySelectorAll('.elemento:not(.elemento--oculto-autoridad)'));
       let sumW = 0, sumH = 0, n = 0;

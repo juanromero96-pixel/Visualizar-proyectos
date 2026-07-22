@@ -73,7 +73,16 @@ const Distribuidor = (() => {
       const ZONAS_COLS = 2;
       const ZONAS_ROWS = 7;
       const zW = ancho / ZONAS_COLS;
-      const MARGEN_TOP = 72;   // header real ≈ 60px + 12px holgura
+      // M-32 (Plan Maestro Fase A · informe MO-2): el chip institucional
+      // mobile mide top:32.4px (--modulo·1.2) + alto:48px (botón 38px +
+      // padding 5+5) = borde inferior real ≈80.4px, SIN contar
+      // env(safe-area-inset-top) en dispositivos con notch/isla, que solo
+      // lo empeora. El viejo 72 se quedaba corto incluso en el caso base
+      // (sin safe-area) — de ahí la tarjeta asomando bajo el chip en M3.
+      // 92 = 80.4 + ~12px de holgura, mismo criterio que el comentario
+      // original ("60 + 12"). Sincronizado con app.js:calcularCapacidad()
+      // y tools/diagnostico-pipeline.js — los tres deben moverse juntos.
+      const MARGEN_TOP = 92;
       const MARGEN_BOT = 52;   // altura del nav #ruta-m
       const altUtil = alto - MARGEN_TOP - MARGEN_BOT;
       const zH = altUtil / ZONAS_ROWS;

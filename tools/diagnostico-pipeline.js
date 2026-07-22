@@ -19,7 +19,7 @@
   if (!sede) { console.warn('No se encontró la sede activa'); return; }
   const esc = sede.querySelector('.escenario');
   const escR = esc.getBoundingClientRect();
-  const MTOP = 72, MBOT = 52, ROWS = 7, COLS = 2;
+  const MTOP = 92, MBOT = 52, ROWS = 7, COLS = 2;   // M-32: MTOP 72→92, ver layout.js
   const zH = (escR.height - MTOP - MBOT) / ROWS, zW = escR.width / COLS;
 
   const filas = [...sede.querySelectorAll('.elemento')]

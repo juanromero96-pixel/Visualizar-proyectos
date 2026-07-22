@@ -342,6 +342,11 @@ function crearNavMobile() {
     const navFb = document.createElement('nav');
     navFb.id = 'ruta-m';
     navFb.setAttribute('aria-label', 'Navegación entre sedes');
+    const posicionFb = document.createElement('span');
+    posicionFb.className = 'ruta-m-posicion';
+    posicionFb.setAttribute('aria-hidden', 'true');
+    posicionFb.textContent = `01/${String(seccionesFb.length).padStart(2, '0')}`;
+    navFb.appendChild(posicionFb);
     seccionesFb.forEach((sec, i) => {
       const clave = sec.dataset.sede || `sede-${i + 1}`;
       const btn = document.createElement('button');
@@ -360,6 +365,7 @@ function crearNavMobile() {
       navFb.querySelectorAll('.ruta-m-btn').forEach((b, i) => {
         b.classList.toggle('ruta-m-btn--activo', i === indice);
       });
+      posicionFb.textContent = `${String(indice + 1).padStart(2, '0')}/${String(seccionesFb.length).padStart(2, '0')}`;
     };
     anclarNavAlViewportVisual(navFb);
     _diag(`crearNavMobile: FALLBACK — nav creado desde .sede (${seccionesFb.length})`);
@@ -372,6 +378,20 @@ function crearNavMobile() {
   const nav = document.createElement('nav');
   nav.id = 'ruta-m';
   nav.setAttribute('aria-label', 'Navegación entre sedes');
+
+  // M-01 (Plan Maestro Fase A · informe MO-1/P-10.1): enunciación
+  // territorial persistente. El nombre de la sede ya lo porta el botón
+  // activo (negrita + subrayado); esta etiqueta agrega lo que faltaba —
+  // la POSICIÓN en la serie, mismo lenguaje que sede-kicker-num en
+  // escritorio ("01 / 03") — para que "acá estoy, esto es lo que hay"
+  // sea legible sin abrir el menú. No crece la franja: mismo alto de
+  // fila que los botones, ancho fijo angosto.
+  const posicion = document.createElement('span');
+  posicion.className = 'ruta-m-posicion';
+  posicion.setAttribute('aria-hidden', 'true');
+  const indiceInicial = Math.max(0, sedesNodos.findIndex((n) => n.classList.contains('ruta-nodo--activo')));
+  posicion.textContent = `${String(indiceInicial + 1).padStart(2, '0')}/${String(sedesNodos.length).padStart(2, '0')}`;
+  nav.appendChild(posicion);
 
   sedesNodos.forEach((nodo, i) => {
     const nombre = nodo.querySelector('.ruta-nodo-nombre')?.textContent?.trim()
@@ -397,6 +417,7 @@ function crearNavMobile() {
     nav.querySelectorAll('.ruta-m-btn').forEach((b, i) => {
       b.classList.toggle('ruta-m-btn--activo', i === indice);
     });
+    posicion.textContent = `${String(indice + 1).padStart(2, '0')}/${String(sedesNodos.length).padStart(2, '0')}`;
   };
 
   anclarNavAlViewportVisual(nav);

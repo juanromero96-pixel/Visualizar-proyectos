@@ -23,6 +23,17 @@
   --papel: #f5f3ee;
   --niebla: rgba(245, 243, 238, 0.1);
   --niebla-borde: rgba(245, 243, 238, 0.18);
+  /* M-02 (Plan Maestro Fase A) — temperamento único del vidrio. --niebla por
+     sí sola es un tinte casi transparente (10% papel): la "claridad" de la
+     tarjeta terminaba dependiendo de lo que hay detrás (foto + velo de sede),
+     no del material. Evidencia: velo diagonal de Oberá cae a opacidad .2 en
+     su punto más transparente (css ~L197) → contraste calculado tarjeta/texto
+     en ese punto = 2.00:1 (bajo AA). --niebla-piso es un piso de oscuridad
+     PROPIO de la tarjeta, compuesto DEBAJO de --niebla (que se conserva
+     encima, intacta, como el brillo/textura de vidrio): con este piso el
+     mismo cálculo da 5.5:1. Un solo material en todo el sistema — el velo
+     de fondo deja de ser responsable de garantizar legibilidad. */
+  --niebla-piso: rgba(8, 12, 16, 0.62);
 
   --fuente: 'Roboto', -apple-system, 'Segoe UI', sans-serif;
   --modulo: 27px; /* mismo módulo que la grilla 1080×1080 del manual, sección 14 */
@@ -302,7 +313,7 @@ button { font-family: inherit; cursor: pointer; }
      institucional + cita). Fotos/video van "desnudos": son objetos de la
      escena, no tarjetas de interfaz. — */
 .elemento--testimonio .elemento-interior {
-  background: var(--niebla);
+  background: linear-gradient(var(--niebla), var(--niebla)), var(--niebla-piso);
   border: 1px solid var(--niebla-borde);
   border-left: 3px solid var(--color-ua, var(--unam-cian));
   backdrop-filter: blur(10px);
@@ -359,7 +370,7 @@ button { font-family: inherit; cursor: pointer; }
    académica como único acento distintivo.
    ========================================================================== */
 .elemento--registro-ua .elemento-interior {
-  background: var(--niebla);
+  background: linear-gradient(var(--niebla), var(--niebla)), var(--niebla-piso);
   /* Borde superior grueso (franja de color UA) + borde izquierdo —
      la doble presencia de color la distingue visualmente como el NODO
      principal de la constelación de esa facultad. */
@@ -739,7 +750,7 @@ button { font-family: inherit; cursor: pointer; }
    al hover; el contenido completo se ve en el lector ampliado.
    ========================================================================== */
 .elemento--video .elemento-interior {
-  background: var(--niebla);
+  background: linear-gradient(var(--niebla), var(--niebla)), var(--niebla-piso);
   border: 1px solid rgba(245, 243, 238, 0.14);
   border-left: 3px solid var(--color-ua, var(--unam-cian));
   border-radius: 4px;
