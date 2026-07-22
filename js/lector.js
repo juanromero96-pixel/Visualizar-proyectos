@@ -478,7 +478,35 @@ const Lector = (() => {
   function construirConstelacion() {
     const lista = elementosDeConstelacion();
     lem.chips.innerHTML = '';
-    if (!lista.length) { lem.constelacion.hidden = true; return; }
+    // Informe de bugs Fase 2 · «Navegación Cíclica»: al derivar hasta una
+    // autoridad (ua:'unam'), elementosDeConstelacion() da [] por diseño
+    // (una autoridad no tiene constelación propia) y la franja entera se
+    // ocultaba — punto muerto real: sin cerrar el Lector a mano no había
+    // forma de seguir explorando. Si hay adónde volver (el origen del
+    // recorrido, distinto del documento actual), se ofrece un único chip
+    // de retorno en vez de dejar la franja vacía.
+    if (!lista.length) {
+      const origen = lemOrigen && lemOrigen.el;
+      if (origen && origen !== lemActual.el && origen.isConnected) {
+        lem.constelacion.hidden = false;
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'lem-chip';
+        chip.setAttribute('role', 'listitem');
+        chip.style.setProperty('--color-ua', obtenerColorUADe(origen));
+        const icono = ICONO_TIPO[origen.dataset.tipo] || '·';
+        const etiqueta = origen.dataset.tipo === 'registro-ua'
+          ? `Volver al expediente ${siglaDe(origen, origen.__item)}`
+          : `Volver a ${etiquetaChip(origen)}`;
+        chip.innerHTML = `<span class="lem-chip-icono" aria-hidden="true">${icono}</span>
+                          <span class="lem-chip-texto">${escaparHTMLLector(etiqueta)}</span>`;
+        chip.addEventListener('click', () => derivarA(origen));
+        lem.chips.appendChild(chip);
+        return;
+      }
+      lem.constelacion.hidden = true;
+      return;
+    }
 
     lista.forEach((el2) => {
       const chip = document.createElement('button');

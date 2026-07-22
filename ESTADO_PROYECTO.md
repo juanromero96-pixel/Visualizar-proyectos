@@ -530,3 +530,25 @@ Dos falsos positivos corregidos (no eran bugs de la app): el check de "sin retra
 
 ### 16.4 Estado de Fase A
 **M-01 ✅ · M-02 ✅ · M-32 ✅ (confirmados en dispositivo) · M-03 implementada, confirmación final pendiente.** Build `v5.2-2026-07-22-faseA-v3fix`.
+
+---
+
+## 17 · Informe de bugs Fase 2 — build v5.3
+
+### 17.1 🔴 Congelamiento de interfaz (escritorio) — causa confirmada y corregida
+**No era el ciclo de vida de componentes** (el proyecto no tiene ese modelo — vanilla JS sin mount/unmount). Causa real, en `css/mobile.css`: `.lem--escritorio` oculta el diálogo por opacidad (`opacity:0`, permanece centrado y en pantalla — a diferencia de `.lem` mobile, que se oculta desplazándose fuera del viewport con `translateY(103%)`, técnica que nunca necesitó `pointer-events:none` porque no hay nada debajo que bloquear). Ninguna regla — ni la base `.lem` ni `.lem--escritorio` — fijaba `pointer-events` para el estado cerrado. Resultado: tras el **primer** cierre del Lector en escritorio, quedaba un rectángulo invisible de 720×900px en el centro de la pantalla, a z-index 521, capturando todos los clics — tarjetas del mural y barra de sedes incluidas. Regresión propia, introducida al unificar el canal escritorio (v5.0).
+
+**Fix**: `pointer-events:none` en `.lem--escritorio` (cerrado), `auto` en `.lem--escritorio.lem--abierta`. Un solo mecanismo, sin tocar la técnica mobile. Verificado con CSS real cargado en el arnés jsdom (antes: `auto` tras cerrar; después: `none`).
+
+### 17.2 🔴 Desborde de chips en «En esta constelación» (escritorio)
+Causa real: `overflow-x:auto` con `scrollbar-width:none` — el contenido excedente era técnicamente alcanzable (scroll horizontal) pero sin ninguna afordancia visual para mouse de escritorio; se percibía como cortado. Fix: `flex-wrap:wrap` — todos los chips quedan siempre visibles, sin depender de que el visitante descubra el gesto de scroll. `.lem-constelacion` no tiene alto fijo (vive dentro de `.lem-scroll`, que ya scrollea verticalmente), así que agregar filas es seguro.
+
+### 17.3 🟡 Navegación cíclica — callejón sin salida en autoridades
+Confirmado en código: `elementosDeConstelacion()` devuelve `[]` por diseño cuando `lemActual.el.dataset.ua === 'unam'` (una autoridad no tiene constelación propia) — la franja completa se ocultaba, sin salida salvo cerrar el Lector a mano. Fix: cuando la lista queda vacía pero existe un origen distinto del documento actual (`lemOrigen.el !== lemActual.el`), se ofrece un chip único «Volver a…» (etiqueta contextual: «Volver al expediente SIGLA» si el origen es una UA). Verificado en `tools/smoke-v5.js` con el flujo real: abrir UA → derivar a autoridad por chip → confirmar aparición del chip de retorno → confirmar que deriva de vuelta.
+
+### 17.4 Dos ítems evaluados, sin implementación (con evidencia de por qué)
+- **Portada en anotaciones de sede**: ya satisfecho en escritorio (las tarjetas `registro-ua` muestran portada institucional — visible en la captura del propio informe). Para mobile es exactamente **M-05** del Plan Maestro (Fase B, no iniciada — pendiente por su propio riesgo de altura fija sobre el presupuesto geométrico).
+- **Padding de tarjetas / título cortado**: el padding real (18–20px) no es la causa — verificado. El recorte de «Una jornada en día de paro: cuatro…» es el `-webkit-line-clamp:3` de mobile (`css/mobile.css` — gancho editorial v4.6, intencional: el título completo vive en el Lector) actuando sobre un título de 59 caracteres/11 palabras, más largo que el resto del corpus. Reducir el padding no resolvería esto (margen marginal, ~2-3 caracteres por línea) ni es evidencia lo respalda como causa. La solución correcta ya está trazada como **M-08** (títulos cortos editoriales curados) — es una decisión de contenido, no de código; no se inventa un recorte algorítmico sin curaduría.
+
+### 17.5 Verificación
+`node --check` en los 3 archivos JS tocados: OK. Batería jsdom **ahora carga el CSS real inline** (upgrade del arnés — antes `getComputedStyle()` no reflejaba ninguna regla externa, un hueco metodológico que hacía inválido cualquier check de propiedades CSS computadas; corregido de una vez para toda verificación futura). 33/33 en la corrida de confirmación completa (32/33 en corridas donde la autoridad no cae en la constelación de la UA muestreada por azar de rotación — condición ya contemplada, se omite igual que «sede sin video»).
