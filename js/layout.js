@@ -372,6 +372,21 @@ const Distribuidor = (() => {
       if (!huboMovimiento) break;
     }
 
+    // V-3 · pasada de rescate (evidencia de dispositivo, Oberá — kicker y
+    // marca-chip sin conflicto entre sí, y aun así una tarjeta permanente
+    // quedó tocando el chip tras las 50 iteraciones normales: matemática-
+    // mente había una posición de residuo 0 disponible, pero separarPar
+    // pudo estar revirtiéndola en la iteración siguiente por una colisión
+    // con OTRO elemento — un tira y afloja entre "salir de la zona" y "no
+    // chocar con el vecino" que puede no converger en el límite de
+    // iteraciones). Prioridad narrativa clara y ya documentada (P2/P6): la
+    // identidad institucional (cabecera, panel de sede) no es negociable;
+    // un roce estético leve entre dos tarjetas del mural sí lo es. Esta
+    // pasada corre UNA vez, DESPUÉS del loop normal, y no vuelve a llamar
+    // separarPar — así ninguna colisión con un vecino puede deshacerla.
+    empujarFueraDeZonas(nodos, zonas, clampEscritorio);
+    nodos.forEach(clampEscritorio);
+
     nodos.forEach((n) => {
       n.el.style.setProperty('--x',      `${Math.round(n.x)}px`);
       n.el.style.setProperty('--y',      `${Math.round(n.y)}px`);
@@ -497,41 +512,41 @@ const Distribuidor = (() => {
 
   function empujarFueraDeZonas(nodos, zonas, clamp) {
     if (!zonas.length) return false;
-    // V-3 (Plan Maestro Fase A · evidencia de dispositivo, 2ª vuelta):
-    // la primera versión empujaba hacia el borde de la zona a menor
-    // DISTANCIA CRUDA. Con el kicker de Eldorado a ~32px del borde del
-    // escenario (MARGEN_ESCENARIO=18), "empujar a la izquierda" salía
-    // elegido por ser la distancia más chica, pero era geométricamente
-    // inviable: el clamp de escenario devolvía la tarjeta al mismo punto
-    // en cada vuelta — "movimiento" que el loop de limpieza veía como
-    // progreso pero que no escapaba nunca la zona. Reproducido con los
-    // números reales medidos (kicker 245×450, zona x:[12.4,297.4]): la
-    // tarjeta quedaba fija en x=104, todavía adentro, 50 iteraciones sin
-    // resolverlo. Ahora se evalúan las 4 direcciones DESPUÉS de aplicar
-    // el mismo clamp que usa el llamador (parámetro opcional `clamp`), y
-    // se elige la que deja MENOS solape residual con la zona — no la de
-    // menor distancia antes de clampear.
+    // V-3 (evidencia de dispositivo, Oberá — 3ª vuelta): las dos versiones
+    // anteriores nunca comparaban contra la posición ACTUAL del nodo —
+    // arrancaban mejorResiduo en Infinity y siempre elegían la "menos
+    // mala" de las 4 direcciones candidatas, aunque QUEDARSE QUIETO ya
+    // fuera mejor que las cuatro. En un escenario angosto con varias
+    // tarjetas cerca (Oberá: 915px de ancho, chip + otra tarjeta activa
+    // cerca), esto podía mover un nodo a un punto PEOR de lo que ya
+    // tenía, y el tira-y-afloja con separarPar en la iteración siguiente
+    // no convergía a un punto fijo limpio en las 50 vueltas disponibles.
+    // Ahora la posición actual entra en la MISMA comparación: solo se
+    // mueve si una alternativa da residuo ESTRICTAMENTE menor.
     let movio = false;
     nodos.forEach((n) => {
       zonas.forEach((zona) => {
         if (!cajaSuperponeZona(n.x, n.y, n.w, n.h, zona)) return;
+        const residuoDe = (x, y) => {
+          const ix = Math.max(0, Math.min(x + n.w/2, zona.derecha) - Math.max(x - n.w/2, zona.izquierda));
+          const iy = Math.max(0, Math.min(y + n.h/2, zona.abajo) - Math.max(y - n.h/2, zona.arriba));
+          return ix * iy;
+        };
         const original = { x: n.x, y: n.y };
+        let mejor = original, mejorResiduo = residuoDe(n.x, n.y);
         const opciones = [
           { x: zona.derecha + n.w / 2,   y: n.y },
           { x: zona.izquierda - n.w / 2, y: n.y },
           { x: n.x, y: zona.abajo + n.h / 2 },
           { x: n.x, y: zona.arriba - n.h / 2 },
         ];
-        let mejor = null, mejorResiduo = Infinity;
         for (const op of opciones) {
           const prueba = { x: op.x, y: op.y, w: n.w, h: n.h };
           if (clamp) clamp(prueba);
-          const ix = Math.max(0, Math.min(prueba.x + prueba.w / 2, zona.derecha) - Math.max(prueba.x - prueba.w / 2, zona.izquierda));
-          const iy = Math.max(0, Math.min(prueba.y + prueba.h / 2, zona.abajo) - Math.max(prueba.y - prueba.h / 2, zona.arriba));
-          const residuo = ix * iy;
+          const residuo = residuoDe(prueba.x, prueba.y);
           if (residuo < mejorResiduo) { mejorResiduo = residuo; mejor = prueba; }
         }
-        if (mejor && (mejor.x !== original.x || mejor.y !== original.y)) {
+        if (mejor.x !== original.x || mejor.y !== original.y) {
           n.x = mejor.x; n.y = mejor.y;
           movio = true;
         }

@@ -630,3 +630,21 @@ Build: `v5.5-2026-07-22-modelotemporal`.
 - Validador de dispositivo extendido (paso 2h): confirma altura real ≈46px de la miniatura visible.
 
 Build `v5.6-2026-07-22-m05portada`. Pendiente, mismo criterio que todo lo demás: una corrida en dispositivo real para confirmar visualmente el resultado y cerrar M-05 con evidencia de pantalla, no solo de simulación.
+
+---
+
+## 21 · V-3, tercera vuelta — bug de raíz encontrado y corregido (build v5.7)
+
+**Caso real:** Oberá escritorio, `registro-ua/fayd` tocando la cabecera institucional (`marca-chip`) tras una sesión larga (vuelta 7 del ciclo). El kicker (V-3 propiamente dicho) no estaba en conflicto esta vez — solo M-32 (cabecera).
+
+**Diagnóstico con datos reales, no supuestos:** con el escenario (915×865), la posición del chip (32,32,170,46) y las dos tarjetas activas (FAyD 265×280 en centro 234,186; FI 247×260 en centro 690,330) — todos medidos en dispositivo, sin aproximar nada — el cálculo a mano mostró que empujar FAyD a `x=354.5` (a la derecha del chip) da **residuo exactamente 0** contra la zona, sin chocar con FI. El algoritmo debería haber llegado ahí solo. No lo hizo.
+
+**Causa real, encontrada por relectura del código propio, no por prueba y error:** las dos versiones anteriores de `empujarFueraDeZonas` (Fase A y la corrección de Eldorado) nunca comparaban las 4 direcciones candidatas contra la posición ACTUAL del nodo — `mejorResiduo` arrancaba en `Infinity`, así que la función siempre elegía la "menos mala" de las 4 alternativas, **incluso cuando quedarse quieto ya era mejor que las cuatro**. En un escenario angosto (915px) con dos tarjetas activas cerca del mismo rincón, esto podía mover un nodo a un punto peor del que ya tenía, y el tira y afloja con `separarPar` en la iteración siguiente no llegaba a un punto fijo limpio dentro de las 50 iteraciones disponibles.
+
+**Fix:** la posición actual entra ahora en la misma comparación que las 4 direcciones — la función solo mueve un nodo si encuentra algo con residuo **estrictamente menor** al que ya tenía. Verificado con los números exactos de Oberá en aislamiento: el resultado es `x=354.5`, residuo 0, sin colisión con FI — coincide con el cálculo manual.
+
+**Salvaguarda adicional (no depende de que el diagnóstico anterior sea exhaustivo):** tras las 50 iteraciones normales de limpieza, una pasada de rescate final llama a `empujarFueraDeZonas` una vez más, sin `separarPar` después — así, sea cual sea la causa exacta de una eventual oscilación futura, la última palabra la tiene siempre el respeto a las zonas institucionales, nunca la separación estética entre tarjetas vecinas.
+
+**Verificación:** `node --check` OK en los tres archivos tocados. Batería jsdom 32-33/33 sin regresión. Simulación geométrica mobile: solape 0px² sostenido (la función es compartida entre ambos canales). Verificación del ciclo editorial (DTI): 17/17 cobertura, vuelta completada — sin regresión, ya que `empujarFueraDeZonas` también participa del camino mobile.
+
+Build `v5.7-2026-07-22-v3fix3`. Pendiente, mismo criterio de siempre: una corrida en Oberá escritorio para confirmar en dispositivo real.

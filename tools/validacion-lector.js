@@ -223,16 +223,81 @@
   }
 
   // ── 2h · M-05: miniatura de portada en registro-ua mobile ──────────────
+  // Corrección sobre la corrida anterior: comparaba getBoundingClientRect
+  // (POST-transform) contra 46px CSS (PRE-transform). Cada .elemento se
+  // posiciona con transform: scale(var(--escala)) — el renderizado real
+  // es 46×escala, no 46 plano. Confirmado con evidencia: getComputedStyle
+  // de la portada dio height:46px/padding:0/border:0/margin:0 EXACTOS —
+  // el CSS está perfecto; el check comparaba mal.
   if (window.esMobile?.()) {
     const portadas = Array.from(escenario?.querySelectorAll('.elemento--registro-ua .registro-ua-portada') || [])
       .filter(vis);
     if (portadas.length) {
-      const alturas = portadas.map((p) => p.getBoundingClientRect().height);
-      const todasFijas = alturas.every((h) => Math.abs(h - 46) <= 2);
-      ok('2h · Miniatura de portada visible y con altura fija (M-05)', todasFijas,
-         `${portadas.length} miniatura(s), alturas: ${alturas.map((h) => Math.round(h)).join(',')}px (esperado ≈46px)`);
+      const medidas = portadas.map((p) => {
+        const escalaEl = p.closest('.elemento');
+        const escala = parseFloat(escalaEl?.style.getPropertyValue('--escala')) || 1;
+        const alturaReal = p.getBoundingClientRect().height;
+        return { alturaReal, esperada: 46 * escala, escala };
+      });
+      const todasFijas = medidas.every((m) => Math.abs(m.alturaReal - m.esperada) <= 2);
+      ok('2h · Miniatura de portada con altura fija proporcional a --escala (M-05)', todasFijas,
+         medidas.map((m) => `${Math.round(m.alturaReal)}px (46×${m.escala.toFixed(2)}=${m.esperada.toFixed(1)})`).join(' · '));
+      if (!todasFijas) {
+        const p0 = portadas[0];
+        const csP = getComputedStyle(p0);
+        const interior = p0.closest('.elemento-interior');
+        const csI = interior ? getComputedStyle(interior) : null;
+        console.log('  🔎 2h detalle — portada (CSS puro, pre-transform):', {
+          height: csP.height, boxSizing: csP.boxSizing, border: csP.border,
+          padding: csP.padding, margin: csP.margin,
+        });
+        console.log('  🔎 2h detalle — .elemento-interior padre:', {
+          tienePortadaClass: interior?.classList.contains('tiene-portada'),
+          padding: csI?.padding, offsetHeight: interior?.offsetHeight,
+        });
+      }
     } else {
       ok('2h · (sin registro-ua con imagenPortada en esta sede)', true, 'omitido');
+    }
+  }
+
+  // ── 1e · V-3/M-32 bis: si hubo invasión, posición absoluta completa ────
+  // Sin adivinar la causa de Oberá: si 1d o 2e ya fallaron arriba, esto
+  // vuelve a medir con el rect COMPLETO (no solo px²) del invasor y del
+  // kicker/chip, para poder reproducir la geometría exacta en simulación.
+  // FIX sobre la corrida anterior: el kicker se buscaba con
+  // document.querySelector('.sede-kicker') SIN acotar a la sede activa —
+  // las tres sedes están en el DOM a la vez (el carrusel las desplaza,
+  // no las desmonta), así que agarraba el kicker de OTRA sede (de ahí
+  // left:-979, un dato basura). Ahora usa escenario.closest('.sede'),
+  // igual que 1d ya hacía bien. Se agrega además el tamaño real del
+  // escenario — sin eso, reproducir la geometría exacta es adivinar.
+  {
+    const ultimoFail1d = R.find((x) => x.paso.startsWith('1d') && x.resultado === 'FAIL');
+    const ultimoFail2e = R.find((x) => x.paso.startsWith('2e') && x.resultado === 'FAIL');
+    if ((ultimoFail1d || ultimoFail2e) && escenario) {
+      const sedeDelEscenario = escenario.closest('.sede');
+      const escR = escenario.getBoundingClientRect();
+      const invasores = Array.from(escenario.querySelectorAll('.elemento[data-tipo="registro-ua"]'))
+        .filter((el) => !el.classList.contains('elemento--rotacion-espera'))
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          return { ua: el.dataset.ua, permanente: el.dataset.permanente,
+            xCssVar: el.style.getPropertyValue('--x'), yCssVar: el.style.getPropertyValue('--y'),
+            left: Math.round(r.left - escR.left), top: Math.round(r.top - escR.top),
+            w: Math.round(r.width), h: Math.round(r.height) };
+        });
+      console.log('  🔎 1e escenario real:', JSON.stringify({ w: Math.round(escR.width), h: Math.round(escR.height) }));
+      const zonasAReportar = [
+        ultimoFail1d && ['sede-kicker', sedeDelEscenario?.querySelector('.sede-kicker')],
+        ultimoFail2e && ['marca-chip', document.querySelector('.marca-chip')],
+      ].filter(Boolean);
+      zonasAReportar.forEach(([nombre, zonaEl]) => {
+        const zr = zonaEl?.getBoundingClientRect();
+        console.log(`  🔎 1e rect de ${nombre} (escenario-relativo):`,
+          JSON.stringify(zr ? { left: Math.round(zr.left - escR.left), top: Math.round(zr.top - escR.top), w: Math.round(zr.width), h: Math.round(zr.height) } : null));
+      });
+      console.log('  🔎 1e todos los registro-ua visibles de esta sede:', JSON.stringify(invasores, null, 1));
     }
   }
 
