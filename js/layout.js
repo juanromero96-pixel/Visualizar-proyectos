@@ -546,6 +546,22 @@ const Distribuidor = (() => {
           const residuo = residuoDe(prueba.x, prueba.y);
           if (residuo < mejorResiduo) { mejorResiduo = residuo; mejor = prueba; }
         }
+        // Instrumentación temporal (V-3, 4ª vuelta): la posición final de
+        // Oberá coincidía exactamente con el ancla original de Monte Carlo
+        // en dos corridas con ancho de escenario distinto — señal de que
+        // esta función podría no estar actuando sobre el nodo en absoluto.
+        // Expone la decisión real, no solo el resultado, cuando DIAG está
+        // activo (?diag=1 o localStorage.diag='1').
+        if (window.__DIAG__?.activo) {
+          console.log('  🔎 empuje-zona:', JSON.stringify({
+            tipo: n.el?.dataset?.tipo, ua: n.el?.dataset?.ua,
+            desde: { x: Math.round(original.x), y: Math.round(original.y) },
+            hacia: { x: Math.round(mejor.x), y: Math.round(mejor.y) },
+            residuoOriginal: Math.round(residuoDe(original.x, original.y)),
+            residuoElegido: Math.round(mejorResiduo),
+            seMovio: mejor.x !== original.x || mejor.y !== original.y,
+          }));
+        }
         if (mejor.x !== original.x || mejor.y !== original.y) {
           n.x = mejor.x; n.y = mejor.y;
           movio = true;
