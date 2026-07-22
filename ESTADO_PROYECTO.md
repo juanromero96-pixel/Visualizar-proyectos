@@ -552,3 +552,18 @@ Confirmado en código: `elementosDeConstelacion()` devuelve `[]` por diseño cua
 
 ### 17.5 Verificación
 `node --check` en los 3 archivos JS tocados: OK. Batería jsdom **ahora carga el CSS real inline** (upgrade del arnés — antes `getComputedStyle()` no reflejaba ninguna regla externa, un hueco metodológico que hacía inválido cualquier check de propiedades CSS computadas; corregido de una vez para toda verificación futura). 33/33 en la corrida de confirmación completa (32/33 en corridas donde la autoridad no cae en la constelación de la UA muestreada por azar de rotación — condición ya contemplada, se omite igual que «sede sin video»).
+
+---
+
+## 18 · V-3, segunda vuelta — causa completa, build v5.4
+
+### 18.1 Hallazgos del validador corregidos (dos, mismo patrón que antes)
+Checks `1/1b/1c` (telemetría de `#ruta-m`) nunca estuvieron gateados a mobile — en una corrida de escritorio **limpia** (sin sesión mixta previa esta vez), `#ruta-m` ausente es el comportamiento **correcto** de `crearNavMobile()`, no un fallo. Mismo tipo de error que el check de retrato en la ronda anterior. Gateado.
+
+### 18.2 V-3: la primera vuelta mejoró, no cerró — causa completa encontrada
+El fix anterior (contar el movimiento de `empujarFueraDeZonas` en la condición de corte) redujo la invasión de **2 tarjetas / 28.296px²** a **1 tarjeta / 2.835px²** — mejora real de un orden de magnitud, pero no total. Causa del resto, confirmada con los números reales medidos (kicker 245×450, posicionado a ~32px del borde del escenario, `MARGEN_ESCENARIO=18`): la función elegía la dirección de empuje por **distancia cruda** al borde de zona más cercano. Con el kicker tan pegado al borde del escenario, "empujar a la izquierda" salía elegida por ser la más corta en el papel, pero es geométricamente inviable — el clamp de escenario devolvía la tarjeta al mismo punto en cada vuelta. El loop veía "movimiento" (la función devolvía `true`) pero sin progreso neto: 50 iteraciones oscilando sin escapar. Reproducido en aislado con los números exactos: posición final atascada en `x=104`, todavía dentro de la zona.
+
+**Fix**: `empujarFueraDeZonas` ahora evalúa las 4 direcciones posibles **después** de aplicar el mismo clamp que usa cada llamador (parámetro `clamp`, la función de límites de escenario ya existente en cada camino — mobile y escritorio pasan la suya), y elige la que deja **menor solape residual** con la zona — no la de menor distancia antes de clampear. Mismo test aislado con el fix: la tarjeta escapa a `x=383.4`, fuera de la zona. Archivo: `js/layout.js`, ambos call sites actualizados (mobile L303, escritorio L358-370).
+
+### 18.3 Verificación
+`node --check` en los 3 archivos tocados: OK. Batería jsdom 32/32 (sin regresión en ningún ciclo). Simulación geométrica mobile: solape 0px² sostenido (el fix es exclusivamente de la rama de zonas, compartida pero sin cambio de comportamiento para el caso mobile ya validado). **Pendiente, como siempre**: una corrida más en escritorio con Eldorado para confirmar 0 invasores — mismo criterio que toda verificación de este documento. Build `v5.4-2026-07-22-v3fix2`.

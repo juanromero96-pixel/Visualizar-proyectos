@@ -51,8 +51,14 @@
     console.warn('⚠ Sesión mixta detectada: #ruta-m existe en escritorio → hubo emulación mobile antes en esta pestaña. Si el paso 3b da FAIL, recargar en limpio ya en escritorio antes de confiar en ese resultado.');
   }
 
-  // ── 1 · TELEMETRÍA #ruta-m (informe QA #1 · «pérdida del navegador») ──
+  // ── 1 · TELEMETRÍA #ruta-m (informe QA #1 · «pérdida del navegador», solo mobile) ──
+  // En escritorio crearNavMobile() corta en seco por diseño — #ruta-m
+  // ausente ahí es el comportamiento correcto, no un fallo. Este bloque
+  // nunca estuvo gateado; en corridas de escritorio con sesión mixta
+  // (residuo de emulación mobile previa) #ruta-m podía existir igual y
+  // ocultaba el problema — una sesión de escritorio limpia lo reveló.
   const nav = document.getElementById('ruta-m');
+  if (window.esMobile?.()) {
   if (!nav) {
     ok('1 · #ruta-m existe', false, 'AUSENTE del DOM — fallo de creación');
   } else {
@@ -78,6 +84,7 @@
     const idTop = topEl ? `${topEl.tagName}${topEl.id ? '#' + topEl.id : ''}${topEl.className ? '.' + String(topEl.className).split(' ')[0] : ''}` : '(nada)';
     ok('1c · #ruta-m no ocluido (pintado encima)', !ocluido,
        `elementFromPoint(${Math.round(px)},${Math.round(py)}) → ${idTop} | z-index nav:${cs.zIndex} opacity:${cs.opacity}`);
+  }
   }
 
   // ── 1d · V-3: invasión real de la zona protegida del panel de sede ────

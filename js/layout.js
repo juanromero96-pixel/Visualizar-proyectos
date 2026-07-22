@@ -290,17 +290,18 @@ const Distribuidor = (() => {
       // logo (y<18) o sobre el nav (y>alto-18). Ahora se usa un limitador mobile
       // que respeta MARGEN_TOP (72px) y MARGEN_BOT (52px) en los bordes verticales
       // y admite el SANGRADO_X en los horizontales (coherente con la colocación).
+      const clampMobile = (n) => {
+        n.x = Math.max(n.w/2 + MARGEN_ESCENARIO - SANGRADO_X,
+              Math.min(ancho - n.w/2 - MARGEN_ESCENARIO + SANGRADO_X, n.x));
+        n.y = Math.max(MARGEN_TOP + n.h/2, Math.min(alto - MARGEN_BOT - n.h/2, n.y));
+      };
       for (let iter = 0; iter < 6; iter++) {
         for (let i = 0; i < nodos.length; i++)
           for (let j = i + 1; j < nodos.length; j++)
             separarPar(nodos[i], nodos[j]);
         // Limitar con márgenes correctos para mobile (header + nav)
-        nodos.forEach((n) => {
-          n.x = Math.max(n.w/2 + MARGEN_ESCENARIO - SANGRADO_X,
-                Math.min(ancho - n.w/2 - MARGEN_ESCENARIO + SANGRADO_X, n.x));
-          n.y = Math.max(MARGEN_TOP + n.h/2, Math.min(alto - MARGEN_BOT - n.h/2, n.y));
-        });
-        empujarFueraDeZonas(nodos, zonas);
+        nodos.forEach(clampMobile);
+        empujarFueraDeZonas(nodos, zonas, clampMobile);
       }
 
       // ── PASE DE LEGIBILIDAD (FASE 2) — solo desktop ────────────────────
@@ -354,8 +355,9 @@ const Distribuidor = (() => {
     // ya retornó). Evita el cálculo de ~2.200 candidatos × n en mobile.
     const factor = ubicarPorBusqueda(nodos, ancho, alto, zonas);
 
-    nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
-    empujarFueraDeZonas(nodos, zonas);
+    const clampEscritorio = (n) => limitarAlEscenario(n, ancho, alto);
+    nodos.forEach(clampEscritorio);
+    empujarFueraDeZonas(nodos, zonas, clampEscritorio);
     for (let iter = 0; iter < ITERACIONES_LIMPIEZA_FINAL; iter++) {
       let huboMovimiento = false;
       for (let i = 0; i < nodos.length; i++)
@@ -365,8 +367,8 @@ const Distribuidor = (() => {
       // separarPar lo hacía, y el loop podía cortar justo después de que
       // un empuje de zona introdujera una colisión nueva sin darle a
       // separarPar una vuelta más para resolverla.
-      if (empujarFueraDeZonas(nodos, zonas)) huboMovimiento = true;
-      nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
+      if (empujarFueraDeZonas(nodos, zonas, clampEscritorio)) huboMovimiento = true;
+      nodos.forEach(clampEscritorio);
       if (!huboMovimiento) break;
     }
 
@@ -493,33 +495,46 @@ const Distribuidor = (() => {
     return true;
   }
 
-  function empujarFueraDeZonas(nodos, zonas) {
+  function empujarFueraDeZonas(nodos, zonas, clamp) {
     if (!zonas.length) return false;
-    // V-3 (Plan Maestro Fase A · evidencia de dispositivo, Eldorado desktop):
-    // devuelve si movió algo. Antes era void — el loop de limpieza final
-    // (ITERACIONES_LIMPIEZA_FINAL) solo medía movimiento de separarPar para
-    // decidir si cortar. Si ESTA función corregía una invasión de zona en
-    // la iteración que separarPar ya no movía nada, el loop cortaba ahí
-    // mismo sin darle a separarPar la chance de resolver una colisión
-    // nueva que el propio empuje pudo haber creado contra un vecino.
-    // Evidencia real: kicker 265×450 en Eldorado — más alto de lo que
-    // parece a simple vista (52vh) — con 2 tarjetas invadiendo, una en
-    // 28.296px² (sustancialmente adentro, no un roce de borde: exactamente
-    // el patrón que un corte prematuro dejaría a medio resolver).
+    // V-3 (Plan Maestro Fase A · evidencia de dispositivo, 2ª vuelta):
+    // la primera versión empujaba hacia el borde de la zona a menor
+    // DISTANCIA CRUDA. Con el kicker de Eldorado a ~32px del borde del
+    // escenario (MARGEN_ESCENARIO=18), "empujar a la izquierda" salía
+    // elegido por ser la distancia más chica, pero era geométricamente
+    // inviable: el clamp de escenario devolvía la tarjeta al mismo punto
+    // en cada vuelta — "movimiento" que el loop de limpieza veía como
+    // progreso pero que no escapaba nunca la zona. Reproducido con los
+    // números reales medidos (kicker 245×450, zona x:[12.4,297.4]): la
+    // tarjeta quedaba fija en x=104, todavía adentro, 50 iteraciones sin
+    // resolverlo. Ahora se evalúan las 4 direcciones DESPUÉS de aplicar
+    // el mismo clamp que usa el llamador (parámetro opcional `clamp`), y
+    // se elige la que deja MENOS solape residual con la zona — no la de
+    // menor distancia antes de clampear.
     let movio = false;
     nodos.forEach((n) => {
       zonas.forEach((zona) => {
         if (!cajaSuperponeZona(n.x, n.y, n.w, n.h, zona)) return;
-        const izq = n.x - n.w/2, der = n.x + n.w/2;
-        const arr = n.y - n.h/2, abj = n.y + n.h/2;
-        const dIzq = der - zona.izquierda, dDer = zona.derecha - izq;
-        const dArr = abj - zona.arriba,    dAbj = zona.abajo   - arr;
-        const min = Math.min(dIzq, dDer, dArr, dAbj);
-        if      (min === dDer) n.x = zona.derecha   + n.w/2;
-        else if (min === dIzq) n.x = zona.izquierda - n.w/2;
-        else if (min === dAbj) n.y = zona.abajo     + n.h/2;
-        else                   n.y = zona.arriba    - n.h/2;
-        movio = true;
+        const original = { x: n.x, y: n.y };
+        const opciones = [
+          { x: zona.derecha + n.w / 2,   y: n.y },
+          { x: zona.izquierda - n.w / 2, y: n.y },
+          { x: n.x, y: zona.abajo + n.h / 2 },
+          { x: n.x, y: zona.arriba - n.h / 2 },
+        ];
+        let mejor = null, mejorResiduo = Infinity;
+        for (const op of opciones) {
+          const prueba = { x: op.x, y: op.y, w: n.w, h: n.h };
+          if (clamp) clamp(prueba);
+          const ix = Math.max(0, Math.min(prueba.x + prueba.w / 2, zona.derecha) - Math.max(prueba.x - prueba.w / 2, zona.izquierda));
+          const iy = Math.max(0, Math.min(prueba.y + prueba.h / 2, zona.abajo) - Math.max(prueba.y - prueba.h / 2, zona.arriba));
+          const residuo = ix * iy;
+          if (residuo < mejorResiduo) { mejorResiduo = residuo; mejor = prueba; }
+        }
+        if (mejor && (mejor.x !== original.x || mejor.y !== original.y)) {
+          n.x = mejor.x; n.y = mejor.y;
+          movio = true;
+        }
       });
     });
     return movio;
