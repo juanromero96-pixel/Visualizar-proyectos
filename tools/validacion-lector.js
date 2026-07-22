@@ -222,6 +222,20 @@
        (estadoCiclo.faltantes.length ? ` · faltan: ${estadoCiclo.faltantes.slice(0, 5).join(', ')}${estadoCiclo.faltantes.length > 5 ? '…' : ''}` : ' · completo'));
   }
 
+  // ── 2h · M-05: miniatura de portada en registro-ua mobile ──────────────
+  if (window.esMobile?.()) {
+    const portadas = Array.from(escenario?.querySelectorAll('.elemento--registro-ua .registro-ua-portada') || [])
+      .filter(vis);
+    if (portadas.length) {
+      const alturas = portadas.map((p) => p.getBoundingClientRect().height);
+      const todasFijas = alturas.every((h) => Math.abs(h - 46) <= 2);
+      ok('2h · Miniatura de portada visible y con altura fija (M-05)', todasFijas,
+         `${portadas.length} miniatura(s), alturas: ${alturas.map((h) => Math.round(h)).join(',')}px (esperado ≈46px)`);
+    } else {
+      ok('2h · (sin registro-ua con imagenPortada en esta sede)', true, 'omitido');
+    }
+  }
+
   // ── 3 · Abrir un expediente UA ─────────────────────────────────────────
   const ua = escenario?.querySelector('.elemento[data-tipo="registro-ua"]');
   if (!ua) { ok('3 · Hay expediente UA visible', false); console.table(R); return; }

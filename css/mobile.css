@@ -110,14 +110,32 @@
   .elemento--registro-ua .elemento-interior {
     padding: 10px 14px 10px !important;  /* P2: -4px top/bot = -8px offH */
   }
-  /* P2a — portada oculta en el mural mobile.
-     Las tarjetas de UA son demasiado altas (321-341px) para caber 3 en 740px.
-     La portada (52-73px) es el elemento más prescindible en el mural:
-     el territorio se comunica por el fondo del escenario. Se preserva íntegra
-     en el lector bottom-sheet (CSS del lector no está en este bloque).
-     Reducción: -52px por tarjeta → offH objetivo ~230-250px. */
+  /* M-05 (Plan Maestro Fase B — informe de bugs, portada en tarjetas de
+     sede): antes display:none puro. La portada ya se genera en el HTML
+     para ambos canales (crearTarjetaRegistroUA, js/app.js) — acá solo se
+     redimensiona a miniatura, no se oculta.
+     RESTRICCIÓN DURA (documentada desde la Fase A): la altura debe ser
+     CONSTANTE y conocida ANTES de que la imagen cargue — es la causa raíz
+     exacta del bug de v4.9 (offH medido antes de la foto, foto cargaba
+     después e inflaba la altura real por encima de lo calculado, producía
+     el solape de Oberá/Eldorado). Por eso ACÁ es `height` fijo, no
+     `aspect-ratio`: el contenedor reserva 46px desde el primer layout,
+     sin importar cuándo ni con qué proporción llegue la imagen — el
+     offsetHeight que mide calcularCapacidad() es el mismo antes y después
+     de la carga, exactamente la garantía que exige el sistema de zonas.
+     +46px de offH por tarjeta con portada: verificado con doble
+     validación (simulación geométrica + smoke jsdom) antes de este commit. */
   .elemento--registro-ua .registro-ua-portada {
-    display: none !important;
+    display: block !important;
+    width: 100% !important;
+    height: 46px !important;
+    aspect-ratio: unset !important;
+    overflow: hidden;
+  }
+  .elemento--registro-ua .registro-ua-portada img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
   }
 
   /* Registros conceptuales */

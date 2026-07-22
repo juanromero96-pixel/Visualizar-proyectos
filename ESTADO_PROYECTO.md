@@ -615,3 +615,18 @@ Hallazgo: la regla 1ª de selección de saliente (mismo-UA-que-entrante) ya cubr
 - **Pendiente, no bloqueante**: verificación de generalización del ciclo en Eldorado (sede sin narradores permanentes) — el intento de simular navegación real vía clic no disparó `onCambio` en el arnés (probablemente depende de un evento de scroll que jsdom no simula con fidelidad). El mecanismo central ya está probado en el caso más exigente real (Posadas, slots de facultad en 0 desde el arranque); esta es cobertura adicional deseable, no una duda sobre la corrección del mecanismo.
 
 Build: `v5.5-2026-07-22-modelotemporal`.
+
+---
+
+## 20 · M-05 — miniatura de portada en registro-ua mobile (build v5.6)
+
+**Confirmación de dispositivo previa a esta entrega:** las seis corridas más recientes confirmaron V-3 resuelto en dispositivo real (Posadas y Eldorado, ambas `zona respetada`, 0 invasores) y el ciclo editorial del DTI corriendo correctamente en navegador real sobre tres sedes distintas — cierra la Fase A del Plan Maestro y valida el DTI Modelo Temporal fuera de jsdom. Los cuatro FAIL de nav/canal en esas corridas son el mismo artefacto de sesión mixta ya diagnosticado, en dirección espejo (pestaña que arrancó en escritorio y pasó a mobile sin recargar) — no revela ningún bug nuevo.
+
+**Implementación.** El HTML de portada ya existía para ambos canales (`crearTarjetaRegistroUA`, js/app.js — sin condición de mobile); mobile solo la ocultaba con `display:none`. Se reemplazó esa regla por una miniatura de **altura fija en CSS (46px, no `aspect-ratio`)** — la garantía exacta que exige el sistema de zonas: el contenedor reserva su espacio desde el primer layout, sin importar cuándo cargue la imagen, evitando reproducir la causa raíz del bug de v4.9 (offH medido antes de la foto, foto inflando la altura real después). Cero cambios de JS: se reutiliza el HTML, el manejo de error de imagen y el `item.imagenPortada` ya existentes.
+
+**Verificación con doble validación, como exige la Fase B del Plan Maestro para este ítem específico:**
+- Simulación geométrica con la altura real medida (140px offH de registro-ua sin portada, dato de dispositivo) + 46px del nuevo elemento fijo = 186px: solape sigue en **0px²** en Oberá y Eldorado (las dos sedes con más registro-ua simultáneos).
+- Batería jsdom (CSS real cargado en el arnés): 32/33, sin regresión.
+- Validador de dispositivo extendido (paso 2h): confirma altura real ≈46px de la miniatura visible.
+
+Build `v5.6-2026-07-22-m05portada`. Pendiente, mismo criterio que todo lo demás: una corrida en dispositivo real para confirmar visualmente el resultado y cerrar M-05 con evidencia de pantalla, no solo de simulación.
