@@ -918,9 +918,11 @@
 
 /* ═══════════════════════════════════════════════════════════════════════
    E4 (DTI §8) — Compactación final mobile · build v4.4
-   Bloque aislado al final del archivo: solo ≤820px, cero efecto desktop.
+   Bloque aislado al final del archivo: doble criterio mobile (mismo que el
+   bloque principal, L28) — cubre también layout-viewports inflados >820px
+   en dispositivos táctiles. Cero efecto desktop (pointer:fine no matchea).
    ═══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 820px) {
+@media (max-width: 820px), (pointer: coarse) and (hover: none) {
 
   /* ── Video CHIP (sedes con ≥3 videos; clase asignada en app.js) ─────────
      Miniatura y resumen fuera del mural (íntegros en el Lector).
@@ -988,7 +990,7 @@
 /* ── v4.6 · Gancho editorial (invitación a la lectura) ──────────────────
    Principio: en el estado compacto sobrevive lo que INVITA; el detalle
    vive en el Lector. Cambios neutros en altura (±2-4px por tarjeta). */
-@media (max-width: 820px) {
+@media (max-width: 820px), (pointer: coarse) and (hover: none) {
   /* UA: el título completo es el gancho → 3 líneas; el resumen sale del
      mural (−18px compensa la 3ª línea del título). Íntegro en el Lector. */
   .elemento--registro-ua .registro-titulo  { -webkit-line-clamp: 3 !important; }
@@ -1003,7 +1005,7 @@
 }
 
 /* ═══ F1 · Microinteracciones (Manual §6/§8) · v4.8 ═══ */
-@media (max-width: 820px) {
+@media (max-width: 820px), (pointer: coarse) and (hover: none) {
   /* Press feedback: escala 0.985 en 120ms (P5: un gesto, una promesa) */
   .elemento:active .elemento-interior { transform: scale(0.985); }
   .elemento .elemento-interior { transition: transform 120ms ease; }
@@ -1028,4 +1030,341 @@
   @keyframes destello-ua { 0%{box-shadow:0 0 0 0 var(--color-ua,#00a3e0)}
     100%{box-shadow:0 0 0 14px rgba(0,0,0,0)} }
   .elemento--origen .elemento-interior { animation: destello-ua 600ms ease-out; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   F2–F4 · LECTOR EDITORIAL MOBILE — Manual §5 (portadas), §7 (anatomía),
+   §8 (tokens). Build v4.9.
+   Los nodos .lem-* SOLO existen cuando lector.js los crea en su rama
+   esMobile() — mismo criterio de guard que .bottom-sheet: sin media query,
+   inmune a cualquier anomalía de layout-viewport, cero alcance desktop.
+   Tokens §8 aplicados: radio 3 · vidrio 8 % blanco · sombra única ·
+   120 ms press · 180 ms cross-fade · 280 ms apertura · 600 ms destello.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.lem-velo {
+  position: fixed; inset: 0; z-index: 520;
+  background: rgba(0, 0, 0, 0.62);
+  opacity: 0; pointer-events: none;
+  transition: opacity 280ms ease-out;
+}
+.lem-velo--visible { opacity: 1; pointer-events: auto; }
+
+.lem {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 521;
+  height: 92dvh;               /* fallback */
+  height: 92svh;               /* §7: alto 92 svh — misma línea base que el mural */
+  background: rgba(8, 12, 16, 0.98);
+  border-top: 2px solid var(--color-ua, var(--unam-cian));
+  border-radius: 3px 3px 0 0;                       /* §8: radio 3 px */
+  transform: translateY(103%);
+  transition: transform 280ms ease-out;             /* §7: apertura 280 ms */
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.5);      /* §8: sombra única suave */
+}
+.lem--abierta { transform: translateY(0); }
+
+/* Grabber 36×4 (§7) — señal de arrastre, no interactivo por sí mismo */
+.lem-grabber {
+  position: absolute; top: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 36px; height: 4px; border-radius: 2px;
+  background: rgba(245, 243, 238, 0.55);
+  z-index: 7; pointer-events: none;
+}
+
+/* Cabecera sticky (§7): transparente sobre el hero; al scrollear gana
+   fondo de vidrio y muestra badge + título en 1 línea. El ✕ (44 px) está
+   presente desde el primer frame. */
+.lem-topbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 6;
+  display: flex; align-items: center; gap: 10px;
+  min-height: 54px;
+  padding: 10px 8px 8px 14px;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  pointer-events: none;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.lem-topbar-badge,
+.lem-topbar-titulo { opacity: 0; transition: opacity 180ms ease; }
+.lem-topbar--fija {
+  background: rgba(8, 12, 16, 0.96);
+  border-bottom-color: rgba(245, 243, 238, 0.12);
+}
+.lem-topbar--fija .lem-topbar-badge,
+.lem-topbar--fija .lem-topbar-titulo { opacity: 1; }
+.lem-topbar-badge {
+  flex-shrink: 0;
+  font-size: 0.60rem; font-weight: 700;              /* §8: badge 0.60 */
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-ua, var(--unam-cian));
+  border-left: 4px solid var(--color-ua, var(--unam-cian));  /* pleca 4 px (P2) */
+  padding-left: 6px;
+}
+.lem-topbar-titulo {
+  flex: 1; min-width: 0;
+  font-size: 0.82rem; font-weight: 700;
+  color: var(--papel);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lem-cerrar {
+  pointer-events: auto;
+  width: 44px; height: 44px; flex-shrink: 0;          /* checklist: ≥44 px */
+  border: none; border-radius: 50%;
+  background: rgba(8, 12, 16, 0.55);
+  color: var(--papel);
+  font-size: 1rem; cursor: pointer;
+  display: grid; place-items: center;
+  transition: background-color 120ms ease;            /* §8: press 120 ms */
+}
+.lem-topbar--fija .lem-cerrar { background: rgba(245, 243, 238, 0.08); }
+.lem-cerrar:active { background: rgba(245, 243, 238, 0.20); }
+
+/* Cuerpo con scroll interno; el cross-fade de la deriva (F4) vive acá */
+.lem-scroll {
+  flex: 1; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  opacity: 1;
+  transition: opacity 180ms ease;                     /* §8: cross-fade 180 ms */
+}
+.lem-scroll--fundido { opacity: 0; }
+
+/* ── HERO (§5) ─────────────────────────────────────────────────────── */
+.lem-hero {
+  position: relative; width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--tinta, #0a0e10);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.lem-hero--conceptual { aspect-ratio: auto; min-height: 152px; }
+.lem-hero-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+/* Fallback §5: bloque del color institucional de la UA con el monograma
+   de la sigla al 12 % de opacidad. */
+.lem-hero--fallback { background: var(--color-ua, var(--unam-cian)); }
+.lem-hero-monograma {
+  display: none;
+  position: absolute; inset: 0;
+  place-items: center;
+  font-weight: 700;
+  font-size: clamp(64px, 24vw, 118px);
+  letter-spacing: 0.02em;
+  color: var(--papel);
+  opacity: 0.12;
+  pointer-events: none; user-select: none;
+}
+.lem-hero--fallback .lem-hero-monograma { display: grid; }
+.lem-hero-velo {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 40%;                                        /* §5: velo inferior 40 % */
+  background: linear-gradient(180deg, rgba(8,12,16,0) 0%, rgba(8,12,16,0.90) 100%);
+  pointer-events: none;
+}
+.lem-hero-meta {
+  position: absolute; left: 16px; right: 16px; bottom: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.lem-hero-badge {
+  align-self: flex-start;
+  font-size: 0.60rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-ua, var(--unam-cian));
+  border-left: 4px solid var(--color-ua, var(--unam-cian));
+  padding-left: 6px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+.lem-hero--fallback .lem-hero-badge { color: var(--papel); border-left-color: var(--papel); }
+.lem-hero-titulo {
+  margin: 0;
+  font-size: 1.25rem; line-height: 1.25; font-weight: 700;   /* §8: título hero 1.25 */
+  color: var(--papel);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.lem-hero-nombre {
+  font-size: 1.15rem; font-weight: 700; color: var(--papel);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.lem-hero-cargo {
+  font-size: 0.72rem; letter-spacing: 0.03em;
+  color: rgba(245, 243, 238, 0.88);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+/* ■ centrado 56 px en heroes de video (§5) — lleva al reproductor */
+.lem-hero-play {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px; height: 56px;
+  border: none; border-radius: 50%;
+  background: rgba(8, 12, 16, 0.62);
+  color: var(--papel); font-size: 1.15rem;
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+.lem-hero-play:active { background: rgba(8, 12, 16, 0.8); transform: translate(-50%, -50%) scale(0.96); }
+
+/* ── CUERPO (§7/§8): tipografía de lectura ─────────────────────────── */
+.lem-cuerpo {
+  padding: 20px 16px 8px;
+  max-width: 34em;                                    /* §8: máx 34 em */
+  margin: 0 auto;
+  width: 100%;
+}
+.lem-cuerpo p {
+  margin: 0 0 16px;
+  font-size: 1.02rem; line-height: 1.6;               /* §8: cuerpo 1.02 · 1.6 */
+  font-weight: 300;
+  color: var(--papel);
+}
+.lem-ua-completa {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.03em;
+  opacity: 0.72;
+  margin-bottom: 14px !important;
+}
+/* Cita destacada con pleca 3 px del color de la UA (§7/§8) */
+.lem-cita {
+  margin: 20px 0;
+  padding: 2px 0 2px 12px;
+  border-left: 3px solid var(--color-ua, var(--unam-cian));
+  font-style: italic;
+  font-size: 1.02rem; line-height: 1.55;
+  color: var(--papel);
+}
+.lem-cita cite {
+  display: block; margin-top: 8px;
+  font-style: normal;
+  font-size: 0.72rem; letter-spacing: 0.03em;
+  opacity: 0.75;
+}
+.lem-cita--integra { font-size: 1.15rem; line-height: 1.6; }   /* §7: testimonios 1.15 */
+.lem-institucion { font-size: 0.72rem !important; opacity: 0.7; }
+
+/* Índice de proyectos plegado (F3 · §11: lista + «ver N restantes») */
+.lem-proyectos { margin: 24px 0 8px; }
+.lem-proyectos-titulo {
+  margin: 0 0 8px;
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-ua, var(--unam-cian));
+}
+.lem-proyectos-lista { list-style: none; margin: 0; padding: 0; }
+.lem-proyectos-lista li {
+  padding: 10px 0;
+  border-top: 1px solid rgba(245, 243, 238, 0.10);
+  line-height: 1.45;
+}
+.lem-proyectos-lista li strong { display: block; font-size: 0.86rem; color: var(--papel); }
+.lem-proyectos-lista li span {
+  display: block; margin-top: 2px;
+  font-size: 0.80rem; font-weight: 300;
+  color: rgba(245, 243, 238, 0.82);
+}
+.lem-proyectos-mas {
+  margin-top: 10px;
+  width: 100%; min-height: 44px;                      /* checklist: ≥44 px */
+  border: 1px solid rgba(245, 243, 238, 0.20);
+  border-radius: 3px;
+  background: rgba(245, 243, 238, 0.08);              /* §8: vidrio 8 % blanco */
+  color: var(--papel);
+  font-size: 0.78rem; letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.lem-proyectos-mas:active { background: rgba(245, 243, 238, 0.14); }
+
+/* Galería full-bleed: swipe con snap + puntos (F3 · §7) */
+.lem-galeria { margin: 20px -16px; }
+.lem-galeria-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.lem-galeria-track::-webkit-scrollbar { display: none; }
+.lem-galeria-track figure { flex: 0 0 100%; margin: 0; scroll-snap-align: center; }
+.lem-galeria-track img {
+  width: 100%; aspect-ratio: 16 / 9;
+  object-fit: cover; display: block;
+}
+.lem-galeria-puntos { display: flex; justify-content: center; gap: 6px; padding: 10px 0 0; }
+.lem-galeria-punto {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(245, 243, 238, 0.30);
+  transition: background-color 180ms ease;
+}
+.lem-galeria-punto--activo { background: var(--color-ua, var(--unam-cian)); }
+
+/* Player 16:9 inline, nunca autoplay (F3 · §7) */
+.lem-video-marco { margin: 0 -16px 14px; }
+.lem-video-ratio { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.lem-video-iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.lem-video-titulo { margin: 0 0 4px; font-size: 0.95rem; font-weight: 700; color: var(--papel); }
+.lem-video-credito { margin: 0 0 14px !important; font-size: 0.72rem !important; opacity: 0.75; }
+
+/* ── CONSTELACIÓN (F4): franja de deriva editorial ─────────────────── */
+.lem-constelacion {
+  border-top: 1px solid rgba(245, 243, 238, 0.10);
+  margin-top: 8px;
+  padding: 4px 0 calc(20px + env(safe-area-inset-bottom, 0px));
+}
+.lem-constelacion-rotulo {
+  margin: 12px 16px 10px;
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(245, 243, 238, 0.60);
+}
+.lem-chips {
+  display: flex; gap: 8px;
+  overflow-x: auto;
+  padding: 0 16px 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.lem-chips::-webkit-scrollbar { display: none; }
+.lem-chip {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 7px;
+  min-height: 44px;                                   /* checklist: ≥44 px */
+  max-width: 72vw;
+  padding: 6px 12px;
+  border: 1px solid rgba(245, 243, 238, 0.18);
+  border-left: 3px solid var(--color-ua, var(--unam-cian));
+  border-radius: 3px;
+  background: rgba(245, 243, 238, 0.08);              /* §8: vidrio 8 % */
+  color: var(--papel);
+  font-family: inherit; font-size: 0.76rem;
+  cursor: pointer;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+.lem-chip:active { background: rgba(245, 243, 238, 0.14); transform: scale(0.985); }
+.lem-chip-icono { color: var(--color-ua, var(--unam-cian)); font-size: 0.72rem; flex-shrink: 0; }
+.lem-chip-texto { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Estado §8 «en-lector»: la tarjeta de ORIGEN queda señalada en el mural
+   mientras el Lector está abierto (memoria espacial, P6). */
+.elemento--en-lector .elemento-interior {
+  box-shadow:
+    0 0 0 2px var(--color-ua, var(--unam-cian)),
+    0 4px 16px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Foco accesible dentro del lector (checklist §12) */
+.lem :focus-visible {
+  outline: 2px solid var(--color-ua, var(--unam-cian)) !important;
+  outline-offset: 2px !important;
+}
+
+/* Reduced motion: el Lector respeta la preferencia del sistema */
+@media (prefers-reduced-motion: reduce) {
+  .lem, .lem-velo, .lem-scroll, .lem-topbar,
+  .lem-topbar-badge, .lem-topbar-titulo { transition: none !important; }
 }

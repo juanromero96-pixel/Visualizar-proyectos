@@ -389,3 +389,54 @@ Para agregar imagen a FAyD: copiar `fayd.jpg` a `assets/ua/`, agregar `"imagenPo
 # Producción: push a GitHub → Vercel auto-deploy
 # El ZIP en outputs/ es la versión para subir si no hay acceso a git
 ```
+
+---
+
+## 13. Lector editorial mobile — Fases F2–F4 (build v4.9)
+
+> Continúa el roadmap del **Manual del Sistema Editorial Mobile v1.0** (§5 portadas/heroes · §6 invitaciones · §7 anatomía del Lector · §8 tokens · §11 implementación por componente · §12 roadmap F0–F5). F0 y F1 estaban confirmadas al inicio; esta iteración implementa F2, F3 y F4 completas, más la batería automatizable de F5. **Desktop permanece intocable.**
+
+### 13.1 Qué se implementó
+
+| Fase | Alcance | Manual |
+|---|---|---|
+| **F2** | Hero por tipo (portada UA 16:9 · foto de persona · miniatura de video · variante conceptual corta), velo inferior 40 %, fallback con monograma al 12 %, cabecera sticky que aparece al scrollear (badge + título 1 línea + ✕ 44 px siempre visible), grabber 36×4, drag-down de cierre (solo con scroll en tope y dirección vertical dominante), tipografía de lectura 1.02rem/1.6 máx 34em | §5, §7, §8 |
+| **F3** | Índice de proyectos plegado (4 visibles + «Ver N restantes» que se retira al desplegar), galería con scroll-snap + puntos (componente listo; el corpus no trae galerías todavía), reproductor 16:9 `youtube-nocookie` **sin autoplay** con título y crédito debajo | §7, §11 |
+| **F4** | Franja **«En esta constelación»**: chips 44 px con icono por tipo + etiqueta, deriva entre registros con cross-fade 180 ms **sin cerrar el Lector**, origen inmutable (P6). Incluye el audiovisual aunque esté en espera de rotación (P3); excluye autoridades UNaM descartadas por el sorteo | §7 |
+| **F5** | Batería de consola `tools/validacion-lector.js` para dispositivo real (lo automatizable; la sesión con 5–8 lectores reales es dependencia humana externa) | §12 |
+
+### 13.2 Arquitectura
+
+- **Un solo motor, no dos.** El Lector editorial vive dentro de `js/lector.js`, en la rama que ya existía tras `esMobile()`. Reemplazó al canal provisional que reutilizaba el bottom sheet genérico con flechas ←/→. El modal desktop (`.lector-superposicion`, `abrirEnDesktop`, `construirContenido*`) queda **100 % intacto**.
+- **Namespace `.lem-*`.** Todos los nodos del Lector se crean solo en la rama mobile de `lector.js`. Su CSS (bloque F2–F4 al final de `mobile.css`) **no lleva media query**: el guard es la creación en JS, exactamente el mismo criterio que `.bottom-sheet`. Esto lo hace inmune a cualquier anomalía de layout-viewport.
+- **`el.__item` (app.js).** Al crear cada tarjeta, `app.js` guarda el item de datos completo como propiedad JS pura (`el.__item = item`). El Lector lee de ahí la portada, el cuerpo, los proyectos, la foto en resolución real y el `youtubeId`, sin depender del DOM recortado del mural. No es atributo, no lo consume ningún selector ni código desktop.
+
+### 13.3 Verificación
+
+| Prueba | Resultado |
+|---|---|
+| `node --check` en `lector.js`, `app.js`, `validacion-lector.js` | OK |
+| Paridad clases JS↔CSS (40 clases `.lem-*` + estados) | Completa, sin faltantes |
+| Smoke test jsdom (código real contra mural mínimo) | **33/33 PASS** — apertura, hero, topbar espejo, cuerpo, cita, índice plegado 4/2, constelación (incluye video en espera), deriva sin cerrar, nocookie sin autoplay, cierre con destello, scroll restaurado, aria, reanudar rotación, ciclo testimonio |
+| No-regresión desktop (diff vs build anterior) | Solo 4 archivos tocados + 1 nuevo. `styles.css`, `layout.js`, `mobile.js`, los 3 JSON: **idénticos byte a byte**. Diff de `app.js` = build + `__item` + microcopy §6 (nada más) |
+| Contraste sobre fondo `rgba(8,12,16,.98)` | Cuerpo papel 17.69:1, meta 9.69:1 (AA texto normal). Badges UA: idéntica situación institucional que el mural v4.4–v4.7 (paleta ratificada; el hero lleva `text-shadow`) |
+| Render de evidencia | `tools/evidencia-lector-v4.9.png` — tres tipos de documento a 393 px con tokens §8 literales |
+
+### 13.4 El gate de build (verificación en dispositivo)
+
+Antes de auditar cualquier cosa en el teléfono:
+
+1. Abrir la consola y confirmar el banner cian **`v4.9-2026-07-19-f2f4`**. **Sin banner = el navegador sirve caché**: detener toda auditoría y forzar recarga (los assets llevan `?v=4.9`; si persiste, redesplegar).
+2. Con el banner correcto, pegar `tools/validacion-lector.js` → imprime la tabla PASS/FAIL del ciclo completo.
+3. El snippet `tools/diagnostico-pipeline.js` sigue aplicando al mural (posición calculada vs renderizada, |Δ|≤1px).
+
+### 13.5 Qué queda (fuera de código)
+
+- **Sesión F5 con 5–8 lectores reales** (§12): dependencia humana externa. El script de verificación está listo; la observación de personas usando el Lector no.
+- **Galerías**: el componente está implementado y probado, pero **ningún registro del corpus tiene el campo `galeria`**. Cuando se agregue a `registros.json`, el Lector las renderiza sin cambios de código (dato manda).
+
+### 13.6 Principios que gobiernan esta capa
+
+- **P2 — pleca, no relleno.** La identidad de la UA se marca con una pleca (4 px en badges/hero, 3 px en citas y chips) del color institucional, nunca tiñendo el fondo. Preserva legibilidad AA del texto sobre `#080c10`.
+- **P3 — el audiovisual entra por rotación y por Lector.** Los satélites en espera de rotación integran la constelación del Lector aunque no estén visibles en el mural en ese instante.
+- **P6 — el origen es inmutable.** Derivar entre registros nunca reescribe el punto de retorno: al cerrar, el foco y el destello vuelven a la tarjeta desde la que se abrió el Lector, y el scroll del mural se restaura al píxel.

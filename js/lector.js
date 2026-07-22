@@ -205,75 +205,507 @@ const Lector = (() => {
     window.setTimeout(() => botonCerrar.focus(), 60);
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     LECTOR EDITORIAL MOBILE — Manual del Sistema Editorial §5 · §7 · §8
+     Fases F2 (hero, cabecera sticky, tipografía, grabber, drag-down),
+     F3 (índice de proyectos plegado, galería, player 16:9 sin autoplay)
+     y F4 (franja «En esta constelación» con cross-fade, sin cerrar).
+     ─────────────────────────────────────────────────────────────────────
+     Reemplaza al canal provisional que reutilizaba el bottom sheet
+     genérico con flechas ←/→: la deriva entre registros ahora ocurre por
+     los chips de constelación (misma capacidad, forma del Manual §7).
+     Todo vive detrás de esMobile(); Desktop conserva su modal intacto.
+     Los nodos .lem-* se crean solo acá — su CSS (mobile.css) no necesita
+     media query, igual que .bottom-sheet.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  let lem = null;         // referencias del lector editorial (creación perezosa)
+  let lemOrigen = null;   // { el, scrollLeft } — P6: retorno exacto + destello
+  let lemActual = null;   // { el, registro } — documento en pantalla (deriva F4)
+
+  const ICONO_TIPO = {
+    'registro-ua': '▤', 'testimonio': '\u201C', 'video': '▶', 'registro-conceptual': '◦',
+  };
+
+  function asegurarLectorEditorial() {
+    if (lem) return lem;
+
+    const velo = document.createElement('div');
+    velo.className = 'lem-velo';
+
+    const sheet = document.createElement('section');
+    sheet.className = 'lem';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+    sheet.setAttribute('aria-label', 'Lector del compendio');
+    sheet.innerHTML = `
+      <div class="lem-grabber" aria-hidden="true"></div>
+      <header class="lem-topbar">
+        <span class="lem-topbar-badge" aria-hidden="true"></span>
+        <span class="lem-topbar-titulo" aria-hidden="true"></span>
+        <button type="button" class="lem-cerrar" aria-label="Cerrar lector">✕</button>
+      </header>
+      <div class="lem-scroll">
+        <div class="lem-hero"></div>
+        <div class="lem-cuerpo"></div>
+        <aside class="lem-constelacion" hidden aria-label="Otros registros de esta constelación">
+          <p class="lem-constelacion-rotulo">En esta constelación</p>
+          <div class="lem-chips" role="list"></div>
+        </aside>
+      </div>
+    `;
+    document.body.appendChild(velo);
+    document.body.appendChild(sheet);
+
+    lem = {
+      velo, sheet,
+      topbar:       sheet.querySelector('.lem-topbar'),
+      topBadge:     sheet.querySelector('.lem-topbar-badge'),
+      topTitulo:    sheet.querySelector('.lem-topbar-titulo'),
+      btnCerrar:    sheet.querySelector('.lem-cerrar'),
+      scroll:       sheet.querySelector('.lem-scroll'),
+      hero:         sheet.querySelector('.lem-hero'),
+      cuerpo:       sheet.querySelector('.lem-cuerpo'),
+      constelacion: sheet.querySelector('.lem-constelacion'),
+      chips:        sheet.querySelector('.lem-chips'),
+    };
+
+    lem.btnCerrar.addEventListener('click', cerrarLectorEditorial);
+    velo.addEventListener('click', cerrarLectorEditorial);
+
+    // §7 · Cabecera sticky: aparece cuando el hero sale del área visible.
+    lem.scroll.addEventListener('scroll', () => {
+      const limite = Math.max(0, lem.hero.offsetHeight - lem.topbar.offsetHeight);
+      lem.topbar.classList.toggle('lem-topbar--fija', lem.scroll.scrollTop > limite);
+    }, { passive: true });
+
+    // §7 · Drag-down de cierre: SOLO con el scroll interno en tope y con
+    // dirección vertical dominante (los carriles horizontales — chips,
+    // galería — no disparan el gesto). Umbral: 30 % de la altura del sheet.
+    let dY0 = 0, dX0 = 0, arrastrando = false, delta = 0;
+    sheet.addEventListener('touchstart', (e) => {
+      const t = e.touches[0];
+      dY0 = t.clientY; dX0 = t.clientX; delta = 0;
+      arrastrando = lem.scroll.scrollTop <= 0 &&
+        !e.target.closest('.lem-chips, .lem-galeria-track, .lem-video-iframe');
+    }, { passive: true });
+    sheet.addEventListener('touchmove', (e) => {
+      if (!arrastrando) return;
+      if (lem.scroll.scrollTop > 0) { arrastrando = false; sheet.style.transform = ''; return; }
+      const t = e.touches[0];
+      const dy = t.clientY - dY0, dx = Math.abs(t.clientX - dX0);
+      if (delta === 0 && (dy < 12 || dy < dx * 1.2)) return;  // aún sin dirección clara
+      delta = Math.max(0, dy);
+      sheet.style.transition = 'none';
+      sheet.style.transform = `translateY(${delta}px)`;
+    }, { passive: true });
+    sheet.addEventListener('touchend', () => {
+      if (!arrastrando) return;
+      arrastrando = false;
+      sheet.style.transition = '';
+      if (delta > sheet.offsetHeight * 0.30) cerrarLectorEditorial();
+      else sheet.style.transform = '';
+    });
+
+    // Teclado: Escape cierra; Tab queda dentro del lector.
+    document.addEventListener('keydown', (e) => {
+      if (!sheet.classList.contains('lem--abierta')) return;
+      if (e.key === 'Escape') { cerrarLectorEditorial(); return; }
+      if (e.key !== 'Tab') return;
+      const focos = Array.from(sheet.querySelectorAll('button, a[href], iframe'))
+        .filter((n) => n.offsetParent !== null);
+      if (!focos.length) return;
+      e.preventDefault();
+      const i = focos.indexOf(document.activeElement);
+      const sig = e.shiftKey
+        ? (i <= 0 ? focos.length - 1 : i - 1)
+        : (i < 0 || i === focos.length - 1 ? 0 : i + 1);
+      focos[sig].focus();
+    });
+
+    return lem;
+  }
+
+  // ── Utilidades de datos ────────────────────────────────────────────────
+  // el.__item lo escribe app.js al crear cada tarjeta (F2): datos íntegros
+  // sin depender del DOM recortado del mural.
+  function datosDe(el, registro = null) { return registro || el.__item || null; }
+
+  function siglaDe(el, item) {
+    if (item && item.unidadAcademica) return item.unidadAcademica;
+    const ua = el.dataset.ua || '';
+    if (ua === 'unam') return 'UNaM';
+    return ua ? ua.toUpperCase() : '';
+  }
+
+  function etiquetaConceptual(item, el) {
+    if (item && item.unidadAcademica) return item.unidadAcademica;
+    const sede = item && item.sede ? item.sede : '';
+    return sede ? `Síntesis · ${sede.charAt(0).toUpperCase()}${sede.slice(1)}` : siglaDe(el, item);
+  }
+
+  // ── Hero (§5): portada / fotografía / miniatura, velo 40 %, meta ───────
+  function crearImgHero(src, alt, srcAlternativo = null) {
+    const img = document.createElement('img');
+    img.className = 'lem-hero-img';
+    img.alt = alt || '';
+    img.loading = 'lazy';        // checklist §12: lazy en hero/foto
+    img.decoding = 'async';
+    img.addEventListener('error', () => {
+      if (srcAlternativo && img.src.indexOf(srcAlternativo) === -1) { img.src = srcAlternativo; return; }
+      img.remove();
+      lem.hero.classList.add('lem-hero--fallback');
+    }, { once: false });
+    img.src = src;               // carga diferida real: recién al abrir (§4)
+    return img;
+  }
+
+  function construirHero(el, registro) {
+    const tipo = el.dataset.tipo || 'testimonio';
+    const item = datosDe(el, registro);
+    const color = obtenerColorUADe(el);
+
+    lem.hero.className = 'lem-hero';
+    lem.hero.innerHTML = '';
+    lem.sheet.style.setProperty('--color-ua', color);
+
+    let img = null, metaHTML = '', monograma = '', tituloTop = '', badgeTop = '';
+
+    if (tipo === 'registro-ua') {
+      const sigla = siglaDe(el, item);
+      badgeTop = sigla;
+      tituloTop = (item && item.titulo) || '';
+      metaHTML = `
+        <span class="lem-hero-badge">${escaparHTMLLector(sigla)}</span>
+        <h2 class="lem-hero-titulo">${escaparHTMLLector(tituloTop)}</h2>`;
+      monograma = sigla;
+      if (item && item.imagenPortada) img = crearImgHero(item.imagenPortada, `${sigla} — sede`);
+    } else if (tipo === 'video') {
+      const sigla = siglaDe(el, item);
+      badgeTop = sigla;
+      tituloTop = (item && item.titulo) || '';
+      metaHTML = `
+        <span class="lem-hero-badge">${escaparHTMLLector(sigla)}</span>
+        <h2 class="lem-hero-titulo">${escaparHTMLLector(tituloTop)}</h2>`;
+      monograma = sigla;
+      if (item && item.youtubeId) {
+        img = crearImgHero(
+          `https://img.youtube.com/vi/${escaparHTMLLector(item.youtubeId)}/hqdefault.jpg`,
+          '', `https://img.youtube.com/vi/${escaparHTMLLector(item.youtubeId)}/mqdefault.jpg`);
+      }
+    } else if (tipo === 'registro-conceptual') {
+      const etiqueta = etiquetaConceptual(item, el);
+      badgeTop = etiqueta;
+      tituloTop = (item && item.titulo) || '';
+      lem.hero.classList.add('lem-hero--conceptual');
+      metaHTML = `
+        <span class="lem-hero-badge">${escaparHTMLLector(etiqueta)}</span>
+        <h2 class="lem-hero-titulo">${escaparHTMLLector(tituloTop)}</h2>`;
+      monograma = (item && item.unidadAcademica) || '◦';
+    } else {
+      // Testimonio / autoridad: hero = fotografía de la persona (diferida),
+      // con nombre y cargo superpuestos (§5).
+      const nombre = el.querySelector('.testimonio-nombre')?.textContent?.trim() || '';
+      const cargo  = el.querySelector('.testimonio-cargo')?.textContent?.trim() || '';
+      badgeTop = siglaDe(el, null);
+      tituloTop = nombre;
+      metaHTML = `
+        <span class="lem-hero-badge">${escaparHTMLLector(badgeTop)}</span>
+        <span class="lem-hero-nombre">${escaparHTMLLector(nombre)}</span>
+        <span class="lem-hero-cargo">${escaparHTMLLector(cargo)}</span>`;
+      monograma = nombre.split(/\s+/).slice(0, 2).map((p) => p.charAt(0)).join('').toUpperCase() || badgeTop;
+      if (item && item.foto) img = crearImgHero(item.foto, nombre);
+    }
+
+    if (img) lem.hero.appendChild(img);
+    else lem.hero.classList.add('lem-hero--fallback');
+
+    // §5 · Fallback: bloque del color institucional con el monograma al 12 %.
+    lem.hero.insertAdjacentHTML('beforeend',
+      `<span class="lem-hero-monograma" aria-hidden="true">${escaparHTMLLector(monograma)}</span>
+       <div class="lem-hero-velo" aria-hidden="true"></div>
+       <div class="lem-hero-meta">${metaHTML}</div>`);
+
+    if (tipo === 'video') {
+      const play = document.createElement('button');
+      play.type = 'button';
+      play.className = 'lem-hero-play';
+      play.setAttribute('aria-label', 'Ir al reproductor');
+      play.textContent = '▶';
+      play.addEventListener('click', () => {
+        lem.cuerpo.querySelector('.lem-video-marco')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      lem.hero.appendChild(play);
+    }
+
+    // Espejo en la cabecera sticky (badge + título en 1 línea + ✕).
+    lem.topBadge.textContent = badgeTop;
+    lem.topTitulo.textContent = tituloTop;
+    lem.sheet.setAttribute('aria-label', tituloTop ? `Lector — ${tituloTop}` : 'Lector del compendio');
+  }
+
+  // ── Cuerpo (§7/§8): tipografía de lectura por tipo de registro ─────────
+  function parrafosHTML(texto) {
+    return String(texto || '')
+      .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => `<p>${escaparHTMLLector(p)}</p>`)
+      .join('');
+  }
+
+  function construirIndiceProyectos(item) {
+    const lista = Array.isArray(item.proyectos) ? item.proyectos : [];
+    if (!lista.length) return null;
+    const VISIBLES = 4;  // §11: «lista + “ver N restantes”» — pliegue tras los primeros
+
+    const cont = document.createElement('section');
+    cont.className = 'lem-proyectos';
+    cont.innerHTML = `<h3 class="lem-proyectos-titulo">Índice de proyectos · ${lista.length}</h3>`;
+
+    const ul = document.createElement('ul');
+    ul.className = 'lem-proyectos-lista';
+    lista.forEach((p, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>${escaparHTMLLector(p.nombre)}</strong><span>${escaparHTMLLector(p.sintesis)}</span>`;
+      if (i >= VISIBLES) li.hidden = true;
+      ul.appendChild(li);
+    });
+    cont.appendChild(ul);
+
+    const restantes = lista.length - VISIBLES;
+    if (restantes > 0) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'lem-proyectos-mas';
+      btn.textContent = `Ver ${restantes} restantes`;
+      btn.addEventListener('click', () => {
+        ul.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; });
+        btn.remove();
+      });
+      cont.appendChild(btn);
+    }
+    return cont;
+  }
+
+  function construirGaleria(item) {
+    const imgs = (Array.isArray(item.galeria) ? item.galeria : [])
+      .map((g) => (typeof g === 'string' ? { src: g, alt: '' } : g))
+      .filter((g) => g && g.src);
+    if (!imgs.length) return null;   // el corpus actual no trae galerías: componente listo, dato manda
+
+    const cont = document.createElement('div');
+    cont.className = 'lem-galeria';
+    const track = document.createElement('div');
+    track.className = 'lem-galeria-track';
+    imgs.forEach((g) => {
+      const fig = document.createElement('figure');
+      fig.innerHTML = `<img src="${escaparHTMLLector(g.src)}" alt="${escaparHTMLLector(g.alt || '')}" loading="lazy" decoding="async">`;
+      track.appendChild(fig);
+    });
+    const puntos = document.createElement('div');
+    puntos.className = 'lem-galeria-puntos';
+    puntos.setAttribute('aria-hidden', 'true');
+    imgs.forEach((g, i) => {
+      const punto = document.createElement('span');
+      punto.className = 'lem-galeria-punto' + (i === 0 ? ' lem-galeria-punto--activo' : '');
+      puntos.appendChild(punto);
+    });
+    track.addEventListener('scroll', () => {
+      const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+      puntos.querySelectorAll('.lem-galeria-punto').forEach((p, j) =>
+        p.classList.toggle('lem-galeria-punto--activo', j === i));
+    }, { passive: true });
+    cont.appendChild(track);
+    cont.appendChild(puntos);
+    return cont;
+  }
+
+  function construirCuerpo(el, registro) {
+    const tipo = el.dataset.tipo || 'testimonio';
+    const item = datosDe(el, registro);
+    lem.cuerpo.innerHTML = '';
+
+    if (tipo === 'registro-ua' && item) {
+      lem.cuerpo.insertAdjacentHTML('beforeend',
+        `<p class="lem-ua-completa">${escaparHTMLLector(item.unidadAcademicaCompleta || '')}</p>`);
+      lem.cuerpo.insertAdjacentHTML('beforeend', parrafosHTML(item.cuerpo));
+      if (item.cita) {
+        lem.cuerpo.insertAdjacentHTML('beforeend', `
+          <blockquote class="lem-cita">${escaparHTMLLector(item.cita)}
+            <cite>— ${escaparHTMLLector(item.citaAutor || '')}${item.citaCargo ? `, ${escaparHTMLLector(item.citaCargo)}` : ''}</cite>
+          </blockquote>`);
+      }
+      const galeria = construirGaleria(item);
+      if (galeria) lem.cuerpo.appendChild(galeria);
+      const indice = construirIndiceProyectos(item);
+      if (indice) lem.cuerpo.appendChild(indice);
+
+    } else if (tipo === 'video' && item) {
+      // §7: player 16:9 embebido, NUNCA autoplay; título y crédito debajo.
+      const esTesti = item.subtipo === 'testimonio_audiovisual';
+      const tipoLabel = esTesti ? 'Testimonio audiovisual' : 'Video institucional';
+      const credito = [tipoLabel, item.fecha || 'Mayo 2026', item.autor || '']
+        .filter(Boolean).join(' · ');
+      lem.cuerpo.insertAdjacentHTML('beforeend', `
+        <div class="lem-video-marco">
+          <div class="lem-video-ratio">
+            <iframe class="lem-video-iframe"
+              src="https://www.youtube-nocookie.com/embed/${escaparHTMLLector(item.youtubeId)}?rel=0&modestbranding=1"
+              title="${escaparHTMLLector(item.titulo || '')}"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen loading="lazy"></iframe>
+          </div>
+        </div>
+        <h3 class="lem-video-titulo">${escaparHTMLLector(item.titulo || '')}</h3>
+        <p class="lem-video-credito">${escaparHTMLLector(credito)}</p>
+        <p class="lem-ua-completa">${escaparHTMLLector(item.unidadAcademicaCompleta || '')}</p>
+        ${item.resumen ? `<p>${escaparHTMLLector(item.resumen)}</p>` : ''}`);
+
+    } else if (tipo === 'registro-conceptual' && item) {
+      lem.cuerpo.insertAdjacentHTML('beforeend', parrafosHTML(item.cuerpo));
+
+    } else {
+      // Testimonio / autoridad: cita íntegra en cuerpo grande (§7, 1.15 rem)
+      // — exactamente la cita que la persona estaba viendo en el mural.
+      const nodoCita = el.querySelector('.testimonio-cita');
+      const cita = (nodoCita?.dataset?.citaActual || nodoCita?.textContent || '').trim();
+      const institucion = (item && item.institucion) || '';
+      lem.cuerpo.insertAdjacentHTML('beforeend', `
+        <blockquote class="lem-cita lem-cita--integra">${escaparHTMLLector(cita)}</blockquote>
+        ${institucion ? `<p class="lem-institucion">${escaparHTMLLector(institucion)}</p>` : ''}`);
+    }
+  }
+
+  // ── Constelación (F4): deriva editorial sin cerrar el Lector ───────────
+  // P3: los satélites en espera de rotación SÍ integran la franja — «el
+  // audiovisual entra por rotación y por Lector». Las autoridades UNaM
+  // descartadas por el sorteo (.elemento--oculto-autoridad) quedan fuera,
+  // igual que en el hilo desktop.
+  function elementosDeConstelacion() {
+    const actual = lemActual.el;
+    const ua = actual.dataset.ua;
+    const escenario = lemOrigen.el.closest('.escenario');
+    if (!ua || ua === 'unam' || !escenario) return [];
+
+    const porOrden = (a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0);
+    const propios = Array.from(
+      escenario.querySelectorAll(`.elemento[data-ua="${ua}"]:not(.elemento--oculto-autoridad)`)
+    ).sort(porOrden);
+    const autoridades = Array.from(
+      escenario.querySelectorAll('.elemento--testimonio-institucional:not(.elemento--oculto-autoridad):not(.elemento--rotacion-espera)')
+    ).sort(porOrden);
+
+    return [...propios, ...autoridades].filter((el) => el !== actual);
+  }
+
+  function etiquetaChip(el) {
+    const tipo = el.dataset.tipo || 'testimonio';
+    if (tipo === 'testimonio') {
+      return el.querySelector('.testimonio-nombre')?.textContent?.trim() || 'Testimonio';
+    }
+    if (tipo === 'registro-ua') return `Expediente ${siglaDe(el, el.__item)}`;
+    const item = el.__item;
+    return (item && item.titulo) || (tipo === 'video' ? 'Registro audiovisual' : 'Registro');
+  }
+
+  function construirConstelacion() {
+    const lista = elementosDeConstelacion();
+    lem.chips.innerHTML = '';
+    if (!lista.length) { lem.constelacion.hidden = true; return; }
+
+    lista.forEach((el2) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'lem-chip';
+      chip.setAttribute('role', 'listitem');
+      chip.style.setProperty('--color-ua', obtenerColorUADe(el2));
+      const icono = ICONO_TIPO[el2.dataset.tipo] || '·';
+      chip.innerHTML = `<span class="lem-chip-icono" aria-hidden="true">${icono}</span>
+                        <span class="lem-chip-texto">${escaparHTMLLector(etiquetaChip(el2))}</span>`;
+      chip.addEventListener('click', () => derivarA(el2));
+      lem.chips.appendChild(chip);
+    });
+    lem.constelacion.hidden = false;
+  }
+
+  // Cross-fade 180 ms (§8): el Lector no se cierra; el documento se
+  // reemplaza y el retorno (P6) sigue apuntando a la tarjeta de ORIGEN.
+  function derivarA(el2) {
+    if (!lem || !lem.sheet.classList.contains('lem--abierta')) return;
+    const iframe = lem.cuerpo.querySelector('.lem-video-iframe');
+    if (iframe) iframe.src = '';
+    lem.scroll.classList.add('lem-scroll--fundido');
+    window.setTimeout(() => {
+      if (!lem.sheet.classList.contains('lem--abierta')) return;  // cerrado durante el fundido
+      const tipo2 = el2.dataset.tipo || 'testimonio';
+      lemActual = { el: el2, registro: tipo2 === 'testimonio' ? null : (el2.__item || null) };
+      renderizarDocumento();
+      lem.scroll.scrollTop = 0;
+      lem.topbar.classList.remove('lem-topbar--fija');
+      requestAnimationFrame(() => lem.scroll.classList.remove('lem-scroll--fundido'));
+    }, 180);
+  }
+
+  function renderizarDocumento() {
+    construirHero(lemActual.el, lemActual.registro);
+    construirCuerpo(lemActual.el, lemActual.registro);
+    construirConstelacion();
+  }
+
   function abrirEnMobile(elementoOrigen, registro) {
-    const sheet = window.LectorSheet;
-    if (!sheet) { abrirEnDesktop(elementoOrigen, registro); return; }
+    asegurarLectorEditorial();
 
-    construirGrupoUA(elementoOrigen, registro);
-    if (registro && posUA >= 0 && posUA < grupoUA.length) {
-      grupoUA[posUA].registro = registro;
-    }
+    const carrusel = document.getElementById('carrusel');
+    lemOrigen = { el: elementoOrigen, scrollLeft: carrusel ? carrusel.scrollLeft : 0 };
+    lemActual = { el: elementoOrigen, registro: registro || null };
 
-    const nodo = construirNodoParaTipo(elementoOrigen, registro);
-    const wrapper = document.createElement('div');
-    wrapper.className = 'lector-mobile-wrapper';
-
-    if (grupoUA.length > 1) {
-      const navEl = document.createElement('div');
-      navEl.className = 'lector-nav-ua';
-      const uaActualMobile = elementoOrigen.dataset.ua || '';
-      const etiquetaMobile = uaActualMobile === 'unam' ? 'UNaM' : uaActualMobile.toUpperCase();
-      navEl.innerHTML = `
-        <button class="lector-nav-ant" aria-label="Documento anterior">←</button>
-        <span class="lector-nav-ua-etiqueta">${etiquetaMobile} · ${posUA + 1}/${grupoUA.length}</span>
-        <button class="lector-nav-sig" aria-label="Documento siguiente">→</button>
-      `;
-      navEl.querySelector('.lector-nav-ant').addEventListener('click', () => navegarUAMobile(-1, sheet));
-      navEl.querySelector('.lector-nav-sig').addEventListener('click', () => navegarUAMobile(1, sheet));
-      wrapper.appendChild(navEl);
-    }
-    if (nodo) wrapper.appendChild(nodo);
+    renderizarDocumento();
 
     elementoOrigen.setAttribute('aria-expanded', 'true');
-    sheet.abrir(wrapper);
+    elementoOrigen.classList.add('elemento--en-lector');   // estado §8: origen marcado
+    document.body.classList.add('lector-bloqueando-scroll');
 
-    const cerrarOriginal = sheet.cerrar.bind(sheet);
-    sheet.cerrar = () => {
-      const iframe = sheet.body.querySelector('.lector-video-iframe');
-      if (iframe) iframe.src = '';
-      elementoActivador?.setAttribute('aria-expanded', 'false');
-      elementoActivador = null;
-      cerrarOriginal();
-      sheet.cerrar = cerrarOriginal;
-    };
+    lem.scroll.scrollTop = 0;
+    lem.topbar.classList.remove('lem-topbar--fija');
+    lem.sheet.style.transform = '';
+    lem.velo.classList.add('lem-velo--visible');
+    requestAnimationFrame(() => lem.sheet.classList.add('lem--abierta'));  // §8: 280 ms ease-out
+    window.setTimeout(() => lem.btnCerrar.focus(), 300);
   }
 
-  function construirNodoParaTipo(elementoOrigen, registro) {
-    if (!registro) return construirContenidoTestimonio(elementoOrigen);
-    if (registro._tipo === 'registro-ua') return construirContenidoRegistroUA(registro, elementoOrigen);
-    if (registro._tipo === 'registro-conceptual') return construirContenidoRegistroConceptual(registro, elementoOrigen);
-    if (registro._tipo === 'video' || registro.tipo === 'video') return construirContenidoVideo(registro, elementoOrigen);
-    return null;
-  }
+  function cerrarLectorEditorial() {
+    if (!lem || !lem.sheet.classList.contains('lem--abierta')) return;
 
-  function navegarUAMobile(delta, sheet) {
-    if (grupoUA.length < 2) return;
-    posUA = ((posUA + delta) + grupoUA.length) % grupoUA.length;
-    const { el, registro: reg } = grupoUA[posUA];
-    const iframe = sheet.body.querySelector('.lector-video-iframe');
-    if (iframe) iframe.src = '';
-    const nodo = construirNodoParaTipo(el, reg);
-    const navEl = sheet.body.querySelector('.lector-nav-ua');
-    const uaMobile = el.dataset.ua || '';
-    const etiquetaNavMobile = uaMobile === 'unam' ? 'UNaM' : uaMobile.toUpperCase();
-    if (navEl) navEl.querySelector('.lector-nav-ua-etiqueta').textContent = `${etiquetaNavMobile} · ${posUA + 1}/${grupoUA.length}`;
-    const oldNode = sheet.body.querySelector('.lector-mobile-wrapper > *:not(.lector-nav-ua)');
-    if (oldNode) oldNode.remove();
-    if (nodo) {
-      const parent = navEl?.parentElement || sheet.body;
-      parent.appendChild(nodo);
+    const iframe = lem.cuerpo.querySelector('.lem-video-iframe');
+    if (iframe) iframe.src = '';   // detiene la reproducción sin YT API
+
+    lem.sheet.classList.remove('lem--abierta');
+    lem.sheet.style.transform = '';
+    lem.velo.classList.remove('lem-velo--visible');
+    document.body.classList.remove('lector-bloqueando-scroll');
+
+    const origen = lemOrigen && lemOrigen.el;
+    if (origen) {
+      // Checklist §12: scroll del mural restaurado al píxel.
+      const carrusel = document.getElementById('carrusel');
+      if (carrusel && Math.abs(carrusel.scrollLeft - lemOrigen.scrollLeft) > 0.5) {
+        carrusel.scrollLeft = lemOrigen.scrollLeft;
+      }
+      origen.setAttribute('aria-expanded', 'false');
+      origen.classList.remove('elemento--en-lector');
+      // §7 · Destello de retorno 600 ms del color de la UA (clase de F1).
+      origen.classList.remove('elemento--origen');
+      void origen.offsetWidth;                    // reinicia la animación
+      origen.classList.add('elemento--origen');
+      window.setTimeout(() => origen.classList.remove('elemento--origen'), 700);
+      origen.focus({ preventScroll: true });
     }
-    sheet.body.scrollTop = 0;
+
+    lemOrigen = null;
+    lemActual = null;
+    elementoActivador = null;
+    window.Rotacion?.reanudar();   // H-08: reanudar el mural al cerrar
   }
 
   function construirContenidoTestimonio(elementoOrigen) {

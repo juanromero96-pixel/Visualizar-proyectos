@@ -29,7 +29,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v4.8-2026-07-19-f1';
+  window.__BUILD__ = 'v4.9-2026-07-19-f2f4';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -332,6 +332,13 @@ function crearElemento(item) {
   const ua = resolverUA(uaTexto);
   el.dataset.ua   = ua;
   el.dataset.tipo = item._tipo;
+
+  // F2–F4 (Manual §5/§7): el Lector editorial mobile necesita los datos
+  // completos del item (portada, cuerpo, proyectos, foto en resolución
+  // real, youtubeId) para construir hero y deriva sin depender del DOM
+  // recortado del mural. Propiedad JS pura: no toca atributos, no la
+  // consume ningún selector ni código desktop.
+  el.__item = item;
 
   // NOTA FORENSE: aquí existía el sistema --ua-order (order de flex column
   // para los "capítulos UA" de la arquitectura mobile anterior). Fue eliminado:
@@ -648,7 +655,7 @@ function crearTarjetaYoutubeVideo(item, interior) {
       <span class="video-badge">${escaparHTML(item.unidadAcademica || '')}${autorLabel}</span>
       <h3 class="video-titulo">${escaparHTML(item.titulo)}</h3>
       <p class="video-resumen">${escaparHTML(item.resumen)}</p>
-      <span class="video-expandir" aria-hidden="true">▷ Registro audiovisual</span>
+      <span class="video-expandir" aria-hidden="true">${window.esMobile?.() ? '· Ver registro' : '▷ Registro audiovisual'}</span>
     </div>
   `;
 
