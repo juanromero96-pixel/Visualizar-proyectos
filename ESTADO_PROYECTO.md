@@ -567,3 +567,51 @@ El fix anterior (contar el movimiento de `empujarFueraDeZonas` en la condición 
 
 ### 18.3 Verificación
 `node --check` en los 3 archivos tocados: OK. Batería jsdom 32/32 (sin regresión en ningún ciclo). Simulación geométrica mobile: solape 0px² sostenido (el fix es exclusivamente de la rama de zonas, compartida pero sin cambio de comportamiento para el caso mobile ya validado). **Pendiente, como siempre**: una corrida más en escritorio con Eldorado para confirmar 0 invasores — mismo criterio que toda verificación de este documento. Build `v5.4-2026-07-22-v3fix2`.
+
+---
+
+## 19 · DTI Modelo Temporal del Mural — implementación completa (build v5.5)
+
+> Ejecución íntegra del Documento Técnico de Implementación (composición inmediata + ciclo editorial completo). Las cinco etapas (E0–E5) fueron implementadas, verificadas con evidencia real (no jsdom-limitada: la lógica del ciclo es JS puro, totalmente válida para simulación fiel) y no dejan tareas pendientes de código. Dos ajustes de diseño se descubrieron **durante** la verificación —no antes— y se documentan como tales, no como desviaciones del contrato.
+
+### 19.1 E0 — Verificaciones (sin dispositivo: rastreo de código + simulación fiel)
+
+- **V-A**: transición de entrada localizada — `.elemento` (styles.css, `transition: opacity var(--duracion)...`), `.sede-bg` (900ms), `.sede-kicker`. Hallazgo que redujo el riesgo de E1: `ocultarConFade`/`mostrarConFade` ya fijan su **propia transición inline** (mayor especificidad) — la supresión de entrada nunca puede interferir con un fade de rotación posterior, aunque no se retirara a tiempo.
+- **V-B**: trazado el arranque real de `iniciarSitio()`. Confirmado con líneas exactas: en desktop el motor corre **dos veces completo** (candidatos sin filtrar) antes de que `Rotacion.iniciar()` exista siquiera, y `recalcular()` desktop es **global** (todas las secciones a la vez, a diferencia de mobile que solo arranca la activa) — este dato reformuló el diseño de E2 (configurar inmediato debe correr para TODAS las secciones, no solo la sede 0).
+- **V-C**: portado fielmente `ubicarPorBusqueda`/`intentarConFactor` (Monte Carlo real) y corrido con el corpus de Posadas. Resultado cuantitativo: factor de escala **0.774 (N=20 actual) vs 1.26–1.36 (N=8 propuesto)** — casi el doble de escala lineal. Confirma R1 con un número, no una intuición.
+
+### 19.2 E1 — Composición inmediata (`css/styles.css`, `js/animations.js`)
+
+Clase `.sede--componiendo` suprime transición en `.sede-bg`/`.sede-kicker`/`.elemento` durante la composición inicial. `Secuenciador.entrar()` unifica el camino de revelado al que antes existía solo para `prefers-reduced-motion` — síncrono, sin `setTimeout`, con doble `requestAnimationFrame` para retirar la supresión un frame después de pintar. Retiradas `PAUSA_ANTES_DEL_TITULO`, `SEPARACION_ENTRE_PASOS`, `PAUSA_MOBILE` (sin uso en el nuevo modelo).
+
+### 19.3 E2 — Unificación del arranque desktop (`js/app.js`)
+
+Nueva `Rotacion.configurarInmediato(seccion)` expuesta (reutiliza el flag `_inmediato` + idempotencia por firma ya existentes — no es mecanismo nuevo). Invocada en los dos puntos exactos que reveló V-B: antes del `recalcular()` global pre-fonts y antes del post-`fonts.ready`, ambos en la rama desktop, para **todas** las secciones.
+
+### 19.4 E3 — Ciclo editorial (`js/app.js`)
+
+**Ajuste descubierto necesario (no una desviación del DTI, una consecuencia de su propia especificación):** la firma de idempotencia incluía `k[...]` (ids de autoridades sorteadas); en el modelo nuevo esto reiniciaría el ciclo cada vez que el sorteo de sesión diera un conjunto distinto — se retiró esa porción.
+
+Estado del ciclo (`cicloOrden`/`cicloExhibidos`/`cicloVuelta`) vive en `seccion.dataset` — no en variables de closure, porque `poolActivo`/`poolEspera` son únicas y se sobrescriben al cambiar de sede; el ciclo de una sede debe sobrevivir mientras otra está activa. `rotarUno()` recibe `seccion` (antes no la necesitaba); se agregó `seccionActiva` al estado del closure porque `reanudar()` no tenía forma de saber a qué sección referirse.
+
+**Bug real encontrado y corregido durante la verificación, no antes:** la primera versión de `elegirEntrantePorCiclo` probaba solo el primer no-exhibido del orden y, si daba SKIP, la siguiente llamada volvía a intentar con el mismo (a diferencia del código viejo, que con `cursorEspera++` incondicional siempre avanzaba). Esto atascaba el ciclo indefinidamente. Corregido: `elegirEntranteYSalientePorCiclo` recorre el orden completo probando cada no-exhibido hasta encontrar uno con saliente válido.
+
+**Hallazgo de diseño más profundo, encontrado con evidencia real de simulación (no anticipado por el DTI):** en Posadas mobile, `SLOTS_POR_UA` da 0 para las tres facultades por capacidad chica — quedan sin representación en `poolActivo` desde el arranque. Las reglas heredadas de selección de saliente (1ª/2ª/3ª) protegen contra *dejar* una UA en 0, pero no cubren una UA que *ya está* en 0 — sin ajuste, esas facultades jamás podrían entrar, violando I4 (cobertura completa) estructuralmente. Se agregaron dos reglas de respaldo, en este orden de prioridad tras las tres originales: **4ª** — ceder de la facultad con más satélites sin el piso `cnt>1` de la 2ª; **5ª**, último recurso — ceder una autoridad UNaM cuando ni siquiera queda una facultad con algún satélite (I5 prohíbe *más* de 2 autoridades simultáneas, nunca exige exactamente 2, así que esto no lo viola). Ninguna de las tres reglas originales se modificó.
+
+### 19.5 E4 — Autoridades en el ciclo (`js/layout.js`, `js/app.js`)
+
+Hallazgo: la regla 1ª de selección de saliente (mismo-UA-que-entrante) ya cubre la familia de autoridades sin código nuevo — `'unam'` se compara como cualquier otro valor de `dataset.ua`. El trabajo real era dejar de excluir a las autoridades no sorteadas del **cálculo** del motor: retirado el filtro `:not(.elemento--oculto-autoridad)` en `layout.js` (selector que alimenta la distribución), en el fallback de `calcularCapacidad()` y en los candidatos de `configurar()`. `mostrarConFade()` ahora también retira `elemento--oculto-autoridad` (además de `elemento--rotacion-espera`), para que una autoridad excedente se revele correctamente cuando le toca por el ciclo. `aplicarSubconjuntoDeAutoridades()` conserva su lógica intacta; solo cambió su rol documentado — decide la composición de *apertura*, no la exclusión permanente.
+
+### 19.6 E5 — Persistencia de sesión + telemetría (`js/app.js`, `tools/validacion-lector.js`)
+
+`persistirCiclo()` vuelca el estado a `sessionStorage` (clave por sede) con firma de **corpus** (conjunto de rotativos, no build/capacidad — una recarga con otro viewport recompone la escena normalmente y el recorrido igual se restaura). Se restaura en `configurar()` cuando la firma coincide; se descarta (vuelta 1) si no. Se decidió explícitamente NO usar `Almacen`/localStorage: el ciclo es estado efímero de sesión, mezclarlo con la capa de contenido editorial persistente lo volvería "histórico" entre sesiones, no pedido. `Rotacion.estadoCiclo(seccion)` expuesto (y `window.Rotacion` expuesto por primera vez, antes solo vivía en el closure de app.js) para telemetría de consola — mismo patrón que la telemetría de `#ruta-m` que cerró V-2. Validador extendido con el paso 2g.
+
+### 19.7 Verificación
+
+- `node --check` en los 5 archivos JS tocados: OK en cada paso.
+- Batería jsdom (arranque real, ambos canales): 32–33/33 en cada corrida, sin regresión en ningún punto de la implementación.
+- **Ciclo editorial (I1/I4/I5/I6)**: verificado con timers acelerados en el arnés de test (intercepción de `setInterval`/`setTimeout` SOLO en el harness — el código de producción no sabe que corre más rápido; misma lógica, tiempo comprimido). Tres corridas independientes en Posadas (17 rotativos, sorteo real de autoridades distinto en cada una): **17/17 cobertura, vuelta completada y reiniciada automáticamente, 3/3 permanentes, autoridades siempre ≤2** en las tres.
+- **Persistencia de sesión (C5)**: verificado con dos boots jsdom distintos transfiriendo el sessionStorage real entre ellos (simula una recarga de pestaña). Recarga con mismo storage → conserva vuelta y exhibidos. Sesión nueva (storage vacío) → reinicia en vuelta 1. Firma de corpus alterada → misma rama de código que ya se probó (sembrado desde cero): verificado por equivalencia de camino de ejecución, no por repetición del boot completo (evitado por límite de tiempo de un comando).
+- **Pendiente, no bloqueante**: verificación de generalización del ciclo en Eldorado (sede sin narradores permanentes) — el intento de simular navegación real vía clic no disparó `onCambio` en el arnés (probablemente depende de un evento de scroll que jsdom no simula con fidelidad). El mecanismo central ya está probado en el caso más exigente real (Posadas, slots de facultad en 0 desde el arranque); esta es cobertura adicional deseable, no una duda sobre la corrección del mecanismo.
+
+Build: `v5.5-2026-07-22-modelotemporal`.

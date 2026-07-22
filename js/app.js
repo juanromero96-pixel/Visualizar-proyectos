@@ -29,7 +29,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v5.4-2026-07-22-v3fix2';
+  window.__BUILD__ = 'v5.5-2026-07-22-modelotemporal';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -83,6 +83,13 @@ window.__DIAG__ = DIAG;
   // reservarles a las autoridades descartadas un lugar que después queda
   // invisible.
   secciones.forEach((s) => aplicarSubconjuntoDeAutoridades(s, testimonios));
+  // DTI Modelo Temporal §5.1 (E2): en desktop, recalcular() sin argumento
+  // distribuye TODAS las secciones de una — para que Monte Carlo reciba
+  // únicamente el conjunto final (I3: el motor calcula solo sobre lo que
+  // se muestra) hay que configurar TODAS las sedes inmediato antes de esta
+  // primera llamada global. Idempotente por firma: no hay doble trabajo
+  // cuando Rotacion.iniciar() vuelva a tocar la sede 0 más abajo.
+  if (!window.esMobile?.()) secciones.forEach((s) => Rotacion.configurarInmediato(s));
   // E2: en mobile el layout inicial correcto ocurre en fonts.ready
   // (iniciar → marcas → recalcular(sede0)); un global previo con el corpus
   // completo sería triple trabajo invisible. Desktop conserva el global.
@@ -108,7 +115,12 @@ window.__DIAG__ = DIAG;
       // 3. (después, en el flujo síncrono) Secuenciador.entrar → revela 6 posicionados
       if (secciones[0]) { Rotacion.iniciar(secciones[0]); recalcular(secciones[0]); }
     } else {
-      // ── DESKTOP — orden original sin cambios ────────────────────────────────
+      // ── DESKTOP — configuración inmediata también aquí (DTI §5.1/E2):
+      // fonts.ready puede cambiar las medidas reales; se re-configura (la
+      // firma cambia solo si cambió algo real — cap por medidas nuevas —
+      // y de lo contrario rehidrata sin tocar clases) antes de este
+      // segundo recalcular global, por la misma razón que el primero.
+      secciones.forEach((s) => Rotacion.configurarInmediato(s));
       recalcular();
       if (secciones[0]) Rotacion.iniciar(secciones[0]);
     }
@@ -690,10 +702,16 @@ const AUTORIDADES_VISIBLES_A_LA_VEZ = 2;
  * misma sesión — el mismo patrón que ya usa elegirCita() para las citas
  * individuales, aplicado acá a qué tarjetas aparecen, no a qué dicen.
  *
- * Los testimonios ocultados no solo bajan su opacidad: se excluyen del
- * cálculo de layout.js por completo (clase `elemento--oculto-autoridad`,
- * ver layout.js), así que el resto de la escena reclama ese espacio de
- * verdad en vez de dejarlo reservado e invisible.
+ * DTI Modelo Temporal §5.4 (E4): esta función decide ÚNICAMENTE la
+ * composición de APERTURA (qué dos autoridades arrancan visibles al entrar
+ * a la sede) — ya no decide exclusión permanente del universo rotativo.
+ * Las no elegidas quedan marcadas `elemento--oculto-autoridad` (mismo
+ * mecanismo visual de siempre, opacity:0 !important) pero SÍ participan del
+ * cálculo del motor y del ciclo de rotación como cualquier testimonio en
+ * espera: cuando les toca entrar por el orden congelado, mostrarConFade()
+ * retira ambas clases (--rotacion-espera y --oculto-autoridad) a la vez.
+ * Antes se excluían del cálculo de layout.js por completo; eso hacía
+ * imposible que alguna vez aparecieran si el sorteo de sesión no las elegía.
  */
 function aplicarSubconjuntoDeAutoridades(seccion, testimonios) {
   const candidatos = Array.from(seccion.querySelectorAll('.elemento--testimonio-institucional'));
@@ -1026,6 +1044,10 @@ const Rotacion = (() => {
   // Esto previene que el setTimeout de una sede anterior afecte a los pools
   // de la nueva sede.
   let generacion    = 0;
+  // DTI Modelo Temporal §5.3 (E3): reanudar() no recibía la sección como
+  // parámetro — rotarUno() ahora la necesita (orden congelado por sede).
+  // Se registra la última sección para la que corrió iniciar()/configurar.
+  let seccionActiva = null;
 
   function calcularCapacidad(escenario, candidatos) {
     // MOBILE — auditoría museográfica (FASE 4, respiración del mural):
@@ -1052,7 +1074,7 @@ const Rotacion = (() => {
       const wEsc = rEsc?.width  || window.innerWidth;
       const altUtil = Math.max(320, (rEsc?.height || window.innerHeight) - 92 - 52);   // M-32: 72→92, ver layout.js
       const lista = (candidatos && candidatos.length) ? candidatos
-        : Array.from((esc || document).querySelectorAll('.elemento:not(.elemento--oculto-autoridad)'));
+        : Array.from((esc || document).querySelectorAll('.elemento'));
       let sumW = 0, sumH = 0, n = 0;
       lista.forEach((el) => {
         const it = el.querySelector('.elemento-interior');
@@ -1091,6 +1113,11 @@ const Rotacion = (() => {
   function mostrarConFade(el) {
     el.style.transition = `opacity ${FADE_ENTRADA_MS}ms ease`;
     el.classList.remove('elemento--rotacion-espera');
+    // DTI Modelo Temporal §5.4 (E4): si el entrante es una autoridad que el
+    // sorteo K=2 no eligió para la apertura, también trae esta clase — sin
+    // esto quedaría con opacity:0 !important (la regla CSS de descarte)
+    // encima del fade normal. No-op para cualquier otro tipo de elemento.
+    el.classList.remove('elemento--oculto-autoridad');
   }
 
   /**
@@ -1103,6 +1130,29 @@ const Rotacion = (() => {
    *      sedes con pocos contenidos —como Eldorado— oculten elementos innecesariamente).
    *   5. Todo lo que no entró: poolEspera, oculto con fade escalonado.
    */
+  /**
+   * DTI Modelo Temporal §5.5 (E5): vuelca el estado del ciclo (orden,
+   * exhibidos, vuelta) de `seccion.dataset` a sessionStorage, bajo la
+   * firma de corpus dada. No usa Almacen (localStorage): el ciclo es
+   * estado EFÍMERO de sesión por definición del pedido — Almacen tiene
+   * semántica de contenido editorial persistente (borradores del panel de
+   * administración), mezclarlos contaminaría esa capa y volvería el
+   * recorrido "histórico" entre sesiones distintas, lo cual no se pidió.
+   */
+  function persistirCiclo(seccion, clave, firmaCorpus) {
+    try {
+      sessionStorage.setItem(clave, JSON.stringify({
+        firmaCorpus,
+        exhibidos: leerJSONSeguro(seccion.dataset.cicloExhibidos) || [],
+        vuelta: Number(seccion.dataset.cicloVuelta || '1'),
+      }));
+    } catch (error) {
+      // sessionStorage lleno o inaccesible (modo privado estricto): el
+      // ciclo sigue funcionando en memoria (dataset), solo no sobrevive
+      // una recarga. No es un fallo que deba interrumpir la rotación.
+    }
+  }
+
   function configurar(seccion) {
     if (!seccion) return;
     const escenario = seccion.querySelector('.escenario');
@@ -1114,7 +1164,7 @@ const Rotacion = (() => {
     // --rotacion-espera. Cuando Secuenciador agrega --visible, los marcados
     // permanecen ocultos (opacity:0 !important tiene mayor especificidad).
     const candidatos = Array.from(
-      escenario.querySelectorAll('.elemento:not(.elemento--oculto-autoridad)')
+      escenario.querySelectorAll('.elemento')
     );
 
     const permanentes  = candidatos.filter((el) => el.dataset.permanente === 'true');
@@ -1123,15 +1173,23 @@ const Rotacion = (() => {
 
     // ── E1 (DTI §6.2, defecto D3): configuración idempotente por sede ─────────
     // La firma captura todo lo que determina la selección: build, corpus,
-    // subconjunto K visible y capacidad medida. Si coincide con la registrada
-    // en la sede, los pools se REHIDRATAN desde las clases actuales (preserva
-    // el estado post-rotaciones) y no se toca ninguna clase — no-op verificable.
+    // capacidad medida. Si coincide con la registrada en la sede, los pools
+    // se REHIDRATAN desde las clases actuales (preserva el estado
+    // post-rotaciones) y no se toca ninguna clase — no-op verificable.
+    //
+    // DTI Modelo Temporal §5.4/E4: la firma YA NO incluye k[...] (el sorteo
+    // de autoridades). En el modelo anterior, cambiar el sorteo cambiaba
+    // qué autoridades eran CANDIDATAS (las no elegidas quedaban excluidas
+    // del cálculo por completo), así que un nuevo sorteo debía forzar
+    // reconfiguración total. En el modelo nuevo todas las autoridades son
+    // candidatas siempre — el sorteo solo decide cuáles DOS arrancan
+    // visibles en el primer frame — así que ya no debe invalidar la
+    // configuración: si lo hiciera, el ciclo (orden congelado + exhibidos)
+    // se reiniciaría cada vez que el sorteo de sesión diera un conjunto
+    // distinto, rompiendo la cobertura y la continuidad del recorrido.
     const idDe = (el) => el.dataset.testimonioId ||
       `${el.dataset.tipo || '?'}-${el.dataset.ua || '?'}-${el.dataset.orden || '?'}`;
-    const kIds = candidatos
-      .filter((el) => el.dataset.ua === 'unam' && el.dataset.permanente !== 'true')
-      .map(idDe).sort().join(',');
-    const firma = `${window.__BUILD__}|c${candidatos.length}|k[${kIds}]|cap${capacidad}`;
+    const firma = `${window.__BUILD__}|c${candidatos.length}|cap${capacidad}`;
     const ordenEditorial = (aEl, bEl) => {
       const uaA = ORDEN_UA.indexOf(aEl.dataset.ua);
       const uaB = ORDEN_UA.indexOf(bEl.dataset.ua);
@@ -1219,6 +1277,48 @@ const Rotacion = (() => {
     });
     cursorEspera = 0;
 
+    // ── DTI Modelo Temporal §5.3 (E3): siembra del ciclo editorial ─────────
+    // Orden congelado = el orden editorial recién calculado (mismo criterio
+    // que el sort de arriba), fijado UNA vez por firma — rotarUno() ya NO
+    // reordena poolEspera después de cada intercambio (esa recomputación
+    // era la causa de que el cursor perdiera correlación con "lo aún no
+    // exhibido": un elemento podía reingresar a espera por delante de otros
+    // que nunca habían salido). Exhibidos arranca con lo que YA está en
+    // pantalla — estar en el primer frame ES haber sido exhibido.
+    //
+    // §5.5 (E5): "primera carga de sesión" vs. recargas. El ciclo se
+    // persiste en sessionStorage con una firma de CORPUS (el conjunto de
+    // rotativos, no el build/capacidad — una recarga con otro viewport
+    // recompone la escena inicial con las reglas normales igual, pero el
+    // RECORRIDO del ciclo debe sobrevivir esa recarga). Si sessionStorage
+    // trae un estado válido para esta firma, se restaura en vez de sembrar
+    // desde cero — "la recarga no reinicia el recorrido; una sesión nueva
+    // sí" (sessionStorage se vacía naturalmente al cerrar la pestaña/sesión,
+    // sin código adicional).
+    const ordenCongelado = rotativos.slice().sort(ordenEditorial).map(idDe);
+    const claveCiclo = `unam_semana_regional_ciclo_${seccion.dataset.sede}`;
+    const firmaCorpusCiclo = rotativos.map(idDe).sort().join(',');
+    const cicloPersistido = leerJSONSeguro(sessionStorage.getItem(claveCiclo));
+
+    if (cicloPersistido && cicloPersistido.firmaCorpus === firmaCorpusCiclo) {
+      // Recarga dentro de la misma sesión: continuar el recorrido. Los
+      // exhibidos persistidos que ya no estén en pantalla ahora (porque la
+      // capacidad cambió) siguen contando como exhibidos — I4 pide que
+      // cada elemento sea mostrado, no que quede visible para siempre.
+      const exhibidosRestaurados = new Set(cicloPersistido.exhibidos || []);
+      poolActivo.forEach((el) => exhibidosRestaurados.add(idDe(el)));
+      seccion.dataset.cicloOrden = JSON.stringify(ordenCongelado);
+      seccion.dataset.cicloExhibidos = JSON.stringify([...exhibidosRestaurados]);
+      seccion.dataset.cicloVuelta = String(cicloPersistido.vuelta || 1);
+      DIAG.log('ciclo-restaurado', { sede: seccion.dataset.sede,
+        vuelta: cicloPersistido.vuelta, exhibidos: exhibidosRestaurados.size });
+    } else {
+      seccion.dataset.cicloOrden = JSON.stringify(ordenCongelado);
+      seccion.dataset.cicloExhibidos = JSON.stringify(poolActivo.map(idDe));
+      seccion.dataset.cicloVuelta = '1';
+    }
+    persistirCiclo(seccion, claveCiclo, firmaCorpusCiclo);
+
     // Mostrar los seleccionados (sin transición — ya deberían estar visibles)
     poolActivo.forEach((el) => {
       el.style.transition = '';  // quitar cualquier transition residual de ciclos anteriores
@@ -1261,63 +1361,130 @@ const Rotacion = (() => {
    *   si otro ciclo modifica el array entre la llamada y el callback,
    *   los índices podrían apuntar a elementos incorrectos.
    */
-  function rotarUno() {
+  /**
+   * DTI Modelo Temporal §5.3 (E3): el entrante ya NO se elige por
+   * `cursorEspera % poolEspera.length` sobre un array que se reordena tras
+   * cada intercambio (eso rompía la cobertura: un elemento podía reingresar
+   * a espera por delante de otros que nunca habían salido). Se elige el
+   * PRIMERO del orden congelado de la sede que (a) esté actualmente en
+   * poolEspera y (b) no haya sido exhibido todavía en esta vuelta. Si no
+   * queda ninguno así, la vuelta se completó: se reinicia el registro de
+   * exhibidos con lo que YA está en pantalla y se incrementa el contador
+   * de vuelta — el ciclo continúa solo, sin pausa ni gesto adicional.
+   */
+  /**
+   * DTI Modelo Temporal §5.3 (E3): el entrante ya NO se elige por
+   * `cursorEspera % poolEspera.length` sobre un array que se reordena tras
+   * cada intercambio (eso rompía la cobertura: un elemento podía reingresar
+   * a espera por delante de otros que nunca habían salido). Se recorre el
+   * orden congelado de la sede probando, para cada no-exhibido en orden,
+   * si existe un saliente válido (mismas reglas de siempre) — el primero
+   * que sí tenga se usa. Si TODOS los no-exhibidos generan SKIP (ninguna
+   * UA puede cederles sitio sin quedar en 0), la vuelta se da por agotada
+   * en lo que se puede mostrar y se completa igual (I6): reintentar
+   * indefinidamente con el mismo bloqueado dejaría el ciclo trabado para
+   * siempre — el código anterior evitaba esto avanzando el cursor SIEMPRE,
+   * incluso en SKIP; este reemplaza ese avance por probar el resto del
+   * orden en la misma pasada.
+   */
+  function elegirEntranteYSalientePorCiclo(seccion) {
+    const idDe = (el) => el.dataset.testimonioId ||
+      `${el.dataset.tipo || '?'}-${el.dataset.ua || '?'}-${el.dataset.orden || '?'}`;
+    const buscarSaliente = (uaEntrante) => {
+      const satelitesPorUA = {};
+      poolActivo.forEach((el) => {
+        if (el.dataset.permanente === 'true' || el.dataset.ua === 'unam') return;
+        satelitesPorUA[el.dataset.ua] = (satelitesPorUA[el.dataset.ua] || 0) + 1;
+      });
+      let i = poolActivo.findIndex((el) => el.dataset.ua === uaEntrante && el.dataset.permanente !== 'true');
+      if (i < 0) {
+        let maxSat = 1;
+        poolActivo.forEach((el, idx) => {
+          if (el.dataset.permanente === 'true' || el.dataset.ua === 'unam') return;
+          const cnt = satelitesPorUA[el.dataset.ua] || 0;
+          if (cnt > maxSat) { maxSat = cnt; i = idx; }
+        });
+      }
+      if (i < 0) {
+        i = poolActivo.findIndex((el) => el.dataset.ua !== 'unam' && el.dataset.permanente !== 'true'
+          && (satelitesPorUA[el.dataset.ua] || 0) > 1);
+      }
+      // 4ª — DTI Modelo Temporal §5.3/E3, ajuste descubierto en verificación:
+      // las 3 reglas anteriores protegen contra DEJAR a una UA en 0, pero
+      // no cubren el caso de una UA que YA está en 0 desde la composición
+      // inicial (capacidad chica → SLOTS_POR_UA=0 para facultades enteras,
+      // caso real medido: Posadas mobile). Sin esta regla, esas facultades
+      // nunca tienen de dónde "robarles" un slot y jamás entran — el ciclo
+      // corre indefinidamente sin poder cumplir I4 para ellas. I4 (cobertura
+      // completa) es un criterio de aceptación explícito del DTI; "nunca
+      // bajar de 1" nunca lo fue — era un supuesto implícito que asumía
+      // que todas las UA ya tenían representación al arrancar, cosa que la
+      // verificación real refutó. Última prioridad: cede la UA de facultad
+      // (no autoridad, no permanente) con MÁS satélites en este momento,
+      // sin piso de cnt>1 — el mismo criterio "richest" de la 2ª regla,
+      // sin la condición que la hacía inútil quando todas están en ≤1.
+      if (i < 0) {
+        let maxSat = 0;
+        poolActivo.forEach((el, idx) => {
+          if (el.dataset.permanente === 'true' || el.dataset.ua === 'unam') return;
+          const cnt = satelitesPorUA[el.dataset.ua] || 0;
+          if (cnt > maxSat) { maxSat = cnt; i = idx; }
+        });
+      }
+      // 5ª — último recurso: ni siquiera queda una facultad con algún
+      // satélite (poolActivo no-permanente son solo autoridades UNaM).
+      // Caso real medido: Posadas mobile con capacidad chica deja CERO
+      // satélites de facultad desde el arranque. I5 prohíbe MÁS de 2
+      // autoridades simultáneas — nunca exige exactamente 2 — así que
+      // ceder una para que una facultad tenga su turno no lo viola, y es
+      // la única vía posible para que esas facultades cumplan I4 alguna
+      // vez. Solo aplica cuando el entrante NO es autoridad (si lo fuera,
+      // la 1ª regla ya la encontró).
+      if (i < 0 && uaEntrante !== 'unam') {
+        i = poolActivo.findIndex((el) => el.dataset.ua === 'unam' && el.dataset.permanente !== 'true');
+      }
+      return i;
+    };
+
+    const intentarVuelta = () => {
+      const orden = leerJSONSeguro(seccion.dataset.cicloOrden) || [];
+      const exhibidos = new Set(leerJSONSeguro(seccion.dataset.cicloExhibidos) || []);
+      const idsEnEspera = new Map(poolEspera.map((el) => [idDe(el), el]));
+      for (const id of orden) {
+        if (!idsEnEspera.has(id) || exhibidos.has(id)) continue;
+        const entrante = idsEnEspera.get(id);
+        const iSaliente = buscarSaliente(entrante.dataset.ua);
+        if (iSaliente >= 0) return { entrante, saliente: poolActivo[iSaliente] };
+      }
+      return null;
+    };
+
+    let resultado = intentarVuelta();
+    if (!resultado) {
+      // Fin de vuelta (I6) o bloqueo total transitorio: reinicia exhibidos
+      // con lo que YA está en pantalla — el ciclo continúa solo, sin pausa
+      // ni gesto visual adicional.
+      const vueltaAnterior = Number(seccion.dataset.cicloVuelta || '1');
+      seccion.dataset.cicloExhibidos = JSON.stringify(poolActivo.map(idDe));
+      seccion.dataset.cicloVuelta = String(vueltaAnterior + 1);
+      DIAG.log('ciclo-vuelta-completa', { sede: seccion.dataset.sede, vuelta: vueltaAnterior });
+      const ordenActual = leerJSONSeguro(seccion.dataset.cicloOrden) || [];
+      persistirCiclo(seccion, `unam_semana_regional_ciclo_${seccion.dataset.sede}`,
+        ordenActual.slice().sort().join(','));
+      resultado = intentarVuelta();
+    }
+    return resultado;
+  }
+
+  function rotarUno(seccion) {
     if (!poolActivo.length || !poolEspera.length) return;
 
     const genEsteCallback = generacion; // captura antes del setTimeout
 
-    const iEntrante = cursorEspera % poolEspera.length;
-    cursorEspera++;
-    const entrante = poolEspera[iEntrante];
-    const uaEntrante = entrante.dataset.ua;
+    const par = elegirEntranteYSalientePorCiclo(seccion);
+    if (!par) return; // ninguna UA puede ceder sitio en este instante — protege constelaciones
+    const { entrante, saliente } = par;
 
-    // ── Selección del saliente con garantía de constelación mínima ─────────
-    // Prioridades:
-    //   1ª → mismo UA que el entrante (intercambio limpio)
-    //   2ª → UA con MÁS de 1 satélite (richest-first: roba de quien puede)
-    //   3ª → cualquier UA con >1 satélite (igual que 2ª pero sin elegir richest)
-    //   SKIP → si nadie puede ceder sin dejar a su UA en 0: no rotar,
-    //          avanzar el cursor para el próximo ciclo.
-    const satelitesPorUA = {};
-    poolActivo.forEach((el) => {
-      if (el.dataset.permanente === 'true' || el.dataset.ua === 'unam') return;
-      satelitesPorUA[el.dataset.ua] = (satelitesPorUA[el.dataset.ua] || 0) + 1;
-    });
-
-    let iSaliente = -1;
-
-    // 1ª: mismo UA que el entrante
-    iSaliente = poolActivo.findIndex(
-      (el) => el.dataset.ua === uaEntrante && el.dataset.permanente !== 'true'
-    );
-
-    // 2ª: richest UA (cnt > 1, elige el máximo)
-    if (iSaliente < 0) {
-      let maxSat = 1;
-      poolActivo.forEach((el, i) => {
-        if (el.dataset.permanente === 'true' || el.dataset.ua === 'unam') return;
-        const cnt = satelitesPorUA[el.dataset.ua] || 0;
-        if (cnt > maxSat) { maxSat = cnt; iSaliente = i; }
-      });
-    }
-
-    // 3ª: cualquier UA con >1 satélite (safety net por si la 2ª falla en orden)
-    if (iSaliente < 0) {
-      iSaliente = poolActivo.findIndex(
-        (el) => el.dataset.ua !== 'unam'
-             && el.dataset.permanente !== 'true'
-             && (satelitesPorUA[el.dataset.ua] || 0) > 1
-      );
-    }
-
-    // SKIP: si ninguna UA puede ceder sin quedar en 0, proteger constelación
-    if (iSaliente < 0) {
-      // Avanzar el cursor para no quedar trabado en el mismo elemento
-      if (cursorEspera >= poolEspera.length) cursorEspera = 0;
-      return;
-    }
-
-    const saliente = poolActivo[iSaliente];
     ocultarConFade(saliente);
 
     window.setTimeout(() => {
@@ -1338,16 +1505,23 @@ const Rotacion = (() => {
       if (realISaliente >= 0) poolActivo.splice(realISaliente, 1);
       if (realIEntrante >= 0) poolEspera.splice(realIEntrante, 1);
 
-      if (cursorEspera >= poolEspera.length) cursorEspera = 0;
-
       poolActivo.push(entrante);
       poolEspera.push(saliente);
-      poolEspera.sort((a, b) => {
-        const uaA = ORDEN_UA.indexOf(a.dataset.ua);
-        const uaB = ORDEN_UA.indexOf(b.dataset.ua);
-        if (uaA !== uaB) return (uaA < 0 ? 99 : uaA) - (uaB < 0 ? 99 : uaB);
-        return tipoPrioridad(a) - tipoPrioridad(b);
-      });
+      // DTI §5.3 (E3): SIN re-sort. El orden de rotarUno() ya no depende del
+      // orden de poolEspera — depende del orden congelado (dataset), que no
+      // cambia. Re-ordenar acá era precisamente lo que rompía la cobertura.
+
+      // ── Marca de exhibido (E3) ───────────────────────────────────────────
+      const idDe = (el) => el.dataset.testimonioId ||
+        `${el.dataset.tipo || '?'}-${el.dataset.ua || '?'}-${el.dataset.orden || '?'}`;
+      if (seccion) {
+        const exhibidos = new Set(leerJSONSeguro(seccion.dataset.cicloExhibidos) || []);
+        exhibidos.add(idDe(entrante));
+        seccion.dataset.cicloExhibidos = JSON.stringify([...exhibidos]);
+        const ordenActual = leerJSONSeguro(seccion.dataset.cicloOrden) || [];
+        persistirCiclo(seccion, `unam_semana_regional_ciclo_${seccion.dataset.sede}`,
+          ordenActual.slice().sort().join(','));
+      }
 
       // ── HERENCIA DE POSICIÓN (solo mobile) ─────────────────────────────
       // Museográficamente: se cambia el documento, no el clavo. El entrante
@@ -1388,6 +1562,7 @@ const Rotacion = (() => {
   }
 
   function iniciar(seccion) {
+    seccionActiva = seccion;
     DIAG.log('iniciar', { sede: seccion?.dataset?.sede, mobile: !!window.esMobile?.() });
     detener(); // E1: sin argumento → solo timers/pools; jamás limpia clases de otras sedes
     if (!seccion) return;
@@ -1410,7 +1585,7 @@ const Rotacion = (() => {
       configurar._inmediato = false;
       timeoutId = window.setTimeout(() => {
         if (poolEspera.length > 0) {
-          intervalId = window.setInterval(rotarUno, INTERVALO_MS);
+          intervalId = window.setInterval(() => rotarUno(seccion), INTERVALO_MS);
         }
       }, INICIO_DELAY_MS);
     } else {
@@ -1418,7 +1593,7 @@ const Rotacion = (() => {
       timeoutId = window.setTimeout(() => {
         configurar(seccion);
         if (poolEspera.length > 0) {
-          intervalId = window.setInterval(rotarUno, INTERVALO_MS);
+          intervalId = window.setInterval(() => rotarUno(seccion), INTERVALO_MS);
         }
       }, INICIO_DELAY_MS);
     }
@@ -1469,9 +1644,41 @@ const Rotacion = (() => {
   function reanudar() {
     // Solo reanuda si hay elementos que rotar y la rotación no está ya corriendo
     if (!intervalId && poolEspera.length > 0) {
-      intervalId = window.setInterval(rotarUno, INTERVALO_MS);
+      intervalId = window.setInterval(() => rotarUno(seccionActiva), INTERVALO_MS);
     }
   }
 
-  return { iniciar, detener, detenerTodo, pausar, reanudar };
+  /**
+   * DTI Modelo Temporal §5.1 (E2): configura la sede INMEDIATO (pools +
+   * marcado --rotacion-espera), sin arrancar el temporizador de rotación.
+   * Reutiliza exactamente el flag _inmediato + la idempotencia por firma
+   * que ya usa la rama mobile de iniciar() — no es mecanismo nuevo, es la
+   * pieza que faltaba exponer para poder invocarla ANTES del layout en
+   * desktop, donde recalcular() distribuye TODAS las secciones de una
+   * (a diferencia de mobile, que solo arranca la sede activa).
+   */
+  function configurarInmediato(seccion) {
+    configurar._inmediato = true;
+    configurar(seccion);
+    configurar._inmediato = false;
+  }
+
+  /**
+   * DTI Modelo Temporal §10: telemetría del ciclo para el validador de
+   * dispositivo — el equivalente de la telemetría de #ruta-m que cerró V-2.
+   */
+  function estadoCiclo(seccion) {
+    if (!seccion) return null;
+    const orden = leerJSONSeguro(seccion.dataset.cicloOrden) || [];
+    const exhibidos = leerJSONSeguro(seccion.dataset.cicloExhibidos) || [];
+    return {
+      vuelta: Number(seccion.dataset.cicloVuelta || '0'),
+      exhibidos: exhibidos.length,
+      total: orden.length,
+      faltantes: orden.filter((id) => !exhibidos.includes(id)),
+    };
+  }
+
+  return { iniciar, detener, detenerTodo, pausar, reanudar, configurarInmediato, estadoCiclo };
 })();
+window.Rotacion = Rotacion;

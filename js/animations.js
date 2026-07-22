@@ -8,9 +8,6 @@
  * permanecen en pantalla para siempre, tal como se pidió.
  */
 const Secuenciador = (() => {
-  const PAUSA_ANTES_DEL_TITULO = 280; // ms
-  const SEPARACION_ENTRE_PASOS = 420; // ms
-
   let prefiereMovimientoReducido = false;
   const seccionesYaReveladas = new WeakSet();
 
@@ -19,47 +16,45 @@ const Secuenciador = (() => {
     _iniciarParalajeDeFondo();
   }
 
+  /**
+   * DTI Modelo Temporal §5.2 (E1): composición inmediata. El camino que
+   * antes existía SOLO para prefers-reduced-motion (revelar todo de una,
+   * sin escalonar) se vuelve el camino ÚNICO — el mural debe estar completo
+   * en el primer paint en ambos canales. Se retiran PAUSA_ANTES_DEL_TITULO,
+   * SEPARACION_ENTRE_PASOS y PAUSA_MOBILE (constantes de stagger, sin uso
+   * en el nuevo modelo) y la bifurcación mobile/desktop de esta función:
+   * ya no hace falta, ambas quedaban destino al mismo resultado (todo
+   * visible), solo con distinto tiempo de llegada.
+   *
+   * `.sede--componiendo` suprime la transición de entrada (css/styles.css)
+   * mientras se aplican las clases --visible; se retira con doble
+   * requestAnimationFrame — un ciclo de pintado real ocurre con las clases
+   * ya puestas y transición aún suprimida, y recién en el segundo frame se
+   * reactiva, garantizando que el navegador no intente animar ese primer
+   * cambio de estado (riesgo real si se retirara en el mismo task: el
+   * navegador podría no haber pintado el frame sin transición todavía).
+   */
   function entrar(seccion) {
     if (!seccion || seccionesYaReveladas.has(seccion)) return; // ya se reveló: no se repite
     seccionesYaReveladas.add(seccion);
 
     const fondo = seccion.querySelector('.sede-bg');
     const kicker = seccion.querySelector('.sede-kicker');
-    const elementos = Array.from(seccion.querySelectorAll('.elemento')).sort(
-      (a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0)
-    );
+    const elementos = Array.from(seccion.querySelectorAll('.elemento'));
 
-    if (prefiereMovimientoReducido) {
+    const aplicar = () => {
       fondo?.classList.add('sede-bg--visible');
       kicker?.classList.add('sede-kicker--visible');
       elementos.forEach((el) => el.classList.add('elemento--visible'));
-      return;
-    }
+    };
 
-    fondo?.classList.add('sede-bg--visible');
+    if (prefiereMovimientoReducido) { aplicar(); return; }
 
-    if (window.esMobile?.()) {
-      // MOBILE: todas las anotaciones aparecen juntas tras la aparición del fondo.
-      // El comportamiento requerido es: "visualizarse todos de una y después
-      // empezar el juego de animaciones (desaparecer de a una y cambiar por otras)".
-      // Rotacion.iniciar tiene delay=INICIO_DELAY_MS (2500ms) — da tiempo suficiente
-      // para que el visitante vea el mural completo antes de que comience la
-      // rotación de satélites.
-      const PAUSA_MOBILE = 320; // ms — tiempo mínimo para que el fondo sea visible
-      window.setTimeout(() => {
-        kicker?.classList.add('sede-kicker--visible');
-        elementos.forEach((el) => el.classList.add('elemento--visible'));
-      }, PAUSA_MOBILE);
-      return;
-    }
-
-    // DESKTOP: reveal escalonado por orden narrativo (sin cambios)
-    window.setTimeout(() => kicker?.classList.add('sede-kicker--visible'), PAUSA_ANTES_DEL_TITULO);
-
-    elementos.forEach((el, indice) => {
-      const tiempo = PAUSA_ANTES_DEL_TITULO + SEPARACION_ENTRE_PASOS * (indice + 1);
-      window.setTimeout(() => el.classList.add('elemento--visible'), tiempo);
-    });
+    seccion.classList.add('sede--componiendo');
+    aplicar();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      seccion.classList.remove('sede--componiendo');
+    }));
   }
 
   // Paralaje de fondo en scroll — sin cambios respecto a la versión anterior.

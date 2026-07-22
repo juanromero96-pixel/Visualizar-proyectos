@@ -296,6 +296,19 @@ button { font-family: inherit; cursor: pointer; }
   opacity: var(--opacidad-final, 1);
   transform: translate(-50%, -50%) scale(var(--escala)) rotate(var(--rot));
 }
+/* DTI Modelo Temporal §5.2 (E1): supresión de transición de ENTRADA durante
+   la composición inicial de la sede. El mural debe estar completo y estable
+   en el primer paint — sin el fundido de aparición que hoy dura 600ms por
+   elemento y 900ms el fondo. Se retira en el frame siguiente (doble rAF en
+   Secuenciador.entrar): la rotación posterior no se ve afectada porque
+   ocultarConFade/mostrarConFade (js/app.js) ya fijan su PROPIA transición
+   inline, de mayor especificidad que esta clase — doble seguridad, no una
+   sola vía. */
+.sede--componiendo .sede-bg,
+.sede--componiendo .sede-kicker,
+.sede--componiendo .elemento {
+  transition: none !important;
+}
 /* Autoridades de alcance UNaM descartadas por el sorteo de
    aplicarSubconjuntoDeAutoridades() (js/app.js) — se desvanecen con
    transición, no desaparecen de golpe; layout.js ya las excluye del

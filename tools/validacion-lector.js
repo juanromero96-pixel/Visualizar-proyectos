@@ -211,6 +211,17 @@
        bgi.slice(0, 70));
   }
 
+  // ── 2g · DTI Modelo Temporal §10: telemetría del ciclo editorial ───────
+  // Equivalente de la telemetría de #ruta-m que cerró V-2: expone en
+  // consola el progreso real del ciclo de la sede activa, sin necesitar
+  // inspeccionar dataset a mano.
+  const estadoCiclo = window.Rotacion?.estadoCiclo?.(sedeActiva);
+  if (estadoCiclo) {
+    ok('2g · Ciclo editorial: progreso', estadoCiclo.total > 0,
+       `vuelta ${estadoCiclo.vuelta} · ${estadoCiclo.exhibidos}/${estadoCiclo.total} exhibidos` +
+       (estadoCiclo.faltantes.length ? ` · faltan: ${estadoCiclo.faltantes.slice(0, 5).join(', ')}${estadoCiclo.faltantes.length > 5 ? '…' : ''}` : ' · completo'));
+  }
+
   // ── 3 · Abrir un expediente UA ─────────────────────────────────────────
   const ua = escenario?.querySelector('.elemento[data-tipo="registro-ua"]');
   if (!ua) { ok('3 · Hay expediente UA visible', false); console.table(R); return; }
