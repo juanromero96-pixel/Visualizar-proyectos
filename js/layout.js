@@ -361,7 +361,11 @@ const Distribuidor = (() => {
       for (let i = 0; i < nodos.length; i++)
         for (let j = i + 1; j < nodos.length; j++)
           if (separarPar(nodos[i], nodos[j])) huboMovimiento = true;
-      empujarFueraDeZonas(nodos, zonas);
+      // V-3: el empuje de zona también cuenta como movimiento — antes solo
+      // separarPar lo hacía, y el loop podía cortar justo después de que
+      // un empuje de zona introdujera una colisión nueva sin darle a
+      // separarPar una vuelta más para resolverla.
+      if (empujarFueraDeZonas(nodos, zonas)) huboMovimiento = true;
       nodos.forEach((n) => limitarAlEscenario(n, ancho, alto));
       if (!huboMovimiento) break;
     }
@@ -490,7 +494,19 @@ const Distribuidor = (() => {
   }
 
   function empujarFueraDeZonas(nodos, zonas) {
-    if (!zonas.length) return;
+    if (!zonas.length) return false;
+    // V-3 (Plan Maestro Fase A · evidencia de dispositivo, Eldorado desktop):
+    // devuelve si movió algo. Antes era void — el loop de limpieza final
+    // (ITERACIONES_LIMPIEZA_FINAL) solo medía movimiento de separarPar para
+    // decidir si cortar. Si ESTA función corregía una invasión de zona en
+    // la iteración que separarPar ya no movía nada, el loop cortaba ahí
+    // mismo sin darle a separarPar la chance de resolver una colisión
+    // nueva que el propio empuje pudo haber creado contra un vecino.
+    // Evidencia real: kicker 265×450 en Eldorado — más alto de lo que
+    // parece a simple vista (52vh) — con 2 tarjetas invadiendo, una en
+    // 28.296px² (sustancialmente adentro, no un roce de borde: exactamente
+    // el patrón que un corte prematuro dejaría a medio resolver).
+    let movio = false;
     nodos.forEach((n) => {
       zonas.forEach((zona) => {
         if (!cajaSuperponeZona(n.x, n.y, n.w, n.h, zona)) return;
@@ -503,8 +519,10 @@ const Distribuidor = (() => {
         else if (min === dIzq) n.x = zona.izquierda - n.w/2;
         else if (min === dAbj) n.y = zona.abajo     + n.h/2;
         else                   n.y = zona.arriba    - n.h/2;
+        movio = true;
       });
     });
+    return movio;
   }
 
   function limitarAlEscenario(n, ancho, alto) {

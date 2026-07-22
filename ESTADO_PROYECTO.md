@@ -508,3 +508,25 @@ Eldorado sigue **sin videos en el corpus** (0 en multimedia.json — faltante do
 ### 15.4 Estado de Fase A
 
 **No cerrada.** M-01, M-32 y M-02 implementadas y verificadas. M-03 sigue dentro de esta fase y sigue bloqueada por V-3. La fase no se declara terminada hasta que las cuatro mejoras (M-01, M-02, M-03, M-32) estén implementadas y verificadas — tal como exige el Plan Maestro.
+
+---
+
+## 16 · Fase A cerrada (implementación) — build v5.2, fix de V-3
+
+### 16.1 M-32 — confirmado en dispositivo
+Segunda corrida mobile: `chip bottom:78 | 0 tarjeta(s) dentro del margen de resguardo`. Cierra sin ambigüedad.
+
+### 16.2 V-3 — evidencia real obtenida y causa corregida
+Primera corrida de escritorio con Eldorado activo (tras 5 intentos): **2 invasores reales** — `testimonio/eae` y `testimonio/unam` (este último con 28.296px² de solape, sustancial). Kicker medido **265×450px** — su alto real (`max-height:clamp(35vh,52vh,62vh)` → 52vh en este viewport) es mucho mayor de lo que parece a simple vista; confirmado también por captura (tarjeta de Lucas de Lima tapando el "03" del kicker).
+
+**Causa raíz, con reproducción sintética.** `empujarFueraDeZonas()` no informaba si movía algo; el loop de limpieza final de escritorio (`ITERACIONES_LIMPIEZA_FINAL=50`) solo medía movimiento de `separarPar` para decidir si cortar. Si el empuje de zona resolvía una invasión en la MISMA iteración en que `separarPar` ya no movía nada, el loop cortaba ahí — dejando sin resolver una colisión nueva que el propio empuje pudo haber creado contra un vecino. Reproducido en un test aislado (sin DOM, solo la matemática): sin el fix, el loop corta en `iter:0` con la colisión sin resolver; con el fix, sigue hasta `iter:9` y termina limpio.
+
+**Fix**: `empujarFueraDeZonas()` ahora devuelve si movió algo; el loop de limpieza lo suma a su condición de corte. No toca Monte Carlo (`ubicarPorBusqueda`) ni la dirección de empuje — solo la condición de convergencia del post-proceso. Aplicado bajo Protocolo §7 (diff mínimo, un solo mecanismo). Archivo: `js/layout.js`.
+
+**Verificación**: batería jsdom 30/30 (sin regresión en ningún ciclo, mobile ni escritorio), simulación geométrica mobile sin cambios (solape 0px² — el fix es exclusivamente de la rama desktop). **Pendiente**: una corrida más en escritorio con Eldorado para confirmar 0 invasores tras el fix — mismo criterio que toda verificación anterior de este documento.
+
+### 16.3 Higiene del validador
+Dos falsos positivos corregidos (no eran bugs de la app): el check de "sin retrato" nunca estuvo gateado a mobile (en escritorio el retrato es correcto por diseño); el FAIL de "canal correcto" en la corrida de escritorio se explica por sesión mixta (el Lector es singleton — `asegurarLectorEditorial()`, `if (lem) return lem` — y `#ruta-m` presente en una corrida de escritorio es prueba estructural de que la pestaña estuvo en emulación mobile antes, sin recarga). Se agregó detección automática de sesión mixta (advertencia en consola) para no repetir el diagnóstico. Gate del validador ampliado de `v5.1-*` a `v5.\*` para no requerir sincronización en cada build menor.
+
+### 16.4 Estado de Fase A
+**M-01 ✅ · M-02 ✅ · M-32 ✅ (confirmados en dispositivo) · M-03 implementada, confirmación final pendiente.** Build `v5.2-2026-07-22-faseA-v3fix`.

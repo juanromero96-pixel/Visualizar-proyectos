@@ -5,7 +5,7 @@
  * corre igual sobre el canal unificado). Imprime una tabla PASS/FAIL del
  * ciclo del Lector + telemetría del navegador de sedes (#ruta-m) para
  * confirmar en el dispositivo el mecanismo de su desaparición.
- * GATE: si el banner de build no es v5.1-*, TODO lo demás es inválido.
+ * GATE: si el banner de build no empieza con v5., TODO lo demás es inválido.
  *
  * v5.0+Fase0 · Plan Maestro §6 — instrumentación de las tres verificaciones
  * bloqueantes antes de tocar código:
@@ -31,12 +31,24 @@
 
   // ── 0 · GATE DE BUILD ──────────────────────────────────────────────────
   const build = window.__BUILD__ || '(ausente)';
-  const gate = /^v5\.1/.test(build);
-  ok('0 · Gate de build v5.0', gate, build);
+  const gate = /^v5\./.test(build);
+  ok('0 · Gate de build v5.x', gate, build);
   if (!gate) {
     console.table(R);
     console.warn('⛔ BUILD INCORRECTO — el navegador sirve caché. Detener la auditoría.');
     return;
+  }
+
+  // ── 0b · Detección de sesión mixta ──────────────────────────────────────
+  // crearNavMobile() corta en seco si esMobile() es falso (js/mobile.js).
+  // Si #ruta-m existe MIENTRAS esMobile() es falso ahora, esta pestaña
+  // estuvo en emulación mobile en algún momento de la MISMA sesión y pasó
+  // a escritorio sin recarga — el Lector es singleton (asegurarLectorEditorial,
+  // lector.js L54: "if (lem) return lem") y pudo quedar creado con la
+  // anatomía mobile, dando falso FAIL en el paso 3b más abajo. No es bug
+  // de la app: recargar en limpio ya en modo escritorio lo resuelve.
+  if (!window.esMobile?.() && document.getElementById('ruta-m')) {
+    console.warn('⚠ Sesión mixta detectada: #ruta-m existe en escritorio → hubo emulación mobile antes en esta pestaña. Si el paso 3b da FAIL, recargar en limpio ya en escritorio antes de confiar en ese resultado.');
   }
 
   // ── 1 · TELEMETRÍA #ruta-m (informe QA #1 · «pérdida del navegador») ──
@@ -119,9 +131,14 @@
     }) || document.querySelector('.sede'));
   const escenario = sedeActiva?.querySelector('.escenario');
   const testis = escenario ? Array.from(escenario.querySelectorAll('.elemento--testimonio')).filter(vis) : [];
-  const conRetrato = testis.filter((t) => vis(t.querySelector('.testimonio-foto')));
-  ok('2 · Testimonios sin retrato en mural', testis.length > 0 && conRetrato.length === 0,
-     `${testis.length} testimonios, ${conRetrato.length} con retrato visible`);
+  // ── 2 · Tarjetas compactas: sin retrato en el mural (informe §4, solo mobile) ──
+  // En escritorio el retrato es correcto por diseño (portada del testimonio);
+  // este check nunca estuvo gateado y daba FAIL esperable en escritorio.
+  if (window.esMobile?.()) {
+    const conRetrato = testis.filter((t) => vis(t.querySelector('.testimonio-foto')));
+    ok('2 · Testimonios sin retrato en mural', testis.length > 0 && conRetrato.length === 0,
+       `${testis.length} testimonios, ${conRetrato.length} con retrato visible`);
+  }
   const conInvitacion = escenario ? escenario.querySelectorAll('[class$="-expandir"]').length : 0;
   ok('2b · Sin spans de invitación', conInvitacion === 0, `${conInvitacion} restantes`);
 
@@ -133,17 +150,33 @@
   }
 
   // ── 2e · M-32: ninguna tarjeta invade la cabecera institucional ───────
+  // Corrección sobre la corrida anterior: este check usaba el MISMO buffer
+  // (20px) que empujarFueraDeZonas usa como margen DE SEGURIDAD alrededor
+  // del chip — eso confunde "dentro del margen de resguardo" con "tocando
+  // el chip". Una tarjeta correctamente clampeada en MARGEN_TOP=92 con
+  // chip.bottom≈80 tiene un hueco real de 12px y NO debería contar como
+  // invasora. Ahora se mide solape de PÍXEL real (buffer 0) para el
+  // resultado, y se reporta aparte —solo informativo— cuántas tarjetas
+  // están dentro del margen de resguardo sin tocarlo.
   const chip = document.querySelector('.marca-chip');
   if (chip && escenario) {
     const cr = chip.getBoundingClientRect();
-    const invasoresChip = Array.from(escenario.querySelectorAll('.elemento'))
+    const clasificar = (buffer) => Array.from(escenario.querySelectorAll('.elemento'))
       .filter((el) => !el.classList.contains('elemento--rotacion-espera') && vis(el))
       .filter((el) => {
         const r = el.getBoundingClientRect();
-        return r.left < cr.right + 20 && r.right > cr.left - 20 && r.top < cr.bottom + 20 && r.bottom > cr.top - 20;
+        return r.left < cr.right + buffer && r.right > cr.left - buffer
+            && r.top < cr.bottom + buffer && r.bottom > cr.top - buffer;
+      })
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        return { tipo: el.dataset.tipo, top: Math.round(r.top), gap: Math.round(r.top - cr.bottom) };
       });
-    ok('2e · Ninguna tarjeta invade la cabecera (M-32)', invasoresChip.length === 0,
-       invasoresChip.length ? `${invasoresChip.length} invasor(es) | chip bottom:${Math.round(cr.bottom)}` : `chip bottom:${Math.round(cr.bottom)}`);
+    const solapeReal = clasificar(0);
+    const enMargenResguardo = clasificar(20).length;
+    ok('2e · Ninguna tarjeta TOCA la cabecera (M-32)', solapeReal.length === 0,
+       solapeReal.length ? `${solapeReal.length} solape real: ${JSON.stringify(solapeReal)} | chip bottom:${Math.round(cr.bottom)}`
+                          : `chip bottom:${Math.round(cr.bottom)} | ${enMargenResguardo} tarjeta(s) dentro del margen de resguardo de 20px sin tocarlo (esperado)`);
   }
 
   // ── 2c · V-1: color computado del cargo (mobile) ───────────────────────
