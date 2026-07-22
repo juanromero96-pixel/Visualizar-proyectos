@@ -1,222 +1,45 @@
 /**
- * lector.js
- * -----------------------------------------------------------------------
- * El "hover" (o el foco de teclado) ya trae una tarjeta al frente y la
- * agranda apenas — eso es una vista previa, vive en styles.css
- * (.elemento--enfocado) y no cambió. Esto es la interacción nueva: click,
- * tap o Enter abren el contenido completo en un lector ampliado, sobre
- * todo lo demás, pensado solo para leer.
- *
- * Es un único modal reutilizado (no uno por tarjeta), con dos formas de
- * llenarse según el tipo de elemento:
- *
- *   - Testimonio: Lector.abrir(el) — sin segundo argumento. Lee el DOM de
- *     la tarjeta tal como está en ese momento (foto, nombre, cargo, cita),
- *     porque la cita pudo haber sido sorteada al azar entre varias
- *     disponibles y tiene que coincidir exactamente con lo que la persona
- *     ya estaba viendo, no con un dato "genérico" de esa persona.
- *   - Registro de unidad académica o conceptual: Lector.abrir(el, registro)
- *     — con el registro completo de datos. A diferencia del testimonio,
- *     estos no rotan contenido: el mural solo muestra título + resumen
- *     recortado, y el cuerpo completo (texto, proyectos, cita de respaldo)
- *     vive únicamente en los datos, nunca en el DOM del mural — por eso
- *     hace falta pasarlo explícitamente en vez de leerlo de la tarjeta.
+ * lector.js — Lector editorial del Compendio · CANAL UNIFICADO (v5.0)
+ * ────────────────────────────────────────────────────────────────────
+ * Un solo motor de lectura para mobile y escritorio (informe QA #1,
+ * «unificación del hilo conductor»): la anatomía del Manual §5/§7/§8
+ * — hero, cabecera sticky, cuerpo de lectura, franja «En esta
+ * constelación» con deriva por cross-fade — se presenta como bottom
+ * sheet en mobile y como diálogo centrado (.lem--escritorio) en
+ * escritorio. El canal modal anterior (lector-superposicion + flechas
+ * ←/→ por grupo UA) fue retirado en v5.0: la deriva es por chips en
+ * ambos canales; en escritorio las flechas del teclado derivan por la
+ * misma constelación. Los selectores .lector-* de styles.css quedan
+ * sin consumidor (archivo congelado: se documenta, no se toca).
+ * El mural (layout.js — Monte Carlo desktop / zonas mobile) NO se toca.
  */
+
 const Lector = (() => {
-  let superposicion, tarjeta, contenido, botonCerrar, elementoActivador = null;
+  let elementoActivador = null;
 
-  function iniciar() {
-    superposicion = document.createElement('div');
-    superposicion.className = 'lector-superposicion';
-
-    superposicion.innerHTML = `
-      <div class="lector-tarjeta" role="dialog" aria-modal="true" aria-label="Contenido completo">
-        <button type="button" class="lector-cerrar" aria-label="Cerrar">✕</button>
-        <div class="lector-nav-ua" aria-label="Documentos relacionados" hidden>
-          <button type="button" class="lector-nav-ant" aria-label="Documento anterior">←</button>
-          <span class="lector-nav-ua-etiqueta"></span>
-          <button type="button" class="lector-nav-sig" aria-label="Documento siguiente">→</button>
-        </div>
-        <div class="lector-contenido"></div>
-      </div>
-    `;
-    document.body.appendChild(superposicion);
-
-    tarjeta = superposicion.querySelector('.lector-tarjeta');
-    contenido = superposicion.querySelector('.lector-contenido');
-    botonCerrar = superposicion.querySelector('.lector-cerrar');
-    const navUA = superposicion.querySelector('.lector-nav-ua');
-    const btnAnt = superposicion.querySelector('.lector-nav-ant');
-    const btnSig = superposicion.querySelector('.lector-nav-sig');
-
-    botonCerrar.addEventListener('click', cerrar);
-    superposicion.addEventListener('click', (evento) => {
-      if (evento.target === superposicion) cerrar();
-    });
-    document.addEventListener('keydown', (evento) => {
-      if (!estaAbierto()) return;
-      if (evento.key === 'Escape') {
-        cerrar();
-      } else if (evento.key === 'Tab') {
-        evento.preventDefault();
-        botonCerrar.focus();
-      } else if (evento.key === 'ArrowRight') {
-        navegarUA(1);
-      } else if (evento.key === 'ArrowLeft') {
-        navegarUA(-1);
-      }
-    });
-
-    btnAnt.addEventListener('click', () => navegarUA(-1));
-    btnSig.addEventListener('click', () => navegarUA(1));
+  function obtenerColorUADe(elementoOrigen) {
+    const valor = getComputedStyle(elementoOrigen).getPropertyValue('--color-ua').trim();
+    return valor || '#00a3e0';
   }
 
-  // Contexto de navegación intra-UA
-  let grupoUA = [];   // [{ el, registro|null }] — todos los docs del mismo UA visible
-  let posUA   = 0;    // posición actual en el grupo
-
-  /**
-   * Construye el grupo de navegación (hilo conductor) a partir del elemento
-   * actualmente abierto. El recorrido va de lo específico a lo general:
-   *
-   *   1. Todos los elementos visibles de la misma UA (registro-ua, testimonios
-   *      propios, registros conceptuales vinculados), ordenados por ordenNarrativo.
-   *   2. Al final del hilo: las autoridades de alcance UNaM que estén visibles
-   *      en esa sede (las que no fueron descartadas por el sorteo de autoridades).
-   *      Así el visitante puede, desde cualquier tarjeta de FCF o EAE, navegar
-   *      naturalmente hasta la voz del Vicerrector o del Secretario General
-   *      sin necesidad de cerrar el lector y buscarlos en el mural.
-   *
-   * Si el elemento abierto ya pertenece a UNaM, su hilo es solo él mismo
-   * (las autoridades generales siguen siendo de acceso individual).
-   */
-  function construirGrupoUA(elementoOrigen, registroActual) {
-    const ua = elementoOrigen.dataset.ua;
-    const escenario = elementoOrigen.closest('.escenario');
-    if (!ua || ua === 'unam' || !escenario) {
-      // Las autoridades UNaM no tienen hilo UA propio — solo ellas mismas.
-      grupoUA = [{ el: elementoOrigen, registro: registroActual }];
-      posUA = 0;
-      return;
-    }
-
-    // 1. Elementos de la UA propia (narrador + satélites), por ordenNarrativo.
-    const propios = Array.from(
-      escenario.querySelectorAll(`.elemento[data-ua="${ua}"]:not(.elemento--oculto-autoridad):not(.elemento--rotacion-espera)`)
-    ).sort((a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0));
-
-    // 2. Autoridades UNaM visibles en esta sede (no descartadas por el sorteo).
-    const autoridadesUnam = Array.from(
-      escenario.querySelectorAll('.elemento--testimonio-institucional:not(.elemento--oculto-autoridad):not(.elemento--rotacion-espera)')
-    ).sort((a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0));
-
-    const todos = [...propios, ...autoridadesUnam];
-
-    grupoUA = todos.map((el) => ({
-      el,
-      registro: el === elementoOrigen ? registroActual : null,
-    }));
-    posUA = grupoUA.findIndex((e) => e.el === elementoOrigen);
-    if (posUA < 0) posUA = 0;
-  }
-
-  function actualizarNavUA() {
-    const navUA = superposicion.querySelector('.lector-nav-ua');
-    const etiqueta = superposicion.querySelector('.lector-nav-ua-etiqueta');
-    if (grupoUA.length < 2) { navUA.hidden = true; return; }
-    navUA.hidden = false;
-    const uaActual = grupoUA[posUA]?.el?.dataset?.ua || '';
-    // Si estamos en la sección de autoridades UNaM del hilo, mostrarlo
-    const etiquetaUA = uaActual === 'unam'
-      ? 'UNaM'
-      : (uaActual.toUpperCase() || '');
-    etiqueta.textContent = `${etiquetaUA}  ·  ${posUA + 1} / ${grupoUA.length}`;
-  }
-
-  function navegarUA(delta) {
-    if (grupoUA.length < 2) return;
-    posUA = ((posUA + delta) + grupoUA.length) % grupoUA.length;
-    const { el } = grupoUA[posUA];
-    // Abrir sin reconstruir el grupo
-    const iframe = superposicion.querySelector('.lector-video-iframe');
-    if (iframe) iframe.src = '';
-    contenido.innerHTML = '';
-    if (!el.dataset.tipo || el.dataset.tipo === 'testimonio') {
-      contenido.appendChild(construirContenidoTestimonio(el));
-    } else {
-      // Para no-testimonios necesitamos los datos del item; los leemos del DOM
-      // lo más que podemos (título desde el DOM si falta el registro guardado).
-      const reg = grupoUA[posUA].registro;
-      if (reg) {
-        if (reg._tipo === 'registro-ua') contenido.appendChild(construirContenidoRegistroUA(reg, el));
-        else if (reg._tipo === 'registro-conceptual') contenido.appendChild(construirContenidoRegistroConceptual(reg, el));
-        else if (reg._tipo === 'video' || reg.tipo === 'video') contenido.appendChild(construirContenidoVideo(reg, el));
-      } else {
-        // Fallback: mostrar título e invitar a expandir desde el mural
-        contenido.innerHTML = `<p style="padding:24px;opacity:0.7">Regresá al mural para expandir este documento.</p>`;
-      }
-    }
-    actualizarNavUA();
-    botonCerrar.focus();
-  }
-
-  function estaAbierto() {
-    return superposicion.classList.contains('lector-superposicion--abierta');
-  }
-
-  /**
-   * Abre el lector. Sin segundo argumento: comportamiento de testimonio
-   * (lee el DOM). Con segundo argumento: un registro de unidad académica,
-   * conceptual, o video — construido directamente desde sus datos completos.
-   */
-  function abrir(elementoOrigen, registro = null) {
-    elementoActivador = elementoOrigen;
-    // H-08: congelar el mural mientras el visitante lee un documento.
-    // La tarjeta de origen permanece visible; al cerrar se reanuda.
-    window.Rotacion?.pausar();
-
-    // En mobile: usar el bottom sheet en vez del modal centrado de desktop
-    if (window.esMobile && window.esMobile()) {
-      abrirEnMobile(elementoOrigen, registro);
-      return;
-    }
-    abrirEnDesktop(elementoOrigen, registro);
-  }
-
-  function abrirEnDesktop(elementoOrigen, registro) {
-    contenido.innerHTML = '';
-    if (!registro) {
-      contenido.appendChild(construirContenidoTestimonio(elementoOrigen));
-    } else if (registro._tipo === 'registro-ua') {
-      contenido.appendChild(construirContenidoRegistroUA(registro, elementoOrigen));
-    } else if (registro._tipo === 'registro-conceptual') {
-      contenido.appendChild(construirContenidoRegistroConceptual(registro, elementoOrigen));
-    } else if (registro._tipo === 'video' || registro.tipo === 'video') {
-      contenido.appendChild(construirContenidoVideo(registro, elementoOrigen));
-    }
-    construirGrupoUA(elementoOrigen, registro);
-    actualizarNavUA();
-    if (registro && posUA >= 0 && posUA < grupoUA.length) {
-      grupoUA[posUA].registro = registro;
-    }
-    elementoOrigen.setAttribute('aria-expanded', 'true');
-    document.body.classList.add('lector-bloqueando-scroll');
-    superposicion.classList.add('lector-superposicion--abierta');
-    window.setTimeout(() => botonCerrar.focus(), 60);
+  function escaparHTMLLector(texto = '') {
+    return String(texto).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
-     LECTOR EDITORIAL MOBILE — Manual del Sistema Editorial §5 · §7 · §8
-     Fases F2 (hero, cabecera sticky, tipografía, grabber, drag-down),
-     F3 (índice de proyectos plegado, galería, player 16:9 sin autoplay)
-     y F4 (franja «En esta constelación» con cross-fade, sin cerrar).
+     LECTOR EDITORIAL — Manual §5 · §7 · §8 · CANAL UNIFICADO (v5.0)
+     F2 (hero, cabecera sticky, tipografía, grabber, drag-down),
+     F3 (índice plegado, galería, reproductor-fachada en el hero),
+     F4 (franja «En esta constelación» con cross-fade, sin cerrar).
      ─────────────────────────────────────────────────────────────────────
-     Reemplaza al canal provisional que reutilizaba el bottom sheet
-     genérico con flechas ←/→: la deriva entre registros ahora ocurre por
-     los chips de constelación (misma capacidad, forma del Manual §7).
-     Todo vive detrás de esMobile(); Desktop conserva su modal intacto.
-     Los nodos .lem-* se crean solo acá — su CSS (mobile.css) no necesita
-     media query, igual que .bottom-sheet.
+     Informe QA #1 · «unificación del hilo conductor»: el mismo motor
+     renderiza bottom sheet en mobile y diálogo centrado en escritorio
+     (.lem--escritorio). El modal desktop anterior (superposición +
+     flechas ←/→ por grupo UA) fue retirado: la deriva es por chips en
+     ambos canales; en escritorio, las flechas del teclado derivan por
+     la misma constelación. Los nodos .lem-* se crean solo acá — su CSS
+     no necesita media query (el guard es la creación en JS). El mural
+     (layout.js) no se toca.
      ═══════════════════════════════════════════════════════════════════ */
 
   let lem = null;         // referencias del lector editorial (creación perezosa)
@@ -254,6 +77,11 @@ const Lector = (() => {
         </aside>
       </div>
     `;
+    // Canal (v5.0): mismo DOM, composición distinta. En escritorio el
+    // sheet se presenta como diálogo centrado; el resto de la anatomía
+    // (hero, cabecera, cuerpo, constelación) es idéntica.
+    if (!window.esMobile?.()) sheet.classList.add('lem--escritorio');
+
     document.body.appendChild(velo);
     document.body.appendChild(sheet);
 
@@ -311,6 +139,20 @@ const Lector = (() => {
     document.addEventListener('keydown', (e) => {
       if (!sheet.classList.contains('lem--abierta')) return;
       if (e.key === 'Escape') { cerrarLectorEditorial(); return; }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        // Unificación (v5.0): en escritorio las flechas derivan por la
+        // constelación, pivoteando sobre el documento actual en el orden
+        // editorial. Mismo destino que los chips — un solo hilo conductor.
+        const lista = elementosDeConstelacion(true);
+        if (lista.length > 1) {
+          const i = lista.indexOf(lemActual.el);
+          const paso = e.key === 'ArrowRight' ? 1 : -1;
+          const destino = lista[((i < 0 ? 0 : i) + paso + lista.length) % lista.length];
+          if (destino && destino !== lemActual.el) derivarA(destino);
+        }
+        e.preventDefault();
+        return;
+      }
       if (e.key !== 'Tab') return;
       const focos = Array.from(sheet.querySelectorAll('button, a[href], iframe'))
         .filter((n) => n.offsetParent !== null);
@@ -427,14 +269,28 @@ const Lector = (() => {
        <div class="lem-hero-meta">${metaHTML}</div>`);
 
     if (tipo === 'video') {
+      // Identidad de la UA integrada al hero (informe QA #1 · mejora §1):
+      // el edificio institucional en un chip de 28 px junto a la pleca.
+      const ua = el.dataset.ua || '';
+      if (ua && ua !== 'unam') {
+        const chipUA = document.createElement('span');
+        chipUA.className = 'lem-hero-ua-chip';
+        chipUA.setAttribute('aria-hidden', 'true');
+        chipUA.innerHTML = `<img src="assets/ua/${ua}.jpg" alt="" loading="lazy" decoding="async">`;
+        chipUA.querySelector('img').addEventListener('error', () => chipUA.remove());
+        lem.hero.appendChild(chipUA);
+      }
+      // Fachada de reproducción (informe QA #1 · bug «repetición»): el hero
+      // ES el reproductor. Miniatura + ■ ocupan el 16:9; al tocar, el
+      // iframe reemplaza la miniatura EN EL MISMO marco — un solo
+      // rectángulo de video en toda la vista. El Manual prohíbe el
+      // autoplay AL ABRIR el Lector: acá nada se reproduce sin gesto.
       const play = document.createElement('button');
       play.type = 'button';
       play.className = 'lem-hero-play';
-      play.setAttribute('aria-label', 'Ir al reproductor');
+      play.setAttribute('aria-label', 'Reproducir video');
       play.textContent = '▶';
-      play.addEventListener('click', () => {
-        lem.cuerpo.querySelector('.lem-video-marco')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
+      play.addEventListener('click', () => activarPlayerEnHero(item));
       lem.hero.appendChild(play);
     }
 
@@ -442,6 +298,22 @@ const Lector = (() => {
     lem.topBadge.textContent = badgeTop;
     lem.topTitulo.textContent = tituloTop;
     lem.sheet.setAttribute('aria-label', tituloTop ? `Lector — ${tituloTop}` : 'Lector del compendio');
+  }
+
+  // Fachada del reproductor: el iframe SOLO existe tras el gesto del
+  // visitante — antes del tap no sale ni una petición a YouTube. Los
+  // parámetros rel/modestbranding son los de v4.9; autoplay=1 es legítimo
+  // aquí porque la reproducción la inicia el propio tap (no la apertura).
+  function activarPlayerEnHero(item) {
+    if (!item || !item.youtubeId) return;
+    if (lem.hero.querySelector('.lem-video-iframe')) return;   // ya activo
+    lem.hero.classList.add('lem-hero--reproduciendo');
+    lem.hero.innerHTML = `
+      <iframe class="lem-video-iframe"
+        src="https://www.youtube-nocookie.com/embed/${escaparHTMLLector(item.youtubeId)}?rel=0&modestbranding=1&playsinline=1&autoplay=1"
+        title="${escaparHTMLLector(item.titulo || '')}"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>`;
   }
 
   // ── Cuerpo (§7/§8): tipografía de lectura por tipo de registro ─────────
@@ -542,22 +414,16 @@ const Lector = (() => {
       if (indice) lem.cuerpo.appendChild(indice);
 
     } else if (tipo === 'video' && item) {
-      // §7: player 16:9 embebido, NUNCA autoplay; título y crédito debajo.
+      // Informe QA #1 · bug «repetición de contenido»: el reproductor vive
+      // en el hero (fachada). El cuerpo queda para lo que el marco no
+      // dice: crédito, unidad académica completa y resumen — sin segundo
+      // marco 16:9 y sin repetir el título (ya está en el hero y en la
+      // cabecera fija al scrollear).
       const esTesti = item.subtipo === 'testimonio_audiovisual';
       const tipoLabel = esTesti ? 'Testimonio audiovisual' : 'Video institucional';
       const credito = [tipoLabel, item.fecha || 'Mayo 2026', item.autor || '']
         .filter(Boolean).join(' · ');
       lem.cuerpo.insertAdjacentHTML('beforeend', `
-        <div class="lem-video-marco">
-          <div class="lem-video-ratio">
-            <iframe class="lem-video-iframe"
-              src="https://www.youtube-nocookie.com/embed/${escaparHTMLLector(item.youtubeId)}?rel=0&modestbranding=1"
-              title="${escaparHTMLLector(item.titulo || '')}"
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen loading="lazy"></iframe>
-          </div>
-        </div>
-        <h3 class="lem-video-titulo">${escaparHTMLLector(item.titulo || '')}</h3>
         <p class="lem-video-credito">${escaparHTMLLector(credito)}</p>
         <p class="lem-ua-completa">${escaparHTMLLector(item.unidadAcademicaCompleta || '')}</p>
         ${item.resumen ? `<p>${escaparHTMLLector(item.resumen)}</p>` : ''}`);
@@ -582,7 +448,7 @@ const Lector = (() => {
   // audiovisual entra por rotación y por Lector». Las autoridades UNaM
   // descartadas por el sorteo (.elemento--oculto-autoridad) quedan fuera,
   // igual que en el hilo desktop.
-  function elementosDeConstelacion() {
+  function elementosDeConstelacion(incluirActual = false) {
     const actual = lemActual.el;
     const ua = actual.dataset.ua;
     const escenario = lemOrigen.el.closest('.escenario');
@@ -596,7 +462,7 @@ const Lector = (() => {
       escenario.querySelectorAll('.elemento--testimonio-institucional:not(.elemento--oculto-autoridad):not(.elemento--rotacion-espera)')
     ).sort(porOrden);
 
-    return [...propios, ...autoridades].filter((el) => el !== actual);
+    return [...propios, ...autoridades].filter((el) => incluirActual || el !== actual);
   }
 
   function etiquetaChip(el) {
@@ -633,7 +499,7 @@ const Lector = (() => {
   // reemplaza y el retorno (P6) sigue apuntando a la tarjeta de ORIGEN.
   function derivarA(el2) {
     if (!lem || !lem.sheet.classList.contains('lem--abierta')) return;
-    const iframe = lem.cuerpo.querySelector('.lem-video-iframe');
+    const iframe = lem.sheet.querySelector('.lem-video-iframe');
     if (iframe) iframe.src = '';
     lem.scroll.classList.add('lem-scroll--fundido');
     window.setTimeout(() => {
@@ -653,8 +519,25 @@ const Lector = (() => {
     construirConstelacion();
   }
 
-  function abrirEnMobile(elementoOrigen, registro) {
+  function abrirEditorial(elementoOrigen, registro) {
     asegurarLectorEditorial();
+
+    // Saneamiento del modo enfoque (informe QA #1 · «tarjetas atascadas»):
+    // si el escenario llegó con clases residuales de un enfoque previo
+    // (focusin disparado por un tap anterior), se limpian ANTES de abrir.
+    // Solo mobile: en escritorio el hover gobierna y se restablece solo.
+    if (window.esMobile?.()) {
+      const esc = elementoOrigen.closest('.escenario');
+      if (esc) {
+        esc.classList.remove('escenario--enfocando');
+        delete esc.dataset.uaActiva;
+        esc.querySelectorAll('.elemento--enfocado, .elemento--ua-alejado, .elemento--ua-relacionado')
+          .forEach((e) => {
+            e.classList.remove('elemento--enfocado', 'elemento--ua-alejado', 'elemento--ua-relacionado');
+            e.style.zIndex = '';
+          });
+      }
+    }
 
     const carrusel = document.getElementById('carrusel');
     lemOrigen = { el: elementoOrigen, scrollLeft: carrusel ? carrusel.scrollLeft : 0 };
@@ -677,7 +560,7 @@ const Lector = (() => {
   function cerrarLectorEditorial() {
     if (!lem || !lem.sheet.classList.contains('lem--abierta')) return;
 
-    const iframe = lem.cuerpo.querySelector('.lem-video-iframe');
+    const iframe = lem.sheet.querySelector('.lem-video-iframe');
     if (iframe) iframe.src = '';   // detiene la reproducción sin YT API
 
     lem.sheet.classList.remove('lem--abierta');
@@ -708,190 +591,26 @@ const Lector = (() => {
     window.Rotacion?.reanudar();   // H-08: reanudar el mural al cerrar
   }
 
-  function construirContenidoTestimonio(elementoOrigen) {
-    const foto = elementoOrigen.querySelector('.testimonio-foto')?.cloneNode(true);
-    const nombre = elementoOrigen.querySelector('.testimonio-nombre')?.textContent || '';
-    const cargo = elementoOrigen.querySelector('.testimonio-cargo')?.textContent || '';
-    const institucion = elementoOrigen.querySelector('.testimonio-institucion')?.textContent || '';
-    const cita = elementoOrigen.querySelector('.testimonio-cita')?.textContent || '';
-
-    const envoltorio = document.createDocumentFragment();
-    if (foto) {
-      foto.className = 'lector-foto';
-      envoltorio.appendChild(foto);
-    }
-    const cuerpo = document.createElement('div');
-    cuerpo.className = 'lector-cuerpo';
-    cuerpo.innerHTML = `
-      <p class="lector-nombre">${nombre}</p>
-      <p class="lector-cargo">${cargo}</p>
-      <p class="lector-institucion">${institucion}</p>
-      <blockquote class="lector-cita">${cita}</blockquote>
-    `;
-    envoltorio.appendChild(cuerpo);
-    return envoltorio;
+  // ── API pública ─────────────────────────────────────────────────────────
+  function iniciar() {
+    // v5.0: el Lector se construye de forma perezosa en el primer abrir()
+    // (asegurarLectorEditorial). iniciar() se conserva por compatibilidad
+    // con app.js; ya no crea superposición alguna por adelantado.
   }
 
   /**
-   * Registro Institucional de Unidad Académica: portada fotográfica (si existe),
-   * badge de la sigla, título, el cuerpo completo en párrafos, la lista de
-   * proyectos reales mencionados en la fuente, y una cita de respaldo con
-   * atribución completa.
-   *
-   * La portada coexiste con el texto: aparece como cabecera del lector, por
-   * encima del badge y el título, igual que en la tarjeta del mural.
+   * Abre el Lector. Sin segundo argumento: testimonio (lee el DOM de la
+   * tarjeta + el.__item). Con segundo argumento: registro UA, conceptual
+   * o video — construido desde sus datos completos.
    */
-  function construirContenidoRegistroUA(registro, elementoOrigen) {
-    const colorUA = obtenerColorUADe(elementoOrigen);
-    const envoltorio = document.createElement('div');
-    envoltorio.className = 'lector-registro';
-
-    const portadaHTML = registro.imagenPortada
-      ? `<div class="lector-registro-portada">
-           <img src="${escaparHTMLLector(registro.imagenPortada)}"
-                alt="${escaparHTMLLector(registro.unidadAcademica || '')} — sede"
-                loading="eager">
-         </div>`
-      : '';
-
-    const parrafos = String(registro.cuerpo || '')
-      .split(/\n{2,}/)
-      .map((p) => `<p>${escaparHTMLLector(p.trim())}</p>`)
-      .join('');
-
-    const proyectosHTML = Array.isArray(registro.proyectos) && registro.proyectos.length
-      ? `
-        <div class="lector-registro-proyectos">
-          <h3>Proyectos mencionados</h3>
-          <ul>
-            ${registro.proyectos
-              .map((p) => `<li><strong>${escaparHTMLLector(p.nombre)}</strong> — ${escaparHTMLLector(p.sintesis)}</li>`)
-              .join('')}
-          </ul>
-        </div>`
-      : '';
-
-    const citaHTML = registro.cita
-      ? `<blockquote class="lector-registro-cita">${escaparHTMLLector(registro.cita)}<cite>— ${escaparHTMLLector(registro.citaAutor || '')}${registro.citaCargo ? `, ${escaparHTMLLector(registro.citaCargo)}` : ''}</cite></blockquote>`
-      : '';
-
-    envoltorio.innerHTML = `
-      ${portadaHTML}
-      <div class="lector-registro-meta">
-        <span class="lector-registro-badge" style="--color-ua:${colorUA}">${escaparHTMLLector(registro.unidadAcademica || '')}</span>
-        <p class="lector-registro-completa">${escaparHTMLLector(registro.unidadAcademicaCompleta || '')}</p>
-        <h2 class="lector-registro-titulo">${escaparHTMLLector(registro.titulo)}</h2>
-      </div>
-      <div class="lector-registro-cuerpo">${parrafos}</div>
-      ${proyectosHTML}
-      ${citaHTML}
-    `;
-    return envoltorio;
+  function abrir(elementoOrigen, registro = null) {
+    elementoActivador = elementoOrigen;
+    // H-08: congelar el mural mientras el visitante lee un documento.
+    window.Rotacion?.pausar();
+    abrirEditorial(elementoOrigen, registro);
   }
 
-  /**
-   * Registro Conceptual: más austero — badge (UA o "Síntesis · Sede"),
-   * título y el desarrollo completo de la idea en párrafos. Sin lista de
-   * proyectos ni cita separada: las citas que respaldan la idea ya están
-   * entretejidas dentro del propio cuerpo, con su atribución.
-   */
-  function construirContenidoRegistroConceptual(registro, elementoOrigen) {
-    const colorUA = obtenerColorUADe(elementoOrigen);
-    const envoltorio = document.createElement('div');
-    envoltorio.className = 'lector-registro lector-registro--conceptual';
-
-    const parrafos = String(registro.cuerpo || '')
-      .split(/\n{2,}/)
-      .map((p) => `<p>${escaparHTMLLector(p.trim())}</p>`)
-      .join('');
-
-    const etiqueta = registro.unidadAcademica
-      ? registro.unidadAcademica
-      : `Síntesis · ${registro.sede.charAt(0).toUpperCase()}${registro.sede.slice(1)}`;
-
-    envoltorio.innerHTML = `
-      <span class="lector-registro-badge" style="--color-ua:${colorUA}">${escaparHTMLLector(etiqueta)}</span>
-      <h2 class="lector-registro-titulo lector-registro-titulo--conceptual">${escaparHTMLLector(registro.titulo)}</h2>
-      <div class="lector-registro-cuerpo">${parrafos}</div>
-    `;
-    return envoltorio;
-  }
-
-  // El color por unidad académica se calcula una sola vez, en app.js, al
-  // construir cada tarjeta (única fuente de verdad) — acá solo se lee lo
-  // que ya quedó guardado como variable CSS en la tarjeta de origen, sin
-  // duplicar la lógica de la paleta en este archivo.
-  function obtenerColorUADe(elementoOrigen) {
-    const valor = getComputedStyle(elementoOrigen).getPropertyValue('--color-ua').trim();
-    return valor || '#00a3e0';
-  }
-
-  function escaparHTMLLector(texto = '') {
-    return String(texto).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  /**
-   * Documento audiovisual: reproductor YouTube embebido (sin cookies, sin
-   * sugerencias de YT) en la parte superior, metadatos institucionales
-   * debajo. Se integra al mismo sistema de lectura que el resto del archivo.
-   *
-   * Seguridad: el iframe usa youtube-nocookie.com y sandbox restrictivo.
-   * Autoplay: activa sólo el autoplay, sin autoplay en YT propiamente.
-   */
-  function construirContenidoVideo(registro, elementoOrigen) {
-    const colorUA = obtenerColorUADe(elementoOrigen);
-    const envoltorio = document.createElement('div');
-    envoltorio.className = 'lector-video';
-
-    const esTesti = registro.subtipo === 'testimonio_audiovisual';
-    const tipoLabel = esTesti ? 'Testimonio audiovisual' : 'Video institucional';
-    const autorHTML = registro.autor
-      ? `<p class="lector-video-autor"><strong>Participante:</strong> ${escaparHTMLLector(registro.autor)}</p>`
-      : '';
-
-    // El iframe se crea como elemento DOM para poder anularlo on cerrar
-    // (setear src = '' detiene la reproducción sin necesidad de YT API).
-    envoltorio.innerHTML = `
-      <div class="lector-video-reproductor">
-        <div class="lector-video-ratio">
-          <iframe
-            class="lector-video-iframe"
-            src="https://www.youtube-nocookie.com/embed/${escaparHTMLLector(registro.youtubeId)}?rel=0&modestbranding=1&autoplay=1"
-            title="${escaparHTMLLector(registro.titulo)}"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            loading="lazy"
-          ></iframe>
-        </div>
-      </div>
-      <div class="lector-video-metadatos">
-        <span class="lector-registro-badge" style="--color-ua:${colorUA}">${escaparHTMLLector(registro.unidadAcademica || '')}</span>
-        <p class="lector-video-tipo">${escaparHTMLLector(tipoLabel)} · ${escaparHTMLLector(registro.fecha || 'Mayo 2026')}</p>
-        <h2 class="lector-registro-titulo">${escaparHTMLLector(registro.titulo)}</h2>
-        ${autorHTML}
-        <p class="lector-video-ua-completa">${escaparHTMLLector(registro.unidadAcademicaCompleta || '')}</p>
-        <p class="lector-video-descripcion">${escaparHTMLLector(registro.resumen || '')}</p>
-      </div>
-    `;
-    return envoltorio;
-  }
-
-  function cerrar() {
-    // Detener el video antes de cerrar el lector: setear src='' en el iframe
-    // es equivalente a pausar sin necesitar la YT IFrame API.
-    const iframe = superposicion.querySelector('.lector-video-iframe');
-    if (iframe) iframe.src = '';
-
-    superposicion.classList.remove('lector-superposicion--abierta');
-    document.body.classList.remove('lector-bloqueando-scroll');
-    elementoActivador?.setAttribute('aria-expanded', 'false');
-    elementoActivador?.focus();
-    elementoActivador = null;
-    // H-08: reanudar la rotación del mural al cerrar el documento.
-    window.Rotacion?.reanudar();
-  }
-
-  return { iniciar, abrir };
+  return { iniciar, abrir, cerrar: cerrarLectorEditorial };
 })();
 
 window.Lector = Lector;

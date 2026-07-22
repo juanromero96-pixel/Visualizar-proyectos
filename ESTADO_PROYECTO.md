@@ -440,3 +440,35 @@ Antes de auditar cualquier cosa en el teléfono:
 - **P2 — pleca, no relleno.** La identidad de la UA se marca con una pleca (4 px en badges/hero, 3 px en citas y chips) del color institucional, nunca tiñendo el fondo. Preserva legibilidad AA del texto sobre `#080c10`.
 - **P3 — el audiovisual entra por rotación y por Lector.** Los satélites en espera de rotación integran la constelación del Lector aunque no estén visibles en el mural en ese instante.
 - **P6 — el origen es inmutable.** Derivar entre registros nunca reescribe el punto de retorno: al cerrar, el foco y el destello vuelven a la tarjeta desde la que se abrió el Lector, y el scroll del mural se restaura al píxel.
+
+---
+
+## 14. Informe QA #1 → build v5.0 (bugs de dispositivo + unificación del hilo)
+
+> Primera auditoría con evidencia de dispositivo real sobre v4.9 (gate en verde). Los cuatro bugs rojos y las cuatro mejoras del informe se resolvieron con causa raíz demostrada. **Un solo motor de Lector para ambos canales desde este build.**
+
+### 14.1 Bugs → causa demostrada → intervención
+
+| Bug (informe) | Causa raíz (evidencia) | Intervención |
+|---|---|---|
+| Solape de tarjetas en Oberá/Eldorado (6.853/9.648 px² medidos) | Tarjetas de `offH` 225–257 px contra zonas de ~100 px: el retrato (y su margen) aportaba 44–70 px y **cargaba después de `calcularCapacidad()`**, inflando la altura real sobre la medida. Simulación fiel del pipeline: reproduce el orden de magnitud del device con las alturas medidas (Eldorado 8.646 px² sim vs 9.648 real) | Tarjeta compacta (informe §4): retrato fuera del mural mobile (`.testimonio-foto` display:none — vive en el hero del Lector §5), cargo a 2 líneas máx. **Con alturas compactas la misma simulación da 0 px² / 0 pares en ambas sedes** |
+| «Al visualizar un elemento el layout colapsa, tarjetas atascadas» | `iniciarInteraccionDeEnfoque` engancha `focusin/focusout`: en touch, el tap dispara `activar()`; al cerrar el Lector, el retorno de foco lo re-dispara sin `mouseleave` que limpie → escenario permanente en `--ua-alejado` (`opacity:.18 + pointer-events:none`, styles.css L923) | Early-return del sistema de enfoque en mobile (app.js) — es lenguaje hover de desktop. Además el Lector sanea clases residuales al abrir (lector.js) |
+| Registros fotográficos faltantes (Eldorado) | Cero rutas rotas (audit completo). Causa real: **4 fotografías institucionales huérfanas** en `assets/photos/` sin referencia en el corpus (`eae-equipo`, `eae-estudiantes-presentacion`, `eae-semana-extension`, `fcf-aula-magna`) — la galería F3 existía, el campo `galeria` nunca se cargó | Campo `galeria` agregado a `r-eae-ua` (3 fotos) y `r-fcf-ua` (1), con alt neutrales derivados del archivo (fidelidad: nada inventado). El Lector las renderiza sin cambio de código |
+| Pérdida del navegador de sedes | Boot jsdom de la cadena real: **el nav SÍ se crea** (estructura sana). La causa en device no está demostrada; hipótesis principal: `position:fixed; bottom:0` anclado al layout viewport bajo la barra del navegador | Blindaje doble en mobile.js: reintentos acotados + **fallback de creación** desde `.sede` (delega en `window.__carrusel`), y **corrección por VisualViewport** (no-op si no hay divergencia). El validador v5.0 imprime telemetría (`rect.bottom` vs `innerHeight` vs `vv.height`) para confirmar el mecanismo en el device |
+| Repetición en la vista de video | v4.9 renderizaba miniatura en hero + player + título en cuerpo (dos marcos 16:9, título 2×) | **Fachada**: el hero ES el reproductor — miniatura + ▶ + chip de identidad UA (edificio 28 px); el tap reemplaza la miniatura por el iframe EN el mismo marco. Cuerpo: crédito + UA completa + resumen, sin marco ni título repetidos |
+
+### 14.2 Unificación del hilo conductor (mejora §2 del informe)
+
+`lector.js` reescrito como **canal único** (897→616 líneas): la anatomía editorial (hero → cuerpo → constelación con cross-fade) se presenta como bottom sheet en mobile y como diálogo centrado en escritorio (`.lem--escritorio`, sin media query — el guard es la clase que asigna JS). El modal desktop anterior (`.lector-superposicion` + flechas ←/→ por grupo UA) fue retirado; en escritorio las **flechas del teclado derivan por la misma constelación** que los chips. Los selectores `.lector-*` de `styles.css` quedan sin consumidor: **styles.css está congelado, se documenta y no se toca**. Los spans de invitación («Abrir expediente», «Leer fragmento»…) se retiraron de ambos canales — la tarjeta completa ya registraba click + Enter/Espacio; se añadió `aria-label` descriptivo por tipo.
+
+### 14.3 Nota sobre autoplay
+
+El principio del Manual prohíbe la reproducción **al abrir** el Lector. La fachada lo cumple estrictamente: antes del tap no existe iframe (ni sale una petición a YouTube). `autoplay=1` en el src post-tap es reproducción **iniciada por gesto** — el patrón estándar de fachada — y el validador lo verifica en ese orden (sin iframe al derivar → tap → iframe con nocookie+autoplay).
+
+### 14.4 Verificación
+
+Batería jsdom sobre el arranque completo real (index + 8 scripts + corpus): **28/28 PASS** en ambos canales — incluye fachada de punta a punta, galería EAE (3 fotos), saneamiento de enfoque, deriva por flechas en escritorio con datos reales y retorno al píxel. No-regresión: `styles.css`, `layout.js`, `carousel/animations/storage/intro.js`, `testimonios/multimedia.json` **idénticos byte a byte**. Evidencia visual: `tools/evidencia-informe1-v5.0.png` (mural compacto con las posiciones del pipeline simulado + fachada + escritorio). Gate en device: banner `v5.0-2026-07-21-informe1` + `tools/validacion-lector.js`.
+
+### 14.5 Fuera de alcance de este build
+
+Eldorado sigue **sin videos en el corpus** (0 en multimedia.json — faltante documental, no bug). La sesión F5 con lectores reales continúa pendiente (dependencia humana).

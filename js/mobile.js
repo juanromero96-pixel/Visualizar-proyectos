@@ -327,7 +327,42 @@ function crearNavMobile() {
 
   const sedesNodos = Array.from(document.querySelectorAll('.ruta-nodo'));
   if (!sedesNodos.length) {
-    window.setTimeout(crearNavMobile, 400);
+    // v5.0 (informe QA #1 · «pérdida del navegador»): reintento acotado.
+    // Si .ruta-nodo no aparece en ~2 s, el nav se construye igual desde
+    // las secciones .sede delegando en window.__carrusel — la existencia
+    // del navegador no puede depender de otra cadena de render.
+    crearNavMobile._intentos = (crearNavMobile._intentos || 0) + 1;
+    if (crearNavMobile._intentos <= 5) {
+      window.setTimeout(crearNavMobile, 400);
+      return;
+    }
+    const NOMBRES_SEDE = { posadas: 'Posadas', obera: 'Oberá', eldorado: 'Eldorado' };
+    const seccionesFb = Array.from(document.querySelectorAll('.sede'));
+    if (!seccionesFb.length) return;
+    const navFb = document.createElement('nav');
+    navFb.id = 'ruta-m';
+    navFb.setAttribute('aria-label', 'Navegación entre sedes');
+    seccionesFb.forEach((sec, i) => {
+      const clave = sec.dataset.sede || `sede-${i + 1}`;
+      const btn = document.createElement('button');
+      btn.className = 'ruta-m-btn' + (i === 0 ? ' ruta-m-btn--activo' : '');
+      btn.dataset.indice = String(i);
+      btn.textContent = NOMBRES_SEDE[clave] || clave;
+      btn.setAttribute('aria-label', `Ir a ${NOMBRES_SEDE[clave] || clave}`);
+      btn.addEventListener('click', () => {
+        window.__carrusel?.ir?.(i);
+        mostrarInfoSede(sec);
+      });
+      navFb.appendChild(btn);
+    });
+    document.body.appendChild(navFb);
+    window.actualizarNavMobile = (indice) => {
+      navFb.querySelectorAll('.ruta-m-btn').forEach((b, i) => {
+        b.classList.toggle('ruta-m-btn--activo', i === indice);
+      });
+    };
+    anclarNavAlViewportVisual(navFb);
+    _diag(`crearNavMobile: FALLBACK — nav creado desde .sede (${seccionesFb.length})`);
     return;
   }
 
@@ -364,7 +399,28 @@ function crearNavMobile() {
     });
   };
 
+  anclarNavAlViewportVisual(nav);
   _diag(`crearNavMobile: nav creado con ${sedesNodos.length} sedes`);
+}
+
+// v5.0 (informe QA #1 · «pérdida del navegador»): en Chromium/Android,
+// position:fixed puede anclarse al LAYOUT viewport — con la barra del
+// navegador visible, bottom:0 queda por DEBAJO del área visible: el nav
+// existe pero no se ve. Se corrige elevándolo exactamente la diferencia
+// entre layout y visual viewport (la fórmula estándar de bottom-seguro).
+// Cuando no hay divergencia el delta es 0 y esto es un no-op. El validador
+// v5.0 imprime la telemetría (rect.bottom vs innerHeight) para confirmar
+// el mecanismo en el dispositivo.
+function anclarNavAlViewportVisual(nav) {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const ajustar = () => {
+    const delta = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    nav.style.bottom = delta ? `${delta}px` : '';
+  };
+  vv.addEventListener('resize', ajustar);
+  vv.addEventListener('scroll', ajustar);
+  ajustar();
 }
 
 // ─── Swipe entre sedes ────────────────────────────────────────────────────────

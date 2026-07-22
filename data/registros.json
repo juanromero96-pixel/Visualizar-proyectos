@@ -311,7 +311,13 @@
     "duracion": 700,
     "ordenNarrativo": 1,
     "visible": true,
-    "imagenPortada": "assets/ua/fcf.jpg"
+    "imagenPortada": "assets/ua/fcf.jpg",
+    "galeria": [
+      {
+        "src": "assets/photos/fcf-aula-magna.jpg",
+        "alt": "Aula magna de la Facultad de Ciencias Forestales durante la jornada"
+      }
+    ]
   },
   {
     "id": "r-eae-ua",
@@ -352,7 +358,21 @@
     "duracion": 700,
     "ordenNarrativo": 2,
     "visible": true,
-    "imagenPortada": "assets/ua/eae.jpg"
+    "imagenPortada": "assets/ua/eae.jpg",
+    "galeria": [
+      {
+        "src": "assets/photos/eae-semana-extension.jpg",
+        "alt": "Semana de la Extensión en la Escuela Agrotécnica de Eldorado"
+      },
+      {
+        "src": "assets/photos/eae-estudiantes-presentacion.jpg",
+        "alt": "Estudiantes de la EAE durante una presentación"
+      },
+      {
+        "src": "assets/photos/eae-equipo.jpg",
+        "alt": "Equipo de la Escuela Agrotécnica de Eldorado"
+      }
+    ]
   },
   {
     "id": "r-conceptual-eldorado-semillas",

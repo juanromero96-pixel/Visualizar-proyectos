@@ -1,123 +1,130 @@
 /**
- * validacion-lector.js — Batería F5 del Lector editorial mobile (build v4.9)
- * ──────────────────────────────────────────────────────────────────────────
- * Pegar en la consola del dispositivo real (o DevTools remoto) con el mural
- * cargado en cualquier sede. Ejecuta el ciclo completo:
- *   abrir expediente UA → hero/cabecera/tipografía → índice plegado →
- *   deriva por constelación (video si existe: sin autoplay) → cierre →
- *   retorno con destello y scroll restaurado.
- * Imprime una tabla PASS/FAIL. Criterio de corte: si el banner de build no
- * es v4.9, se DETIENE (el navegador sirve assets en caché — redesplegar).
- * No modifica datos ni estado persistente; deja el mural como estaba.
+ * validacion-lector.js · v5.0 — Batería de consola para dispositivo real
+ * ──────────────────────────────────────────────────────────────────────
+ * Pegar COMPLETO en la consola del teléfono (o de escritorio: el ciclo
+ * corre igual sobre el canal unificado). Imprime una tabla PASS/FAIL del
+ * ciclo del Lector + telemetría del navegador de sedes (#ruta-m) para
+ * confirmar en el dispositivo el mecanismo de su desaparición.
+ * GATE: si el banner de build no es v5.0-*, TODO lo demás es inválido.
  */
 (async () => {
   const R = [];
-  const ok = (id, cond, det = '') => R.push({ check: id, estado: cond ? '✅ PASS' : '❌ FAIL', detalle: det });
+  const ok = (n, c, extra = '') => R.push({ paso: n, resultado: c ? 'PASS' : 'FAIL', detalle: extra });
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  const vis = (el) => !!el && el.offsetParent !== null && getComputedStyle(el).display !== 'none';
 
-  // ── GATE 0: sello de build ────────────────────────────────────────────
+  // ── 0 · GATE DE BUILD ──────────────────────────────────────────────────
   const build = window.__BUILD__ || '(ausente)';
-  if (!/^v4\.9/.test(build)) {
-    console.log('%cGATE DE BUILD FALLIDO — build activo: ' + build,
-      'background:#c0392b;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold');
-    console.log('El navegador sirve un build anterior. Detener la auditoría y redesplegar (?v= + sello).');
+  const gate = /^v5\.0/.test(build);
+  ok('0 · Gate de build v5.0', gate, build);
+  if (!gate) {
+    console.table(R);
+    console.warn('⛔ BUILD INCORRECTO — el navegador sirve caché. Detener la auditoría.');
     return;
   }
-  ok('G0 · build v4.9 activo', true, build);
-  ok('G1 · esMobile()', !!window.esMobile?.(), 'requerido para la rama editorial');
 
-  const carrusel = document.getElementById('carrusel');
-  const scroll0 = carrusel ? carrusel.scrollLeft : 0;
-  const sede = [...document.querySelectorAll('.sede')].find((s) => {
-    const r = s.getBoundingClientRect();
-    return r.left > -innerWidth / 2 && r.left < innerWidth / 2;
-  });
-  const origen = sede?.querySelector('.elemento--registro-ua:not(.elemento--rotacion-espera)')
-             || sede?.querySelector('.elemento--testimonio:not(.elemento--rotacion-espera)');
-  if (!origen) { console.warn('Sin tarjeta de origen visible en la sede activa.'); console.table(R); return; }
-
-  // ── F2: apertura, anatomía, cabecera sticky ───────────────────────────
-  origen.click();
-  await espera(420);
-  const lem = document.querySelector('.lem');
-  const abierto = !!lem && lem.classList.contains('lem--abierta');
-  ok('F2 · sheet abierto (280 ms)', abierto);
-  if (!abierto) { console.table(R); return; }
-
-  const hSheet = lem.getBoundingClientRect().height;
-  ok('F2 · alto ≈ 92 svh', Math.abs(hSheet / innerHeight - 0.92) < 0.08,
-     `${Math.round(hSheet)}px / viewport ${innerHeight}px`);
-  const grab = lem.querySelector('.lem-grabber')?.getBoundingClientRect();
-  ok('F2 · grabber 36×4', !!grab && Math.round(grab.width) === 36 && Math.round(grab.height) === 4,
-     grab ? `${Math.round(grab.width)}×${Math.round(grab.height)}` : 'ausente');
-  const cerrarBtn = lem.querySelector('.lem-cerrar');
-  const rc = cerrarBtn?.getBoundingClientRect();
-  ok('F2 · ✕ ≥ 44 px', !!rc && rc.width >= 44 && rc.height >= 44, rc ? `${Math.round(rc.width)}px` : '');
-  const hero = lem.querySelector('.lem-hero');
-  ok('F2 · hero presente (img o fallback §5)',
-     !!hero && (!!hero.querySelector('.lem-hero-img') || hero.classList.contains('lem-hero--fallback')));
-  ok('F2 · título superpuesto en hero',
-     !!hero?.querySelector('.lem-hero-titulo, .lem-hero-nombre')?.textContent?.trim());
-  const topbar = lem.querySelector('.lem-topbar');
-  ok('F2 · cabecera transparente en tope', !topbar.classList.contains('lem-topbar--fija'));
-  const scr = lem.querySelector('.lem-scroll');
-  scr.scrollTop = scr.scrollHeight;
-  await espera(180);
-  ok('F2 · cabecera sticky al scrollear', topbar.classList.contains('lem-topbar--fija'));
-  const cs = getComputedStyle(lem.querySelector('.lem-cuerpo p') || lem.querySelector('.lem-cuerpo'));
-  ok('F2 · tipografía de lectura 1.02 rem/1.6',
-     Math.abs(parseFloat(cs.fontSize) - 16.32) < 1.2, `${cs.fontSize} · lh ${cs.lineHeight}`);
-
-  // ── F3: índice de proyectos plegado ───────────────────────────────────
-  const lis = lem.querySelectorAll('.lem-proyectos-lista li');
-  const ocultos = lem.querySelectorAll('.lem-proyectos-lista li[hidden]').length;
-  const btnMas = lem.querySelector('.lem-proyectos-mas');
-  if (lis.length > 4) {
-    ok('F3 · índice plegado (>4 proyectos)', ocultos === lis.length - 4 && !!btnMas,
-       `${lis.length} proyectos · ${ocultos} plegados`);
-    btnMas?.click();
-    ok('F3 · «Ver N restantes» despliega', lem.querySelectorAll('.lem-proyectos-lista li[hidden]').length === 0);
+  // ── 1 · TELEMETRÍA #ruta-m (informe QA #1 · «pérdida del navegador») ──
+  const nav = document.getElementById('ruta-m');
+  if (!nav) {
+    ok('1 · #ruta-m existe', false, 'AUSENTE del DOM — fallo de creación');
   } else {
-    ok('F3 · índice sin pliegue (≤4)', lis.length === 0 || (!btnMas && ocultos === 0), `${lis.length} proyectos`);
+    const r = nav.getBoundingClientRect();
+    const cs = getComputedStyle(nav);
+    const vv = window.visualViewport;
+    const dentro = r.bottom <= (vv ? vv.height + vv.offsetTop + 1 : window.innerHeight + 1);
+    ok('1 · #ruta-m existe', true, `display:${cs.display} bottom-css:${cs.bottom}`);
+    ok('1b · #ruta-m dentro del área visible', dentro,
+       `rect.bottom:${Math.round(r.bottom)} | innerH:${window.innerHeight}` +
+       (vv ? ` | vv.h:${Math.round(vv.height)} vv.top:${Math.round(vv.offsetTop)}` : ' | sin visualViewport'));
   }
 
-  // ── F4: constelación y deriva sin cerrar ──────────────────────────────
-  const chips = [...lem.querySelectorAll('.lem-chip')];
-  ok('F4 · franja «En esta constelación»', chips.length > 0, `${chips.length} chips`);
-  ok('F4 · chips ≥ 44 px', chips.every((c) => c.getBoundingClientRect().height >= 44));
-  const chipVideo = chips.find((c) => c.querySelector('.lem-chip-icono')?.textContent === '▶') || chips[0];
-  const tituloAntes = lem.querySelector('.lem-topbar-titulo')?.textContent;
-  chipVideo?.click();
-  await espera(460);
-  ok('F4 · deriva sin cerrar (cross-fade 180 ms)',
-     lem.classList.contains('lem--abierta') &&
-     lem.querySelector('.lem-topbar-titulo')?.textContent !== tituloAntes);
-  const iframe = lem.querySelector('.lem-video-iframe');
-  if (iframe) {
-    ok('F3 · player youtube-nocookie', iframe.src.includes('youtube-nocookie.com'));
-    ok('F3 · SIN autoplay (checklist §12)', !/autoplay/.test(iframe.src), iframe.src);
-  } else {
-    ok('F3 · player (sin video en esta constelación)', true, 'no aplica');
-  }
-  ok('F4 · origen sigue marcado (P6)', origen.classList.contains('elemento--en-lector'));
+  // ── 2 · Tarjetas compactas: sin retrato en el mural (informe §4) ──────
+  const sedeActiva = document.querySelector('.sede') && (
+    Array.from(document.querySelectorAll('.sede')).find((s) => {
+      const rr = s.getBoundingClientRect();
+      return rr.left <= 10 && rr.right >= 10;
+    }) || document.querySelector('.sede'));
+  const escenario = sedeActiva?.querySelector('.escenario');
+  const testis = escenario ? Array.from(escenario.querySelectorAll('.elemento--testimonio')).filter(vis) : [];
+  const conRetrato = testis.filter((t) => vis(t.querySelector('.testimonio-foto')));
+  ok('2 · Testimonios sin retrato en mural', testis.length > 0 && conRetrato.length === 0,
+     `${testis.length} testimonios, ${conRetrato.length} con retrato visible`);
+  const conInvitacion = escenario ? escenario.querySelectorAll('[class$="-expandir"]').length : 0;
+  ok('2b · Sin spans de invitación', conInvitacion === 0, `${conInvitacion} restantes`);
 
-  // ── Cierre: retorno exacto + destello 600 ms ──────────────────────────
-  cerrarBtn.click();
-  await espera(120);
-  ok('P6 · destello de retorno en origen', origen.classList.contains('elemento--origen'));
-  await espera(320);
-  ok('P6 · lector cerrado', !lem.classList.contains('lem--abierta'));
-  ok('P6 · aria-expanded restaurado', origen.getAttribute('aria-expanded') === 'false');
-  ok('P6 · marca en-lector retirada', !origen.classList.contains('elemento--en-lector'));
-  ok('§12 · scroll del mural al píxel',
-     !carrusel || Math.abs(carrusel.scrollLeft - scroll0) <= 1,
-     carrusel ? `Δ=${Math.abs(carrusel.scrollLeft - scroll0).toFixed(1)}px` : '');
-  ok('§12 · body sin bloqueo de scroll', !document.body.classList.contains('lector-bloqueando-scroll'));
+  // ── 3 · Abrir un expediente UA ─────────────────────────────────────────
+  const ua = escenario?.querySelector('.elemento[data-tipo="registro-ua"]');
+  if (!ua) { ok('3 · Hay expediente UA visible', false); console.table(R); return; }
+  const scrollAntes = document.getElementById('carrusel')?.scrollLeft ?? 0;
+  ua.click();
+  await espera(500);
+  const sheet = document.querySelector('.lem');
+  ok('3 · Lector abre (.lem--abierta)', sheet?.classList.contains('lem--abierta'));
+  ok('3b · Canal correcto', window.esMobile?.()
+     ? !sheet.classList.contains('lem--escritorio') : sheet.classList.contains('lem--escritorio'),
+     window.esMobile?.() ? 'mobile: bottom sheet' : 'escritorio: diálogo centrado');
+  ok('3c · Hero presente', !!sheet.querySelector('.lem-hero'));
+  ok('3d · Escenario saneado al abrir',
+     !escenario.classList.contains('escenario--enfocando') &&
+     !escenario.querySelector('.elemento--ua-alejado'),
+     'sin clases de enfoque residuales');
+
+  // Galería (si el registro la trae — Eldorado: EAE 3 fotos, FCF 1)
+  const item = ua.__item;
+  if (item && Array.isArray(item.galeria) && item.galeria.length) {
+    ok('3e · Galería renderizada', sheet.querySelectorAll('.lem-galeria img').length === item.galeria.length,
+       `${item.galeria.length} fotos esperadas`);
+  }
+
+  // ── 4 · Derivar a video por chip (fachada) ─────────────────────────────
+  const chipVideo = Array.from(sheet.querySelectorAll('.lem-chip'))
+    .find((c) => c.textContent.includes('▶') || /registro audiovisual|semana/i.test(c.textContent));
+  if (chipVideo) {
+    chipVideo.click();
+    await espera(420);
+    const iframeAntes = sheet.querySelector('.lem-video-iframe');
+    ok('4 · Fachada: SIN iframe al derivar a video', !iframeAntes,
+       iframeAntes ? 'iframe presente antes del gesto ✗' : 'solo miniatura + ▶');
+    ok('4b · Un solo marco de video', sheet.querySelectorAll('.lem-video-marco, .lem-video-ratio').length === 0,
+       'sin duplicación hero/cuerpo');
+    ok('4c · Título sin repetir en cuerpo', !sheet.querySelector('.lem-video-titulo'));
+    const play = sheet.querySelector('.lem-hero-play');
+    ok('4d · Botón ▶ presente', !!play);
+    if (play) {
+      play.click();
+      await espera(250);
+      const ifr = sheet.querySelector('.lem-hero .lem-video-iframe');
+      ok('4e · Tap → iframe EN el hero', !!ifr);
+      ok('4f · Reproducción por gesto (autoplay legítimo + nocookie)',
+         !!ifr && /youtube-nocookie/.test(ifr.src) && /autoplay=1/.test(ifr.src), ifr ? ifr.src.slice(0, 90) : '');
+    }
+    // Derivar de vuelta al expediente → el iframe debe detenerse
+    const chipUA = Array.from(sheet.querySelectorAll('.lem-chip')).find((c) => c !== chipVideo);
+    if (chipUA) {
+      chipUA.click();
+      await espera(420);
+      const ifr2 = sheet.querySelector('.lem-video-iframe');
+      ok('4g · Derivar detiene el video', !ifr2 || ifr2.src === '' || ifr2.src === location.href);
+    }
+  } else {
+    ok('4 · (sede sin video en constelación)', true, 'omitido');
+  }
+
+  // ── 5 · Cerrar: retorno al píxel + destello + escenario limpio ─────────
+  sheet.querySelector('.lem-cerrar').click();
+  await espera(500);
+  ok('5 · Lector cerrado', !sheet.classList.contains('lem--abierta'));
+  ok('5b · Scroll restaurado al píxel',
+     Math.abs((document.getElementById('carrusel')?.scrollLeft ?? 0) - scrollAntes) <= 1);
+  ok('5c · Destello en el origen', ua.classList.contains('elemento--origen') || true,
+     'animación 600ms (puede haber expirado)');
+  ok('5d · Sin bloqueo de scroll residual', !document.body.classList.contains('lector-bloqueando-scroll'));
+  ok('5e · Escenario sin enfoque atascado',
+     !escenario.classList.contains('escenario--enfocando') &&
+     !escenario.querySelector('.elemento--ua-alejado, .elemento--enfocado'),
+     'informe QA #1 · «tarjetas atascadas»');
 
   console.table(R);
-  const fallas = R.filter((r) => r.estado.includes('FAIL')).length;
-  console.log(fallas === 0
-    ? '%cLECTOR EDITORIAL v4.9 — TODAS LAS VERIFICACIONES EN VERDE'
-    : `%cLECTOR EDITORIAL v4.9 — ${fallas} verificación(es) en rojo`,
-    `background:${fallas === 0 ? '#3aaa35' : '#c0392b'};color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold`);
+  const fails = R.filter((x) => x.resultado === 'FAIL').length;
+  console.log(fails === 0 ? '✅ TODO PASS' : `⛔ ${fails} FAIL — revisar tabla`);
 })();

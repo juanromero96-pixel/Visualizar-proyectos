@@ -29,7 +29,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v4.9-2026-07-19-f2f4';
+  window.__BUILD__ = 'v5.0-2026-07-21-informe1';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -157,7 +157,9 @@ window.__DIAG__ = DIAG;
   window.Mobile?.inicializar(); // solo configura bottom sheets, no toca el DOM del mural
   Secuenciador.iniciar();
 
-  const carrusel = new Carrusel({
+  // v5.0: referencia global para el fallback de #ruta-m en mobile.js
+  // (creación del nav aun si .ruta-nodo no llegara a poblarse). Inerte fuera de eso.
+  const carrusel = window.__carrusel = new Carrusel({
     contenedor,
     secciones,
     onCambio: (indice, seccionNueva) => {
@@ -366,6 +368,7 @@ function crearElemento(item) {
     el.style.setProperty('--color-ua', colorDeUnidadAcademica(resolverUA(item.institucion || '')));
     el.setAttribute('aria-haspopup', 'dialog');
     el.setAttribute('aria-expanded', 'false');
+    el.setAttribute('aria-label', `Abrir testimonio de ${item.nombreCompleto || 'la persona'}`);
     el.addEventListener('click', () => Lector.abrir(el));
     el.addEventListener('keydown', (evento) => {
       // Enter/Espacio abren el lector ampliado — el resto de las teclas
@@ -384,6 +387,7 @@ function crearElemento(item) {
     el.style.setProperty('--color-ua', colorDeUnidadAcademica(item.unidadAcademica));
     el.setAttribute('aria-haspopup', 'dialog');
     el.setAttribute('aria-expanded', 'false');
+    el.setAttribute('aria-label', `Abrir expediente ${item.unidadAcademica || ''}: ${item.titulo || ''}`);
     el.addEventListener('click', () => Lector.abrir(el, item));
     el.addEventListener('keydown', (evento) => {
       if (evento.key === 'Enter' || evento.key === ' ') {
@@ -396,6 +400,7 @@ function crearElemento(item) {
     el.style.setProperty('--color-ua', item.unidadAcademica ? colorDeUnidadAcademica(item.unidadAcademica) : 'var(--unam-cian)');
     el.setAttribute('aria-haspopup', 'dialog');
     el.setAttribute('aria-expanded', 'false');
+    el.setAttribute('aria-label', `Abrir registro: ${item.titulo || ''}`);
     el.addEventListener('click', () => Lector.abrir(el, item));
     el.addEventListener('keydown', (evento) => {
       if (evento.key === 'Enter' || evento.key === ' ') {
@@ -420,6 +425,7 @@ function crearElemento(item) {
       el.style.setProperty('--color-ua', colorDeUnidadAcademica(item.unidadAcademica));
       el.setAttribute('aria-haspopup', 'dialog');
       el.setAttribute('aria-expanded', 'false');
+      el.setAttribute('aria-label', `Ver registro audiovisual: ${item.titulo || ''}`);
       el.addEventListener('click', () => Lector.abrir(el, item));
       el.addEventListener('keydown', (evento) => {
         if (evento.key === 'Enter' || evento.key === ' ') {
@@ -495,7 +501,6 @@ function crearTarjetaTestimonio(item, interior) {
     <p class="testimonio-cargo">${escaparHTML(item.cargo)}</p>
     <p class="testimonio-institucion">${escaparHTML(item.institucion)}</p>
     <blockquote class="testimonio-cita">${escaparHTML(citas.reduce((mas, c) => (c.length > mas.length ? c : mas), ''))}</blockquote>
-    <span class="testimonio-expandir" aria-hidden="true">· Leer fragmento</span>
   `;
   // Arranca mostrando la cita MÁS LARGA disponible — no vacía, no la que
   // termine eligiéndose al azar — para que la primera medición de alto
@@ -594,7 +599,6 @@ function crearTarjetaRegistroUA(item, interior) {
       <span class="registro-ua-badge">${escaparHTML(item.unidadAcademica || '')}</span>
       <h3 class="registro-titulo">${escaparHTML(item.titulo)}</h3>
       <p class="registro-resumen">${escaparHTML(item.resumen)}</p>
-      <span class="registro-expandir" aria-hidden="true">· Abrir expediente</span>
     </div>
   `;
 
@@ -624,7 +628,6 @@ function crearTarjetaRegistroConceptual(item, interior) {
     <span class="registro-conceptual-badge">${etiqueta}</span>
     <h3 class="registro-conceptual-titulo">${escaparHTML(item.titulo)}</h3>
     <p class="registro-conceptual-resumen">${escaparHTML(item.resumen)}</p>
-    <span class="registro-conceptual-expandir" aria-hidden="true">· Abrir registro</span>
   `;
 }
 
@@ -655,7 +658,6 @@ function crearTarjetaYoutubeVideo(item, interior) {
       <span class="video-badge">${escaparHTML(item.unidadAcademica || '')}${autorLabel}</span>
       <h3 class="video-titulo">${escaparHTML(item.titulo)}</h3>
       <p class="video-resumen">${escaparHTML(item.resumen)}</p>
-      <span class="video-expandir" aria-hidden="true">${window.esMobile?.() ? '· Ver registro' : '▷ Registro audiovisual'}</span>
     </div>
   `;
 
@@ -884,6 +886,17 @@ function hashSimple(texto = '') {
  * agrupación de la constelación sin necesidad de líneas ni gráficos.
  */
 function iniciarInteraccionDeEnfoque(secciones) {
+  // ── v5.0 · Informe QA #1 (bug «layout colapsa / tarjetas atascadas») ──
+  // Causa raíz demostrada: este sistema engancha focusin→activar y
+  // focusout→desactivar. En touch, el tap que abre el Lector dispara
+  // focusin; al cerrar, el retorno de foco a la tarjeta origen dispara
+  // focusin OTRA VEZ y no existe mouseleave que lo limpie → el escenario
+  // queda atascado en modo enfoque: todas las tarjetas de otras UA al 18 %
+  // de opacidad y con pointer-events:none (.elemento--ua-alejado,
+  // styles.css L923). El enfoque es un lenguaje hover de desktop; en
+  // mobile el tap tiene UNA promesa: abrir el Lector (P5).
+  if (window.esMobile?.()) return;
+
   secciones.forEach((seccion) => {
     const escenario = seccion.querySelector('.escenario');
     if (!escenario) return;
