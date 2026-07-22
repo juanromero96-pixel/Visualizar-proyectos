@@ -223,38 +223,35 @@
   }
 
   // ── 2h · M-05: miniatura de portada en registro-ua mobile ──────────────
-  // Corrección sobre la corrida anterior: comparaba getBoundingClientRect
-  // (POST-transform) contra 46px CSS (PRE-transform). Cada .elemento se
-  // posiciona con transform: scale(var(--escala)) — el renderizado real
-  // es 46×escala, no 46 plano. Confirmado con evidencia: getComputedStyle
-  // de la portada dio height:46px/padding:0/border:0/margin:0 EXACTOS —
-  // el CSS está perfecto; el check comparaba mal.
+  // 3ª corrección del check, esta vez con causa CONFIRMADA por los datos
+  // de dispositivo: getComputedStyle dio height:46px/padding:0/border:0
+  // EXACTOS y offsetHeight del interior dio 186 (=140+46, el número de la
+  // simulación) — el CSS es perfecto. Los 51-53px del rect eran el AABB
+  // de la tarjeta ROTADA: los registro-ua llevan rotacion ±2° a ±3° por
+  // diseño (data/registros.json), y getBoundingClientRect devuelve la
+  // caja alineada a ejes del rectángulo rotado: 165·sin(2°)+46·cos(2°) ≈
+  // 51.7px. La garantía real de M-05 es la caja de LAYOUT (pre-transform)
+  // — la misma métrica que usa calcularCapacidad() — así que se mide con
+  // offsetHeight, que ignora transforms por definición.
   if (window.esMobile?.()) {
     const portadas = Array.from(escenario?.querySelectorAll('.elemento--registro-ua .registro-ua-portada') || [])
       .filter(vis);
     if (portadas.length) {
-      const medidas = portadas.map((p) => {
-        const escalaEl = p.closest('.elemento');
-        const escala = parseFloat(escalaEl?.style.getPropertyValue('--escala')) || 1;
-        const alturaReal = p.getBoundingClientRect().height;
-        return { alturaReal, esperada: 46 * escala, escala };
-      });
-      const todasFijas = medidas.every((m) => Math.abs(m.alturaReal - m.esperada) <= 2);
-      ok('2h · Miniatura de portada con altura fija proporcional a --escala (M-05)', todasFijas,
-         medidas.map((m) => `${Math.round(m.alturaReal)}px (46×${m.escala.toFixed(2)}=${m.esperada.toFixed(1)})`).join(' · '));
+      const alturas = portadas.map((p) => p.offsetHeight);
+      const todasFijas = alturas.every((h) => Math.abs(h - 46) <= 1);
+      ok('2h · Miniatura de portada: caja de layout fija en 46px (M-05)', todasFijas,
+         alturas.map((h) => `${h}px`).join(' · ') + ' (offsetHeight, pre-transform — la métrica de calcularCapacidad)');
       if (!todasFijas) {
         const p0 = portadas[0];
         const csP = getComputedStyle(p0);
         const interior = p0.closest('.elemento-interior');
-        const csI = interior ? getComputedStyle(interior) : null;
-        console.log('  🔎 2h detalle — portada (CSS puro, pre-transform):', {
-          height: csP.height, boxSizing: csP.boxSizing, border: csP.border,
-          padding: csP.padding, margin: csP.margin,
-        });
-        console.log('  🔎 2h detalle — .elemento-interior padre:', {
-          tienePortadaClass: interior?.classList.contains('tiene-portada'),
-          padding: csI?.padding, offsetHeight: interior?.offsetHeight,
-        });
+        console.log('  🔎 2h detalle — portada (CSS puro):', JSON.stringify({
+          height: csP.height, padding: csP.padding, border: csP.borderWidth, margin: csP.margin,
+        }));
+        console.log('  🔎 2h detalle — interior:', JSON.stringify({
+          tienePortada: interior?.classList.contains('tiene-portada'),
+          offsetHeight: interior?.offsetHeight,
+        }));
       }
     } else {
       ok('2h · (sin registro-ua con imagenPortada en esta sede)', true, 'omitido');

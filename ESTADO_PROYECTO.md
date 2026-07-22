@@ -648,3 +648,29 @@ Build `v5.6-2026-07-22-m05portada`. Pendiente, mismo criterio que todo lo demás
 **Verificación:** `node --check` OK en los tres archivos tocados. Batería jsdom 32-33/33 sin regresión. Simulación geométrica mobile: solape 0px² sostenido (la función es compartida entre ambos canales). Verificación del ciclo editorial (DTI): 17/17 cobertura, vuelta completada — sin regresión, ya que `empujarFueraDeZonas` también participa del camino mobile.
 
 Build `v5.7-2026-07-22-v3fix3`. Pendiente, mismo criterio de siempre: una corrida en Oberá escritorio para confirmar en dispositivo real.
+
+---
+
+## 22 · M-05 cerrado con evidencia de pantalla (capturas de dispositivo, las tres sedes mobile)
+
+Tres capturas de dispositivo real confirman visualmente lo que la telemetría ya había medido (§20, corrección del check en la ronda 51px=46×escala):
+
+- **Posadas**: FHyCS, FCEQyN y FCE — las tres con miniatura de portada renderizada sobre la tarjeta. Composición: 3 narradores + 2 autoridades (Guidek, Matot — K=2 respetado a la vista) + 1 conceptual; brújula «01/03»; chip institucional y nav sin invasión.
+- **Oberá**: FAyD y FI con miniatura. Franco + Matot como las 2 autoridades visibles. Brújula «02/03».
+- **Eldorado**: FCF y EAE con miniatura (las portadas que salieron del rescate de fotos huérfanas de la v5.0). Katogui + Guidek como autoridades. Brújula «03/03».
+
+Los **siete narradores UA del corpus** muestran su fotografía institucional en el mural mobile. M-05 queda cerrado por la cadena completa: implementación CSS de altura fija → simulación geométrica (0px²) → batería jsdom → telemetría de dispositivo (46×escala exacto) → evidencia visual de pantalla en las tres sedes.
+
+**Observación menor registrada, no bug:** en Posadas, la tarjeta de Matot solapa parcialmente el final del texto del registro conceptual «Síntesis». Está dentro de la tolerancia declarada del canal mobile (solape mínimo entre tipos distintos es aceptable; lo que importa es que ningún texto quede completamente cubierto — comentario de diseño en layout.js, SEPARACION_MINIMA=8). Se anota para vigilancia si se repite con más severidad tras rotaciones largas. Los títulos truncados con «…» siguen siendo M-08 (curaduría de títulos cortos — decisión de contenido, no de código).
+
+**Pendiente sin cambios:** la corrida de Oberá **escritorio** con el modo diagnóstico activo (`localStorage.setItem('diag','1')`) — los pegados de consola de esta ronda llegaron vacíos. Es el único dato que falta para cerrar la invasión del chip con el mecanismo entendido.
+
+---
+
+## 23 · Cierres por evidencia de dispositivo (archivo txt — el canal que sí funciona)
+
+**M-05 — cerrado definitivamente, causa del "51px" confirmada al píxel.** Los datos de dispositivo dieron: `getComputedStyle` de la portada `height:46px, padding:0, border:0, margin:0` exactos; `offsetHeight` del interior **186** (=140+46, el número exacto de la simulación geométrica pre-implementación); `--escala` 1.00. Con escala 1, la única explicación física del rect de 51-53px es la **rotación editorial** de las tarjetas: los registro-ua llevan `rotacion` ±2° a ±3° por diseño (data/registros.json, verificado: FHyCS 2°, FCEQyN −2°, FCE 3°, FAyD −2°, FI 2°, FCF −2°, EAE 2°), y `getBoundingClientRect` devuelve la caja alineada a ejes del rectángulo rotado: 165·sin(2°)+46·cos(2°)=51.7px; con 2.4-3°, ~53px — los valores medidos, al píxel. La garantía real de M-05 (altura de layout constante, conocida por `calcularCapacidad()`) se cumple perfecta: esa función usa `offsetHeight`, que ignora transforms. El check 2h se corrigió por tercera y última vez para medir con la misma métrica del sistema. Tercera confirmación independiente de que el diseño de altura fija era el correcto.
+
+**Ciclo editorial — la validación pendiente del DTI (§19.7, Eldorado) queda cerrada con dispositivo real.** Las tres corridas mobile: Posadas `vuelta 4 · 17/17 exhibidos · completo`; Oberá `vuelta 21 · 12/12 · completo` (¡veintiuna vueltas completas en sesión larga — robustez sostenida!); Eldorado `vuelta 2 · 8/10 · faltan: t-rivaldi-eldorado, registro-conceptual-general-5` — exactamente el estado esperable a mitad de vuelta 2, con la telemetría nombrando los faltantes como fue diseñada. La generalización a sede sin estructura de Posadas, que jsdom no pudo simular, está verificada donde importa.
+
+**Abierto sin cambios:** la invasión del chip en Oberá **escritorio** — las tres corridas del txt son mobile (1/1b/1c PASS = `esMobile` verdadero); la corrida de escritorio con `diag=1` y las líneas `empuje-zona` sigue siendo el único dato pendiente del tablero.
