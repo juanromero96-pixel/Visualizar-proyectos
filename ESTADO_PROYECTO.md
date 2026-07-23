@@ -746,3 +746,21 @@ La medición previa que documentaba "PASO_BUSQUEDA 24→12 da +17% de área" fue
 **Causa real de la densidad, con evidencia:** a factor 1.26 el conjunto real de Posadas todavía entra sin solape; a 1.40 ya no. El algoritmo está cerca de su techo natural para 8 candidatos de este tamaño — no es timidez de parámetros, es un límite estructural del criterio actual ("todosEntraron" exige cero solape para seguir creciendo). Tocar eso con efecto real requeriría cambiar el criterio de crecimiento del propio Monte Carlo — Protocolo §7 en serio, decisión editorial deliberada (tolerar algo de solape, o mostrar más tarjetas más chicas), no un ajuste de bajo riesgo. Queda documentado, no implementado — el DTF exige exactamente esto cuando la evidencia no sostiene el camino fácil.
 
 Build `v5.9-2026-07-22-d01`.
+
+---
+
+## 27 · Informe de bug de dispositivo real — hallazgo propio, no del entorno de simulación (build v5.9.1)
+
+**El reporte:** tres capturas de dispositivo real (Brave, Android) mostrando solape severo de tarjetas en las tres sedes mobile — no densidad esperable, sino contenido genuinamente tapado (ej. "Extensión y vinculación:" con el resto de esa tarjeta invisible detrás de otra).
+
+**La hipótesis del informe — evaluada, no aceptada por defecto.** Se propuso que el sistema estaría "codificado rígidamente a la resolución del simulador de Brave". Esto se contrasta con evidencia real ya establecida en esta sesión: la detección mobile usa `pointer:coarse AND hover:none` (no un ancho de viewport fijo), y buena parte de este proyecto se construyó corrigiendo discrepancias reales entre el simulador (720px) y el dispositivo físico (864px medido) — la arquitectura fue deliberadamente construida para no depender de un viewport simulado específico. La hipótesis, tal como está formulada, no se sostiene contra el código real.
+
+**Lo que sí se encontró — y es un hallazgo propio, no ajeno.** El sistema mobile de distribución (grilla de 2 columnas × 7 filas con balanceo de columna/banda y penalización por saturación, `js/layout.js`) asigna zonas **iterando el array de nodos en el orden en que llega** — las primeras tarjetas reclaman las mejores celdas antes que las siguientes. Ese array se construía directamente de `escenario.querySelectorAll(...)`, en **orden del DOM**. M-30 (implementada dos turnos atrás, para que la tabulación por teclado siguiera el orden narrativo del ciclo) reordena exactamente ese DOM. El algoritmo de distribución pasó a depender de un orden que dejó de ser el mismo tras M-30, sin que esa dependencia hubiera sido intencional ni documentada — nadie la había necesitado tocar hasta ahora.
+
+**Fix, no un revertido de M-30 (la tabulación accesible sigue siendo un requisito real):** se desacopla el algoritmo de distribución del orden del DOM — ordena explícitamente por `dataset.orden` (el campo narrativo que ya existe para esto, mismo criterio que usa el Lector para constelaciones) antes de asignar zonas. Esto deja al sistema inmune a cualquier reordenamiento del DOM, pasado o futuro, sin importar su motivo — un endurecimiento estructural, no un parche puntual.
+
+**Verificación y sus límites, con la misma honestidad de siempre.** Batería 33/33, solape geométrico 0px² (simulación Python, no depende del layout de jsdom), ciclo del DTI intacto. **No pude reproducir el solape exacto observado en las capturas** con el sistema completo de bandas/columnas — reconstruirlo con fidelidad total (penalizaciones, balanceo, las anclas reales de las tres sedes) excede lo verificable sin el dispositivo en este momento. El fix es correcto por diseño (un algoritmo de layout no debería depender del orden de inserción del DOM, punto aparte de si esta fue la única causa), pero el cierre con certeza total pide lo de siempre: una corrida del validador en el dispositivo real que generó esas capturas.
+
+**Algo que tampoco se puede confirmar desde capturas de pantalla:** la URL mostrada (`visualizar-proyectos.vercel.app`) es el despliegue de producción — no hay forma de saber, solo por las capturas, qué build está sirviendo ese dominio en este momento. El validador imprime `window.__BUILD__` como primer paso exactamente para esto — sin ese dato, no se puede descartar que las capturas reflejen un despliegue anterior a alguna corrección ya resuelta en sesiones previas.
+
+Build `v5.9.1-2026-07-22-ordendom`.

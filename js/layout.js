@@ -50,6 +50,20 @@ const Distribuidor = (() => {
       const elementos = Array.from(escenario.querySelectorAll('.elemento:not(.elemento--rotacion-espera)'));
     if (!elementos.length) return;
 
+    // Informe de bug (dispositivo real, capturas de las tres sedes): tras
+    // M-30 (orden de foco por teclado, reordena el DOM real), el sistema
+    // de zonas mobile —que asigna por orden de llegada al array `nodos`,
+    // dejando que las primeras tarjetas reclamen las mejores celdas antes
+    // que las siguientes— pasó a depender de un orden que ya no es el
+    // mismo que antes. La corrección correcta no es revertir M-30 (la
+    // tabulación accesible es un requisito real): es que ESTE algoritmo
+    // nunca debió depender del orden del DOM en primer lugar — se ordena
+    // acá, explícitamente, por dataset.orden (el campo narrativo que YA
+    // existe para esto — mismo criterio que usa el Lector para constelaciones,
+    // lector.js: "porOrden"), quedando inmune a cualquier reordenamiento
+    // del DOM, pasado o futuro, sin importar su motivo.
+    elementos.sort((a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0));
+
     const rectEscenario = escenario.getBoundingClientRect();
     const ancho = rectEscenario.width;
     const alto = rectEscenario.height;
