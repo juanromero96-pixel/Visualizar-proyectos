@@ -1,0 +1,164 @@
+/* =============================================================================
+   SUBSISTEMA DE AUTOCORRECCIÓN — CSS
+   DTI §11 (panel), §6.3 (clases correctivas de accesibilidad), §6.5 (layout)
+   ============================================================================= */
+
+/* ── Panel de diagnóstico (§11) ─────────────────────────────────────────── */
+
+#ac-panel {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: min(440px, 100vw);
+  max-height: 72vh;
+  overflow-y: auto;
+  background: rgba(8, 12, 16, 0.96);
+  color: var(--papel, #f5f3ee);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  border-top: 1px solid rgba(0, 163, 224, 0.4);
+  border-left: 1px solid rgba(0, 163, 224, 0.4);
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+}
+
+#ac-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(0, 163, 224, 0.12);
+  border-bottom: 1px solid rgba(0, 163, 224, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+#ac-panel-titulo {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--unam-cian, #00a3e0);
+  letter-spacing: 0.04em;
+}
+
+#ac-panel-cerrar {
+  background: none;
+  border: none;
+  color: var(--papel, #f5f3ee);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  opacity: 0.7;
+  border-radius: 3px;
+  transition: opacity 150ms;
+}
+#ac-panel-cerrar:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+
+#ac-panel-cuerpo {
+  padding: 10px;
+}
+
+#ac-panel section {
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+#ac-panel h3 {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--unam-cian, #00a3e0);
+  margin: 0 0 6px;
+}
+
+#ac-panel p {
+  margin: 3px 0;
+  font-size: 11px;
+}
+
+#ac-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+#ac-panel th {
+  text-align: left;
+  padding: 2px 4px;
+  color: rgba(245, 243, 238, 0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+#ac-panel td { padding: 2px 4px; vertical-align: middle; }
+#ac-panel tr:hover td { background: rgba(255,255,255,0.04); }
+
+#ac-panel code {
+  background: rgba(0, 163, 224, 0.15);
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 10px;
+}
+
+#ac-sec-controles button {
+  background: rgba(0, 163, 224, 0.2);
+  border: 1px solid rgba(0, 163, 224, 0.4);
+  color: var(--papel, #f5f3ee);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  margin: 2px;
+  transition: background 150ms;
+}
+#ac-sec-controles button:hover { background: rgba(0, 163, 224, 0.35); }
+
+/* ── Clases correctivas de accesibilidad (C-20: contraste de foco) ────── */
+
+/* Cuando el Executor aplica C-20, agrega esta clase al documentElement */
+.ac--focus-refuerzo :focus-visible {
+  outline: 3px solid var(--unam-cian, #00a3e0) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 6px rgba(10, 14, 16, 0.85) !important;
+}
+
+/* ── Fallback cromático de fondo de sede (C-12) ─────────────────────────── */
+
+.sede--fallback-cromatico .sede-bg {
+  background: linear-gradient(
+    145deg,
+    rgba(8, 12, 16, 0.95) 0%,
+    rgba(0, 40, 60, 0.9) 50%,
+    rgba(8, 12, 16, 0.95) 100%
+  ) !important;
+}
+.sede--fallback-cromatico .sede-bg::after {
+  content: 'Imagen de fondo no disponible';
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  font-size: 9px;
+  color: rgba(245, 243, 238, 0.3);
+  letter-spacing: 0.05em;
+}
+
+/* ── Variante tipográfica compacta (C-34) ────────────────────────────────── */
+
+.ac--titulo-compacto {
+  font-size: 0.88em !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em;
+}
+
+/* ── Indicador visual de intervención activa (feedback sutil) ───────────── */
+
+.elemento--ac-corrigiendo {
+  outline: 1px dashed rgba(0, 163, 224, 0.4);
+  outline-offset: 2px;
+  animation: ac-corrigiendo-pulse 800ms ease-in-out 2;
+}
+@keyframes ac-corrigiendo-pulse {
+  0%, 100% { outline-color: rgba(0, 163, 224, 0.4); }
+  50% { outline-color: rgba(0, 163, 224, 0.8); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .elemento--ac-corrigiendo { animation: none; }
+}

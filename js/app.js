@@ -8,10 +8,22 @@ const DIAG = (() => {
   try { activo = /[?&]diag=1/.test(location.search) || localStorage.getItem('diag') === '1'; } catch (e) {}
   const t0 = performance.now();
   const eventos = [];
+  // DTI §14.3: listeners del Subsistema de Autocorrección. subscribe() permite
+  // que el Monitor observe cada evento emitido sin alterar los sitios de
+  // emisión (log sigue siendo la única API que usa el motor) y sin que el
+  // motor sepa que existe el subsistema. No bloqueante: cada listener recibe
+  // una copia del evento; un listener lento no retrasa al siguiente.
+  const listeners = [];
   return {
     activo,
-    log(tipo, detalle) { if (activo) eventos.push({ t: Math.round(performance.now() - t0), tipo, ...detalle }); },
-    volcar() { console.table(eventos); return eventos; }
+    log(tipo, detalle) {
+      const ev = { t: Math.round(performance.now() - t0), tipo, ...detalle };
+      if (activo) eventos.push(ev);
+      listeners.forEach((fn) => { try { fn(ev); } catch (e) {} });
+    },
+    volcar() { console.table(eventos); return eventos; },
+    subscribe(fn) { if (typeof fn === 'function') listeners.push(fn); },
+    unsubscribe(fn) { const i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); },
   };
 })();
 window.__DIAG__ = DIAG;
@@ -29,7 +41,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v5.9.1-2026-07-22-ordendom';
+  window.__BUILD__ = 'v6.0-2026-07-22-autocorreccion';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
