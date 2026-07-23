@@ -29,7 +29,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v5.8-2026-07-22-dtf-p1p2';
+  window.__BUILD__ = 'v5.9-2026-07-22-d01';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -1628,6 +1628,16 @@ const Rotacion = (() => {
           const yFinal = Math.max(yMin, Math.min(yMax, yNum));
           entrante.style.setProperty('--y', `${Math.round(yFinal)}px`);
         }
+      } else {
+        // D-01 (DTF §5, causa raíz confirmada): tras el DTI E2, un satélite
+        // en poolEspera nunca fue procesado por Monte Carlo — su --x/--y
+        // sigue siendo el ancla cruda en % (crearElemento). Sin esto, el
+        // entrante aparecía literalmente ahí, sin separación ni protección
+        // de zonas, y el loop de limpieza real (50 iteraciones) solo corre
+        // en configurar() — nunca se re-ejecuta tras una rotación
+        // individual. reposicionarEntranteDesktop corre la MISMA limpieza,
+        // acotada a este único nodo contra los activos ya en pantalla.
+        window.Distribuidor?.reposicionarEntranteDesktop(entrante, seccion);
       }
 
       mostrarConFade(entrante);

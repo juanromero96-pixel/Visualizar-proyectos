@@ -6,6 +6,23 @@ const Distribuidor = (() => {
   const MARGEN_ESCENARIO = 18;
   const MARGEN_ZONA_PROTEGIDA = 20;
   const PASO_BUSQUEDA = 24;
+  // F-01 (DTF §5) — INTENTADO Y REVERTIDO, con la misma vara de evidencia
+  // que todo lo demás en este proyecto. La medición que justificaba
+  // 24→12 (turno anterior: "1.260→1.360, +17% de área") usó una
+  // transcripción propia del algoritmo, corrida UNA vez cada valor, sin
+  // controlar que ubicarPorBusqueda usa Math.random() internamente y
+  // varía entre corridas AUNQUE NADA CAMBIE (confirmado acá: 20 corridas
+  // con el MISMO paso=24 dieron 1.166 a 1.260 — más rango que la
+  // diferencia que le atribuí al cambio). Repetido con el código REAL
+  // (extraído de este archivo, no transcrito) y comparación controlada
+  // (20 corridas de cada valor): paso=24 promedio 1.194, paso=12
+  // promedio 1.204 — menos de 1% de diferencia real, no el 17%
+  // documentado. La causa real de la densidad no es la resolución de la
+  // grilla de candidatos: es que "todosEntraron" exige CERO solape para
+  // seguir creciendo el factor, y se frena ahí sin importar cuán fina sea
+  // la grilla. Tocar eso sí tendría efecto, pero es cambiar el criterio
+  // de crecimiento del propio Monte Carlo — Protocolo §7 en serio, una
+  // decisión deliberada aparte, no algo para colar en este cambio.
   const FACTOR_MINIMO = 0.4;
   const FACTOR_MAXIMO = 1.6;
   const PASO_CRECIMIENTO = 1.08;
@@ -632,7 +649,72 @@ const Distribuidor = (() => {
     });
   }
 
-  return { distribuir };
+  /**
+   * D-01 (DTF §5, causa raíz confirmada con evidencia de código + jsdom):
+   * tras el DTI E2, Monte Carlo calcula posición SOLO para el conjunto
+   * final visible — un satélite en poolEspera nunca es procesado, así que
+   * su --x/--y sigue siendo el ancla cruda en % (crearElemento, app.js
+   * L413-414). En mobile esto no importa (herencia de posición cubre la
+   * entrada por rotación); en desktop, mostrarConFade() no asigna ninguna
+   * posición nueva — el entrante aparece literalmente en su ancla %, sin
+   * pasar nunca por separación de vecinos ni protección de zonas, y el
+   * loop de limpieza de 50 iteraciones SOLO corre en configurar() — nunca
+   * se re-ejecuta tras una rotación individual. Reproducido con jsdom: un
+   * elemento sin --x/--y cae con el centro en (0,0); con ancla real en %,
+   * cae exactamente en su ancla, sin resolver colisiones. Esta función
+   * corre la MISMA limpieza (separarPar + empujarFueraDeZonas +
+   * limitarAlEscenario, todas ya existentes, sin duplicar lógica) pero
+   * ACOTADA a un solo nodo nuevo contra los activos ya en pantalla — sin
+   * reabrir el costo que E2 resolvió (no reprocesa los ~17-20 candidatos,
+   * solo 1 contra ~7 activos).
+   */
+  function empujarSoloUno(movil, fijo) {
+    const SEPARACION_MINIMA_ESCRITORIO = 16; // valor real de escritorio (línea 28) — literal acá porque
+    const dx = fijo.x - movil.x, dy = fijo.y - movil.y;   // SEPARACION_MINIMA es 'let' y se reasigna según canal;
+    const soX = (movil.w+fijo.w)/2 + SEPARACION_MINIMA_ESCRITORIO - Math.abs(dx); // esta función solo corre
+    const soY = (movil.h+fijo.h)/2 + SEPARACION_MINIMA_ESCRITORIO - Math.abs(dy); // en desktop, sin ambigüedad.
+    if (soX <= EPSILON || soY <= EPSILON) return false;
+    if (soX < soY) movil.x -= (Math.sign(dx)||1) * soX;
+    else           movil.y -= (Math.sign(dy)||1) * soY;
+    return true;
+  }
+
+  function reposicionarEntranteDesktop(entrante, seccion) {
+    if (window.esMobile?.()) return; // mobile: herencia de posición ya lo cubre
+    const escenario = seccion.querySelector('.escenario');
+    if (!escenario || !entrante) return;
+    const rectEscenario = escenario.getBoundingClientRect();
+    const ancho = rectEscenario.width, alto = rectEscenario.height;
+    if (!ancho || !alto) return;
+
+    const zonas = obtenerZonasProtegidas(seccion, rectEscenario);
+    const activos = Array.from(escenario.querySelectorAll('.elemento:not(.elemento--rotacion-espera)'))
+      .filter((el) => el !== entrante)
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left - rectEscenario.left + r.width/2, y: r.top - rectEscenario.top + r.height/2, w: r.width, h: r.height };
+      });
+
+    const rEntrante = entrante.getBoundingClientRect();
+    const nodo = {
+      x: (Number(entrante.dataset.anclaX) || 50) / 100 * ancho,
+      y: (Number(entrante.dataset.anclaY) || 50) / 100 * alto,
+      w: rEntrante.width, h: rEntrante.height,
+    };
+    const clamp = (n) => limitarAlEscenario(n, ancho, alto);
+    clamp(nodo);
+    for (let iter = 0; iter < 20; iter++) {
+      let hubo = false;
+      activos.forEach((a) => { if (empujarSoloUno(nodo, a)) hubo = true; });
+      if (empujarFueraDeZonas([nodo], zonas, clamp)) hubo = true;
+      clamp(nodo);
+      if (!hubo) break;
+    }
+    entrante.style.setProperty('--x', `${Math.round(nodo.x)}px`);
+    entrante.style.setProperty('--y', `${Math.round(nodo.y)}px`);
+  }
+
+  return { distribuir, reposicionarEntranteDesktop };
 })();
 
 window.Distribuidor = Distribuidor;

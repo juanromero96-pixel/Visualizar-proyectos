@@ -724,3 +724,25 @@ Build `v5.8-2026-07-22-dtf-p1p2`.
 ### Estado de cumplimiento del DTF, honesto y explícito
 **Cerrado (11/17):** F-02, F-03, M-06, F-08, M-30, F-04, F-05, F-06, F-07, F-09, F-10.
 **Abierto por dependencia externa no resuelta (6/17):** D-01 (device evidence pendiente), M-08 y M-07 (curaduría de contenido — no ejecutable como código sin inventar información, violaría el principio de fidelidad documental del corpus), F-01/M-13/M-25 (bloqueados transitivamente por D-01/F-01). El mandato exige "nunca comenzar una tarea cuya dependencia no esté resuelta" — se respeta con estos seis ítems permaneciendo abiertos, no tachados por apariencia.
+
+---
+
+## 25 · D-01 cerrado — causa raíz real, no la que se sospechaba (build v5.9)
+
+**Evidencia de partida:** las seis corridas de dispositivo de esta ronda (tres mobile confirmando M-05 perfecto, tres desktop) mostraron el mismo patrón exacto (`top:46, yCssVar:186, gap:-32`) en **dos sedes distintas con dos UA distintas** — FHyCS en Posadas, FAyD en Oberá — siempre al mismo viewport (1209×865). No era una tarjeta específica: era geometría reproducible a un tamaño de escenario, independiente de cuál UA cayera ahí.
+
+**Reproducción con el motor real, no una copia:** extraje `ubicarPorBusqueda`, `separarPar`, `empujarFueraDeZonas` directamente de `js/layout.js` (nunca transcritas) y las corrí contra el corpus real de Posadas, barriendo las 10 combinaciones posibles del sorteo K=2 × 5 semillas (50 corridas): **0/50 reprodujeron la invasión** con el arranque limpio. Esto descartó por evidencia que el defecto estuviera en la lógica de `empujarFueraDeZonas` misma (ya corregida dos veces antes) — el mecanismo tenía que estar en otro lado, porque las corridas reales mostraban "vuelta 8", "vuelta 22" — nunca vuelta 1.
+
+**Causa real, confirmada por lectura de código + verificación empírica:** tras el DTI E2, Monte Carlo calcula posición solo para el conjunto final visible (~8 candidatos) — un satélite en `poolEspera` nunca es procesado, así que su `--x`/`--y` sigue siendo el ancla cruda en **porcentaje** (`crearElemento()`, `js/app.js` L413-414, incondicional para todo item). En mobile esto no importa (la herencia de posición en `rotarUno()` cubre la entrada por rotación); en **desktop**, `mostrarConFade()` nunca asignaba ninguna posición nueva al entrante — aparecía literalmente en su ancla cruda, sin pasar nunca por separación de vecinos ni protección de zonas, porque el loop de limpieza de 50 iteraciones **solo corre en `configurar()`**, nunca se re-ejecuta tras una rotación individual. Confirmado con jsdom: un elemento sin `--x`/`--y` cae con el centro en (0,0); con ancla real en %, cae exactamente ahí, sin resolver ninguna colisión.
+
+**Fix:** nueva función pública `Distribuidor.reposicionarEntranteDesktop(entrante, seccion)` (`js/layout.js`) — reutiliza `obtenerZonasProtegidas`, `empujarFueraDeZonas`, `limitarAlEscenario` ya existentes (sin duplicar lógica), acotada a un solo nodo nuevo contra los activos ya en pantalla (no reabre el costo que el DTI E2 resolvió). Enganchada en el camino desktop de `rotarUno()` (`js/app.js`), en el mismo punto donde mobile hace su herencia de posición. Verificado con jsdom mockeando `getBoundingClientRect` con geometría realista: sin el fix, un satélite de prueba caía en (123,85), solapando la zona del chip; con el fix, en (317,126), matemáticamente fuera.
+
+**Verificación:** batería 33/33, solape mobile 0px² sostenido, ciclo del DTI (17/17, I1/I4/I5/I6) sin regresión.
+
+## 26 · F-01 — intentado, medido, y revertido con la misma vara de evidencia
+
+La medición previa que documentaba "PASO_BUSQUEDA 24→12 da +17% de área" fue **incorrecta** — comparé una corrida de cada valor, sin controlar que `ubicarPorBusqueda` usa `Math.random()` internamente y varía entre corridas aunque nada cambie (confirmado: 20 corridas con el mismo `PASO_BUSQUEDA=24` dieron un rango de 1.166 a 1.260 — más amplio que la diferencia que le había atribuido al cambio). Repetido con el código real (extraído, no transcrito) y comparación controlada (20 corridas de cada valor): 24→promedio 1.194, 12→promedio 1.204 — menos del 1% real. **Revertido a 24**; no se aplica un cambio de 4× costo computacional sin beneficio medible.
+
+**Causa real de la densidad, con evidencia:** a factor 1.26 el conjunto real de Posadas todavía entra sin solape; a 1.40 ya no. El algoritmo está cerca de su techo natural para 8 candidatos de este tamaño — no es timidez de parámetros, es un límite estructural del criterio actual ("todosEntraron" exige cero solape para seguir creciendo). Tocar eso con efecto real requeriría cambiar el criterio de crecimiento del propio Monte Carlo — Protocolo §7 en serio, decisión editorial deliberada (tolerar algo de solape, o mostrar más tarjetas más chicas), no un ajuste de bajo riesgo. Queda documentado, no implementado — el DTF exige exactamente esto cuando la evidencia no sostiene el camino fácil.
+
+Build `v5.9-2026-07-22-d01`.
