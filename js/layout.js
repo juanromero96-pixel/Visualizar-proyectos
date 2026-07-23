@@ -500,10 +500,29 @@ const Distribuidor = (() => {
     return solaX * solaY;
   }
 
+  /**
+   * F-05 (DTF §5, D-04): el registro-conceptual no tiene caja visual —
+   * su identidad ES la ausencia de fondo (§4.5 del DTF). Eso lo deja sin
+   * la defensa espacial que sí tiene cualquier tarjeta con fondo opaco:
+   * si otro elemento invade su SEPARACION_MINIMA normal, su texto puede
+   * quedar parcialmente cubierto (observado: Matot sobre «Síntesis» en
+   * Posadas — dentro de la tolerancia declarada, pero en el límite). Solo
+   * en mobile (donde SEPARACION_MINIMA=8 ya es angosta) se le da un
+   * colchón extra cuando alguno de los dos nodos del par es conceptual —
+   * no cambia SEPARACION_MINIMA global, solo este caso puntual.
+   */
+  function margenSeparacion(a, b) {
+    const EXTRA_CONCEPTUAL = 14;
+    if (!window.esMobile?.()) return SEPARACION_MINIMA;
+    const esConceptual = (n) => n.el?.dataset?.tipo === 'registro-conceptual';
+    return (esConceptual(a) || esConceptual(b)) ? SEPARACION_MINIMA + EXTRA_CONCEPTUAL : SEPARACION_MINIMA;
+  }
+
   function separarPar(a, b) {
     const dx = b.x - a.x, dy = b.y - a.y;
-    const soX = (a.w+b.w)/2 + SEPARACION_MINIMA - Math.abs(dx);
-    const soY = (a.h+b.h)/2 + SEPARACION_MINIMA - Math.abs(dy);
+    const margen = margenSeparacion(a, b);
+    const soX = (a.w+b.w)/2 + margen - Math.abs(dx);
+    const soY = (a.h+b.h)/2 + margen - Math.abs(dy);
     if (soX <= EPSILON || soY <= EPSILON) return false;
     if (soX < soY) { const s = Math.sign(dx)||1; a.x -= soX/2*s; b.x += soX/2*s; }
     else           { const s = Math.sign(dy)||1; a.y -= soY/2*s; b.y += soY/2*s; }

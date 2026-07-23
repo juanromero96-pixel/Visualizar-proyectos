@@ -217,9 +217,23 @@ const Lector = (() => {
       const sigla = siglaDe(el, item);
       badgeTop = sigla;
       tituloTop = (item && item.titulo) || '';
+      // F-10 (DTF §5, =M-28): cifra editorial del acervo — cuenta TODO lo
+      // que pertenece a esta UA en el escenario (propios, sin filtrar por
+      // --rotacion-espera/--oculto-autoridad: esos SIGUEN existiendo en el
+      // DOM, solo ocultos por el ciclo), no lo actualmente visible — la
+      // cifra no debe cambiar cada vez que rota el mural, sería confusa
+      // para un número que promete profundidad, no un conteo de pantalla.
+      const escenarioActual = el.closest('.escenario');
+      const totalAcervo = escenarioActual
+        ? escenarioActual.querySelectorAll(`.elemento[data-ua="${el.dataset.ua}"]`).length - 1 // -1: el propio expediente no cuenta como "más para descubrir"
+        : 0;
+      const cifraHTML = totalAcervo > 0
+        ? `<span class="lem-hero-acervo">${totalAcervo} ${totalAcervo === 1 ? 'documento más' : 'documentos más'} en esta constelación</span>`
+        : '';
       metaHTML = `
         <span class="lem-hero-badge">${escaparHTMLLector(sigla)}</span>
-        <h2 class="lem-hero-titulo">${escaparHTMLLector(tituloTop)}</h2>`;
+        <h2 class="lem-hero-titulo">${escaparHTMLLector(tituloTop)}</h2>
+        ${cifraHTML}`;
       monograma = sigla;
       if (item && item.imagenPortada) img = crearImgHero(item.imagenPortada, `${sigla} — sede`);
     } else if (tipo === 'video') {
@@ -523,6 +537,30 @@ const Lector = (() => {
     lem.constelacion.hidden = false;
   }
 
+  /**
+   * F-06 (DTF §5, §4.11): enlace profundo por expediente, sin router.
+   * history.replaceState (no location.hash directo, no pushState): cada
+   * apertura o derivación reemplaza el hash actual, no agrega una entrada
+   * — el botón "atrás" del navegador sigue saliendo del sitio, no
+   * navegando entre expedientes (eso no lo pidió el DTF y cambiaría un
+   * comportamiento validado). El id sale del registro (si vino con uno)
+   * o de item.__item (testimonios, que se leen del DOM) — misma fuente
+   * que ya usa el resto del sistema para identificar elementos.
+   */
+  function actualizarHashDelLector(el, registro) {
+    const sede = el?.closest?.('.sede')?.dataset?.sede;
+    const id = registro?.id || el?.__item?.id || el?.dataset?.testimonioId;
+    if (!sede || !id) return;
+    try {
+      history.replaceState(null, '', `#${sede}/${id}`);
+    } catch (error) { /* entorno sin history API (raro) — no bloquea la apertura */ }
+  }
+  function limpiarHashDelLector() {
+    try {
+      history.replaceState(null, '', location.pathname + location.search);
+    } catch (error) { /* idem */ }
+  }
+
   // Cross-fade 180 ms (§8): el Lector no se cierra; el documento se
   // reemplaza y el retorno (P6) sigue apuntando a la tarjeta de ORIGEN.
   function derivarA(el2) {
@@ -534,6 +572,7 @@ const Lector = (() => {
       if (!lem.sheet.classList.contains('lem--abierta')) return;  // cerrado durante el fundido
       const tipo2 = el2.dataset.tipo || 'testimonio';
       lemActual = { el: el2, registro: tipo2 === 'testimonio' ? null : (el2.__item || null) };
+      actualizarHashDelLector(lemActual.el, lemActual.registro);
       renderizarDocumento();
       lem.scroll.scrollTop = 0;
       lem.topbar.classList.remove('lem-topbar--fija');
@@ -570,6 +609,7 @@ const Lector = (() => {
     const carrusel = document.getElementById('carrusel');
     lemOrigen = { el: elementoOrigen, scrollLeft: carrusel ? carrusel.scrollLeft : 0 };
     lemActual = { el: elementoOrigen, registro: registro || null };
+    actualizarHashDelLector(lemActual.el, lemActual.registro);
 
     renderizarDocumento();
 
@@ -581,12 +621,32 @@ const Lector = (() => {
     lem.topbar.classList.remove('lem-topbar--fija');
     lem.sheet.style.transform = '';
     lem.velo.classList.add('lem-velo--visible');
+    // F-09 (DTF §5): transform-origin dinámico, solo escritorio — la
+    // apertura mobile (bottom-sheet) no usa transform-origin en absoluto,
+    // así que esto es inerte ahí. Defensivo a propósito: si getBoundingClientRect
+    // fallara por cualquier razón, las custom properties simplemente no se
+    // setean y el CSS cae a su fallback (50%/50%, el centro de siempre).
+    if (!window.esMobile?.()) {
+      try {
+        const rOrigen = elementoOrigen.getBoundingClientRect();
+        const rLector = lem.sheet.getBoundingClientRect();
+        const cxOrigen = rOrigen.left + rOrigen.width / 2;
+        const cyOrigen = rOrigen.top + rOrigen.height / 2;
+        const cxLector = rLector.left + rLector.width / 2;
+        const cyLector = rLector.top + rLector.height / 2;
+        const pctX = 50 + ((cxOrigen - cxLector) / rLector.width) * 100;
+        const pctY = 50 + ((cyOrigen - cyLector) / rLector.height) * 100;
+        lem.sheet.style.setProperty('--lem-origen-x', `${pctX.toFixed(1)}%`);
+        lem.sheet.style.setProperty('--lem-origen-y', `${pctY.toFixed(1)}%`);
+      } catch (error) { /* sin origen dinámico: cae al centro, comportamiento anterior */ }
+    }
     requestAnimationFrame(() => lem.sheet.classList.add('lem--abierta'));  // §8: 280 ms ease-out
     window.setTimeout(() => lem.btnCerrar.focus(), 300);
   }
 
   function cerrarLectorEditorial() {
     if (!lem || !lem.sheet.classList.contains('lem--abierta')) return;
+    limpiarHashDelLector();
 
     const iframe = lem.sheet.querySelector('.lem-video-iframe');
     if (iframe) iframe.src = '';   // detiene la reproducción sin YT API

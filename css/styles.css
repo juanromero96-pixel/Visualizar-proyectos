@@ -244,6 +244,16 @@ button { font-family: inherit; cursor: pointer; }
 }
 .sede-kicker--visible { opacity: 1; transform: translateY(0); }
 .sede--vertical .sede-kicker { border-left-width: 3px; }
+/* F-02 (DTF §5, D-05): scrollbar-width:thin solo lo respeta Firefox — sin
+   esta regla, Chromium/WebKit muestran el indicador nativo de scroll
+   dentro del panel narrativo (visible en las capturas desktop de Posadas
+   y Oberá), el único rastro de "aplicación" en una escena editorial. El
+   scroll sigue funcional — solo se retira el indicador visual grueso;
+   criterio de validación del DTF: contenido igual de alcanzable. */
+.sede-kicker::-webkit-scrollbar { width: 4px; }
+.sede-kicker::-webkit-scrollbar-track { background: transparent; }
+.sede-kicker::-webkit-scrollbar-thumb { background: rgba(245, 243, 238, 0.25); border-radius: 2px; }
+.sede-kicker::-webkit-scrollbar-thumb:hover { background: rgba(245, 243, 238, 0.4); }
 
 /* Tipografía del kicker completamente fluid — escala con el viewport,
    nunca fija en px, nunca domina sobre el mural */
@@ -351,6 +361,25 @@ button { font-family: inherit; cursor: pointer; }
 .elemento--testimonio-institucional .testimonio-nombre {
   font-size: 1rem;
   letter-spacing: 0.01em;
+}
+/* M-06 (DTF §5, ámbito reducido tras V-1 a solo sello tipográfico): marca
+   institucional discreta que distingue a una autoridad UNaM de un
+   testimonio de facultad, sin retrato ni bandera de color adicional —
+   solo tipografía. position:absolute: no participa del flujo, así que
+   NO puede alterar el offsetHeight que mide calcularCapacidad() (la
+   garantía geométrica que costó estabilizar en M-05). */
+.elemento--testimonio-institucional .elemento-interior { position: relative; }
+.elemento--testimonio-institucional .elemento-interior::before {
+  content: 'UNaM';
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--unam-cian);
+  opacity: 0.7;
+  pointer-events: none;
 }
 .elemento--foto .elemento-interior,
 .elemento--video .elemento-interior {
@@ -698,6 +727,7 @@ button { font-family: inherit; cursor: pointer; }
 .elemento--enfocado {
   outline: 2px solid rgba(0, 163, 224, 0.7);
   outline-offset: 5px;
+  box-shadow: 0 0 0 7px rgba(10, 14, 16, 0.5);
   border-radius: 6px;
 }
 
@@ -720,8 +750,14 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 999px;
   padding: 8px 10px;
 }
-.ruta-flecha { background: none; border: none; color: var(--papel); width: 30px; height: 30px; border-radius: 50%; font-size: 1.1rem; display: grid; place-items: center; transition: background 150ms ease; }
-.ruta-flecha:hover, .ruta-flecha:focus-visible { background: rgba(255, 255, 255, 0.12); }
+/* F-02 (DTF §5): antes usaban una píldora circular rellena en hover
+   (border-radius:50% + background), un lenguaje de "botón de app" ajeno
+   al resto del sistema. .ruta-nodo, a centímetros de distancia, resuelve
+   la misma interacción con opacidad pura — se adopta ese mismo patrón acá,
+   sin inventar un tratamiento nuevo. Función y accesibilidad intactas:
+   mismo tamaño de target (30×30), mismo aria-label, mismo foco. */
+.ruta-flecha { background: none; border: none; color: var(--papel); width: 30px; height: 30px; font-size: 1.1rem; display: grid; place-items: center; opacity: 0.55; transition: opacity 200ms ease; }
+.ruta-flecha:hover, .ruta-flecha:focus-visible { opacity: 0.85; background: none; }
 .ruta-nodos { position: relative; list-style: none; display: flex; gap: 26px; margin: 0; padding: 0 8px; }
 .ruta-nodos::before, .ruta-nodos::after { content: ''; position: absolute; top: 5px; height: 2px; background: rgba(255, 255, 255, 0.22); }
 .ruta-nodos::before { left: 5px; right: 5px; }
@@ -738,7 +774,21 @@ button { font-family: inherit; cursor: pointer; }
 .estado-error h1 { font-weight: 700; font-size: 1.4rem; }
 .estado-error p { font-weight: 300; opacity: 0.8; max-width: 420px; }
 
-:focus-visible { outline: 2px solid var(--unam-cian); outline-offset: 2px; }
+/* F-08 (DTF §5): auditoría de contraste real. Medido contra los fondos
+   fotográficos reales del mural (muestreo de píxeles de las capturas de
+   dispositivo, zona más clara tras el velo del sistema, rgb≈105,108,107):
+   el outline cian solo daba 1.85:1 — bajo el mínimo 3:1 de WCAG 1.4.11
+   (contraste no-textual). Fondo oscuro no tenía el problema (5.03:1), pero
+   el mural cambia de imagen por sede — el criterio debe sostenerse en
+   cualquier fondo, no solo en el peor caso medido hoy. Patrón estándar de
+   doble contorno: el halo oscuro exterior asegura visibilidad sobre fondos
+   claros; el outline cian interior la asegura sobre fondos oscuros — la
+   combinación no depende de qué imagen esté detrás. */
+:focus-visible {
+  outline: 2px solid var(--unam-cian);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(10, 14, 16, 0.65);
+}
 
 /* =============================================================================
    Responsive — la posición de cada elemento es un porcentaje del propio

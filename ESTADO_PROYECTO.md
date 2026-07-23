@@ -674,3 +674,53 @@ Los **siete narradores UA del corpus** muestran su fotografía institucional en 
 **Ciclo editorial — la validación pendiente del DTI (§19.7, Eldorado) queda cerrada con dispositivo real.** Las tres corridas mobile: Posadas `vuelta 4 · 17/17 exhibidos · completo`; Oberá `vuelta 21 · 12/12 · completo` (¡veintiuna vueltas completas en sesión larga — robustez sostenida!); Eldorado `vuelta 2 · 8/10 · faltan: t-rivaldi-eldorado, registro-conceptual-general-5` — exactamente el estado esperable a mitad de vuelta 2, con la telemetría nombrando los faltantes como fue diseñada. La generalización a sede sin estructura de Posadas, que jsdom no pudo simular, está verificada donde importa.
 
 **Abierto sin cambios:** la invasión del chip en Oberá **escritorio** — las tres corridas del txt son mobile (1/1b/1c PASS = `esMobile` verdadero); la corrida de escritorio con `diag=1` y las líneas `empuje-zona` sigue siendo el único dato pendiente del tablero.
+
+---
+
+## 24 · Implementación DTF — P1/P2 ejecutables (build v5.8)
+
+Ejecución del mandato "implementar íntegramente el DTF" sobre los ítems SIN dependencia bloqueante. D-01/M-08/M-07/F-01/M-13/M-25 quedan explícitamente abiertos (dependencias externas — device evidence o curaduría de contenido — no resueltas; el propio mandato prohíbe iniciar tareas con dependencia sin resolver).
+
+Cada ítem sigue el ciclo completo (DTF §"Implementación obligatoria"): sección → objetivo → archivo → decisión → justificación → validación → regresión → resolución.
+
+### F-02 · Pulido `[PD]`
+**Objetivo:** D-05 (scrollbar nativa visible) + flechas de ruta con lenguaje de "botón de app". **Archivos:** `css/styles.css`. **Decisión:** `::-webkit-scrollbar` con thumb sutil (scrollbar-width:thin ya cubría Firefox, faltaba Chromium); flechas migradas al mismo lenguaje de opacidad que `.ruta-nodo` (ya existente a centímetros), sin inventar un tratamiento nuevo. **Validación:** batería 33/33 + solape 0px² (Protocolo §7, cambio puramente visual sin efecto geométrico). **Regresiones:** ninguna.
+
+### F-03 · Favicon + Open Graph
+**Objetivo:** D-06. **Archivos:** `index.html`. **Decisión:** `unam-badge.svg` como favicon; OG reutiliza título/descripción ya declarados y el logo institucional ya presente — cero contenido inventado. **Validación:** verificación de tags en el head. **Regresiones:** ninguna (no toca JS/CSS de comportamiento).
+
+### M-06 · Sello institucional
+**Objetivo:** distinguir autoridades UNaM por tipografía, sin retrato ni color adicional (ámbito ya reducido tras V-1). **Archivos:** `css/styles.css`. **Decisión:** `::before` con `position:absolute` — no participa del flujo, no puede alterar el `offsetHeight` que mide `calcularCapacidad()` (lección M-05 aplicada preventivamente). **Validación:** batería 33/33. **Regresiones:** ninguna.
+
+### F-08 · Refuerzo de `:focus-visible`
+**Objetivo:** auditar contraste del indicador de foco sobre fondos fotográficos. **Archivos:** `css/styles.css`. **Decisión:** medí el color real de fondo desde las capturas de dispositivo (muestreo de píxeles) y calculé el contraste WCAG real del outline existente: **1.85:1**, bajo el mínimo 3:1 de 1.4.11. Hallazgo real, no hipotético. Corregido con patrón de doble contorno (halo oscuro + outline cian) en las dos reglas de foco del sistema (`:focus-visible` global y `.elemento--enfocado`). **Validación:** batería 32/32. **Regresiones:** ninguna.
+
+### M-30 · Orden de foco narrativo
+**Objetivo:** tabulación = orden editorial del ciclo, no orden de inserción del DOM. **Archivos:** `js/app.js`. **Decisión:** reordenamiento real del DOM vía `appendChild` (permanentes + `cicloOrden`), no `tabindex` positivo (antipatrón de accesibilidad). Seguro porque TODA la posición visual es absoluta (`--x`/`--y`) y el z-index se asigna explícitamente por JS — confirmado por lectura de código antes de tocar nada. **Validación:** batería 32/32 + verificación del ciclo del DTI (17/17, I1/I4/I5/I6 intactos tras el reordenamiento). **Regresiones:** ninguna.
+
+### F-04 · Señal de swipe
+**Objetivo:** D-07 — el gesto existe, nada lo enseña. **Archivos:** `js/mobile.js`, `css/mobile.css`. **Decisión, con dos correcciones en el camino:** el primer diseño tocaba `scrollLeft` del carrusel — descartado por riesgo real de conflicto con `scroll-snap-type:mandatory`, no verificable en jsdom. El segundo animaba `.ruta-flecha` — descartado: esa clase es `display:none` en mobile. Versión final: pulso CSS del botón activo del nav mobile real (`#ruta-m .ruta-m-btn--activo`), sessionStorage (patrón ya usado 4 veces en el proyecto), respeta `reduced-motion`. **Validación:** batería 33/33. **Regresiones:** ninguna.
+
+### F-05 · Zona blanda del conceptual
+**Objetivo:** D-04 — el conceptual no tiene caja visual, sin defensa espacial propia. **Archivos:** `js/layout.js`. **Decisión:** margen extra de separación (+14px sobre los 8px base) cuando un par de `separarPar` incluye un conceptual — mobile-only, no toca `SEPARACION_MINIMA` global. **Validación:** batería 33/33 + solape 0px² + confirmación puntual del comportamiento exacto (22px con conceptual, 8px sin cambio en el resto, desktop intacto). **Regresiones:** ninguna.
+
+### F-06 · Enlace profundo por hash
+**Objetivo:** `#sede/id` al abrir un expediente; carga con hash abre directo. **Archivos:** `js/lector.js`, `js/app.js`. **Decisión:** `history.replaceState` (no `pushState` ni `location.hash` directo) — cada apertura/derivación reemplaza, no acumula historial; el botón "atrás" sigue saliendo del sitio, no navegando entre expedientes (comportamiento no pedido, no alterado). Restauración al cargar: espera a que la composición inicial arranque (ambos canales), cambia de sede si hace falta, busca el elemento por `__item.id`. **Validación:** batería completa incluyendo TODOS los checks del Lector (subsistema más frágil, 28/28 en dispositivo previamente) sin ninguna regresión. **Regresiones:** ninguna.
+
+### F-07 · Precarga de fondos adyacentes
+**Objetivo:** cambio de sede sin flash de carga. **Archivos:** `js/app.js`. **Decisión:** `new Image()` con `.src` — técnica estándar no bloqueante, no toca el DOM visible. Enganchada en `onCambio` (adyacentes de la nueva sede) y una vez al arranque para la sede inicial (`onCambio` no se dispara en la primera carga). **Validación:** batería 32/32. **Regresiones:** ninguna.
+
+### F-09 · Micro-transición del lector escritorio
+**Objetivo:** entrada 200-250ms con origen en la tarjeta. **Archivos:** `css/mobile.css` (la anatomía `.lem--escritorio` vive ahí, no en styles.css), `js/lector.js`. **Decisión:** ya existía una transición de 280ms fade+scale genérica desde el centro — ajustada a 230ms (dentro del rango pedido) y `transform-origin` dinámico vía custom properties (`--lem-origen-x/y`) calculadas desde la posición real de la tarjeta clickeada, con fallback defensivo a 50%/50% (comportamiento anterior) si el cálculo fallara por cualquier motivo. **Validación:** batería completa con atención específica a D6/D6b/D7 (freeze) y D2/D2b (canal escritorio) — todos intactos. **Regresiones:** ninguna.
+
+### F-10 · Cifra editorial del acervo (=M-28)
+**Objetivo:** comunicar profundidad de la constelación de cada UA. **Archivos:** `js/lector.js`, `css/mobile.css`. **Decisión:** en el hero del expediente (no en la tarjeta — la restricción de altura fija de M-05 hacía riesgoso tocar la tarjeta). Cuenta TODO lo que pertenece a la UA en el escenario (`data-ua`), no solo lo visible ahora — una cifra que cambiara con cada rotación sería confusa para lo que pretende comunicar. **Validación:** batería completa, atención a D3 (constelación) y el hero en general. **Regresiones:** ninguna.
+
+### Verificación final combinada
+`node --check` en los 4 archivos JS tocados: OK. Batería jsdom: 32-33/33 (variación esperada por sorteo aleatorio de D8). Simulación geométrica: solape 0px² sostenido. Ningún subsistema de la lista de regresión del mandato (mobile, desktop, lector, ciclo, Monte Carlo, temporal, animaciones, accesibilidad, distribución, rotaciones, layout, navegación, constelaciones, expedientes, multimedia, testimonios, narradores, videos, conceptual, autoridades) presenta regresión.
+
+Build `v5.8-2026-07-22-dtf-p1p2`.
+
+### Estado de cumplimiento del DTF, honesto y explícito
+**Cerrado (11/17):** F-02, F-03, M-06, F-08, M-30, F-04, F-05, F-06, F-07, F-09, F-10.
+**Abierto por dependencia externa no resuelta (6/17):** D-01 (device evidence pendiente), M-08 y M-07 (curaduría de contenido — no ejecutable como código sin inventar información, violaría el principio de fidelidad documental del corpus), F-01/M-13/M-25 (bloqueados transitivamente por D-01/F-01). El mandato exige "nunca comenzar una tarea cuya dependencia no esté resuelta" — se respeta con estos seis ítems permaneciendo abiertos, no tachados por apariencia.

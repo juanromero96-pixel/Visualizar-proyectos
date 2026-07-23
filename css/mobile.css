@@ -827,6 +827,19 @@
   border-bottom-color: var(--unam-cian, #00a3e0);
 }
 
+/* F-04 (DTF §5, D-07): el swipe entre sedes funciona (scroll-snap nativo,
+   ver mobile.js) pero nada lo enseña. Pulso sutil del punto activo del
+   nav, una sola vez por sesión (sessionStorage en mobile.js) — no toca
+   el scroll real, cero riesgo de interferir con scroll-snap:mandatory. */
+.ruta-m-btn--sugerencia {
+  animation: ruta-m-sugerencia 1000ms ease;
+}
+@keyframes ruta-m-sugerencia {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-3px); }
+  60% { transform: translateX(2px); }
+}
+
 .ruta-m-btn:active {
   color: rgba(245, 243, 238, 0.85);
   background: rgba(255, 255, 255, 0.04);
@@ -1212,6 +1225,13 @@
   color: var(--papel);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
+/* F-10 (DTF §5, =M-28): cifra editorial del acervo. Discreta a propósito
+   — refuerza la promesa de profundidad sin competir con el título. */
+.lem-hero-acervo {
+  font-size: 0.72rem; font-weight: 400;
+  color: var(--papel); opacity: 0.72;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
 .lem-hero-nombre {
   font-size: 1.15rem; font-weight: 700; color: var(--papel);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
@@ -1447,6 +1467,7 @@
   border-radius: 3px;
   border-top-width: 3px;
   transform: translate(-50%, -50%) translateY(24px) scale(0.985);
+  transform-origin: var(--lem-origen-x, 50%) var(--lem-origen-y, 50%);
   opacity: 0;
   /* Informe de bugs Fase 2 · congelamiento de interfaz — causa raíz:
      el .lem base (mobile) se oculta desplazándose fuera de pantalla
@@ -1457,7 +1478,13 @@
      pero clickeable tapando el centro del mural y la barra de sedes para
      siempre — exactamente el freeze reportado. */
   pointer-events: none;
-  transition: transform 280ms ease-out, opacity 280ms ease-out;
+  /* F-09 (DTF §5, §4.11): 280→230ms (rango 200-250 pedido); transform-origin
+     dinámico (--lem-origen-x/y, seteado por lector.js desde la posición
+     real de la tarjeta clickeada) da la sensación de apertura DESDE el
+     origen en vez de un fade genérico centrado. Custom property con
+     fallback a 50%/50%: si por lo que sea no se setea, es exactamente el
+     comportamiento anterior — no hay forma de que esto rompa la apertura. */
+  transition: transform 230ms ease-out, opacity 230ms ease-out;
 }
 .lem--escritorio.lem--abierta {
   transform: translate(-50%, -50%);

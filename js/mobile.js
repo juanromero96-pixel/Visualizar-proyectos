@@ -450,11 +450,39 @@ function anclarNavAlViewportVisual(nav) {
 // snappea a la siguiente sede y el IntersectionObserver dispara onCambio.
 // Un detector de swipe JS adicional sería redundante y podría causar doble-
 // scroll (CSS snap mueve al Sede B, y entonces JS también llama ir(C)).
-// Por eso inicializarSwipeSedes es un no-op — se conserva por compatibilidad
-// de API pero no registra ningún listener.
+// Por eso NO se agrega detección de gesto — el swipe real sigue siendo 100%
+// nativo, sin JS interceptando touch.
+//
+// F-04 (DTF §5): lo que sí se agrega acá es la SEÑAL — el gesto funciona
+// pero nada lo enseña (D-07). Una vez por sesión (mismo patrón sessionStorage
+// que ya usa el proyecto para citas/autoridades/ciclo), un scrollBy suave de
+// ida y vuelta sugiere "esto se desliza", sin interceptar el swipe real: es
+// el mismo scrollLeft nativo, con behavior:'smooth', compatible con el
+// scroll-snap existente. Se omite con prefers-reduced-motion.
+const CLAVE_SEÑAL_SWIPE = 'unam_semana_regional_senal_swipe_mostrada';
+
 function inicializarSwipeSedes(carruselEl, carruselInstance) {
-  // Intencionalmente vacío: CSS scroll-snap maneja el swipe nativo.
-  // La navegación táctil entre sedes funciona sin código JS adicional.
+  if (!carruselEl) return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  try {
+    if (sessionStorage.getItem(CLAVE_SEÑAL_SWIPE) === '1') return;
+    sessionStorage.setItem(CLAVE_SEÑAL_SWIPE, '1');
+  } catch (error) {
+    return; // sessionStorage inaccesible (modo privado estricto): sin señal, sin romper nada
+  }
+  // No se toca scrollLeft del carrusel: con scroll-snap-type:x mandatory,
+  // un scroll programático parcial puede quedar en conflicto con el propio
+  // snap-back del navegador (jsdom no permite verificar scroll-snap real,
+  // así que no se arriesga). La señal anima en su lugar el botón activo del
+  // nav de sedes mobile (#ruta-m .ruta-m-btn--activo) — ya visible, ya
+  // existente; .ruta-flecha es desktop-only (display:none en mobile), no
+  // serviría de nada animarla acá.
+  const activo = document.querySelector('#ruta-m .ruta-m-btn--activo');
+  if (!activo) return;
+  window.setTimeout(() => {
+    activo.classList.add('ruta-m-btn--sugerencia');
+    window.setTimeout(() => activo.classList.remove('ruta-m-btn--sugerencia'), 1000);
+  }, 2900);
 }
 
 // ─── Resize reactivo ─────────────────────────────────────────────────────────

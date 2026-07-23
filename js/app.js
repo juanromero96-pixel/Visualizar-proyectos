@@ -29,7 +29,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v5.7.1-2026-07-22-diag';
+  window.__BUILD__ = 'v5.8-2026-07-22-dtf-p1p2';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -124,6 +124,30 @@ window.__DIAG__ = DIAG;
       recalcular();
       if (secciones[0]) Rotacion.iniciar(secciones[0]);
     }
+
+    // F-06 (DTF §5, §4.11): enlace profundo — si se llegó con #sede/id,
+    // abrir ese expediente directo. Corre DESPUÉS de que la composición
+    // inicial haya arrancado (Rotacion.iniciar ya corrió arriba, en
+    // ambos canales) para que las tarjetas ya tengan posición real;
+    // un pequeño delay adicional evita competir visualmente con el T0
+    // del DTI recién compuesto, sin llegar a esperar la contemplación
+    // completa (alguien que llegó con un link directo quiere ver ESE
+    // documento, no contemplar el mural primero).
+    const coincideHash = location.hash.match(/^#([a-z0-9-]+)\/([a-z0-9-]+)$/i);
+    if (coincideHash) {
+      const [, sedeHash, idHash] = coincideHash;
+      window.setTimeout(() => {
+        const seccionHash = secciones.find((s) => s.dataset.sede === sedeHash);
+        if (!seccionHash) return;
+        const indice = secciones.indexOf(seccionHash);
+        if (indice !== 0) carrusel.ir(indice);
+        window.setTimeout(() => {
+          const elementoHash = Array.from(seccionHash.querySelectorAll('.elemento'))
+            .find((el) => el.__item?.id === idHash || el.dataset.testimonioId === idHash);
+          if (elementoHash) window.Lector?.abrir(elementoHash);
+        }, indice !== 0 ? 260 : 0); // margen si hubo que cambiar de sede
+      }, 400);
+    }
   });
 
   // H-05: en mobile, el browser dispara resize al mostrar/ocultar la barra de URL
@@ -169,6 +193,24 @@ window.__DIAG__ = DIAG;
   window.Mobile?.inicializar(); // solo configura bottom sheets, no toca el DOM del mural
   Secuenciador.iniciar();
 
+  /**
+   * F-07 (DTF §5, §4.13): precarga las imágenes de fondo de las sedes
+   * ADYACENTES a la activa (no la activa misma, que ya se está mostrando).
+   * new Image() con .src asignado dispara la descarga sin insertar nada
+   * en el DOM — cuando el visitante cambia de sede, el navegador ya tiene
+   * el archivo en caché y el fondo aparece sin flash de carga.
+   */
+  const fondosPrecargados = new Set();
+  function precargarFondosAdyacentes(indice) {
+    [indice - 1, indice + 1].forEach((i) => {
+      const url = sedesVisibles[i]?.imagenFondo;
+      if (!url || fondosPrecargados.has(url)) return;
+      fondosPrecargados.add(url);
+      const img = new Image();
+      img.src = url;
+    });
+  }
+
   // v5.0: referencia global para el fallback de #ruta-m en mobile.js
   // (creación del nav aun si .ruta-nodo no llegara a poblarse). Inerte fuera de eso.
   const carrusel = window.__carrusel = new Carrusel({
@@ -188,8 +230,10 @@ window.__DIAG__ = DIAG;
       if (window.esMobile?.()) recalcular(seccionNueva);
       Secuenciador.entrar(seccionNueva);
       refrescarCitas(seccionNueva, testimonios);
+      precargarFondosAdyacentes(indice);
     },
   });
+  precargarFondosAdyacentes(0); // onCambio no se dispara en la primera carga
 
   // Swipe horizontal entre sedes — solo en mobile.
   // Se inicializa DESPUÉS de crear el Carrusel porque necesita la instancia
@@ -1139,6 +1183,25 @@ const Rotacion = (() => {
    * administración), mezclarlos contaminaría esa capa y volvería el
    * recorrido "histórico" entre sesiones distintas, lo cual no se pidió.
    */
+  /**
+   * M-30 (DTF §5): reordena el DOM real de .escenario para que el orden
+   * de tabulación por teclado siga la narrativa editorial: permanentes
+   * (narradores UA) en su orden ya natural, luego el resto de rotativos
+   * en el orden congelado del ciclo. appendChild sobre un nodo YA presente
+   * en el DOM lo MUEVE a esa posición — no lo duplica ni lo recrea, así
+   * que no dispara ningún efecto de montaje/reflow de layout.
+   */
+  function ordenarFocoNarrativo(escenario, permanentes, ordenCongelado, idDe) {
+    if (!escenario) return;
+    const porId = new Map();
+    escenario.querySelectorAll('.elemento').forEach((el) => porId.set(idDe(el), el));
+    permanentes.forEach((el) => escenario.appendChild(el));
+    ordenCongelado.forEach((id) => {
+      const el = porId.get(id);
+      if (el) escenario.appendChild(el);
+    });
+  }
+
   function persistirCiclo(seccion, clave, firmaCorpus) {
     try {
       sessionStorage.setItem(clave, JSON.stringify({
@@ -1318,6 +1381,16 @@ const Rotacion = (() => {
       seccion.dataset.cicloVuelta = '1';
     }
     persistirCiclo(seccion, claveCiclo, firmaCorpusCiclo);
+
+    // M-30 (DTF §5): orden de tabulación por teclado = orden narrativo
+    // (permanentes primero, luego rotativos en el orden congelado del
+    // ciclo), no el orden de inserción del DOM. Reordenar el DOM real
+    // (en vez de usar tabindex positivo, antipatrón de accesibilidad que
+    // interfiere con el resto de la página) es seguro acá porque TODA la
+    // posición visual del mural es absoluta (--x/--y) y el z-index se
+    // asigna explícitamente por JS (L342 de layout.js) — ninguno de los
+    // dos depende del orden de aparición en el marcado.
+    ordenarFocoNarrativo(escenario, permanentes, ordenCongelado, idDe);
 
     // Mostrar los seleccionados (sin transición — ya deberían estar visibles)
     poolActivo.forEach((el) => {
