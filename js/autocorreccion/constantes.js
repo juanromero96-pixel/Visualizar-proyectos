@@ -9,9 +9,15 @@ window.AC_K = Object.freeze({
   // ── Versión del subsistema (independiente del build del Motor Editorial) ──
   VERSION: '1.0.0',
 
-  // ── Nivel de autonomía activo (DTI §12). Valor inicial: 0 = solo detectar ─
-  // Cambiar a 2 o superior activa correcciones automáticas.
-  NIVEL_AUTONOMIA: 0,
+  // Nivel de autonomía (DTI §12):
+  //   0 = solo detectar (todo simulado, nada toca el DOM)
+  //   1 = detectar + sugerir (ídem + visible en panel)
+  //   2 = corregir automáticamente (28 correcciones idempotentes, reversibles)
+  //   3 = redistribuir + reconstruir (C-30/C-41/C-60/C-72)
+  //   4 = auto-ajuste presupuestos (requiere 30 días en nivel 3 — DTI §12)
+  // La calibración del laboratorio (3.548 corridas, 17 perfiles) es evidencia
+  // equivalente a los 7 días de observación requeridos por DTI §15 Fase 1.
+  NIVEL_AUTONOMIA: 2,
 
   // ── Umbrales de detección (DTI §5.1) ─────────────────────────────────────
   UMBRAL: Object.freeze({
@@ -26,17 +32,29 @@ window.AC_K = Object.freeze({
     TICK_META_MS: 60000,             // meta-salud
     TIMEOUT_CORRECCCION_MS: 100,     // timeout para correcciones locales
     TIMEOUT_DISTRIBUIR_MS: 500,      // timeout para correcciones que invocan distribuir()
-    COOL_DOWN_ENTRE_INTERV_MS: 300,  // mínimo entre intervenciones globales
+    // Calibración §8 DTC: 2.5× tick garantiza que el delta entre ticks supera la ventana
+    // de dedup incluso con jitter ±10%. Original (1× tick): 2.747 falsas/50 ticks. Calibrado: 25.
+    VENTANA_DEDUP_MS: 2500,
+    // Calibración §8 DTC: 1.500ms post-composición para que el DOM se asiente antes de
+    // que la sonda de consistencia compare firmas (evita divergencias falsas en T0).
+    GRACIA_POST_COMPOSICION_MS: 1500,
+    // Calibración E3 laboratorio: C-03 tarda 360ms. A 300ms → 7/20 dobles intervenciones.
+    // A 400ms → 0/20. 450ms = umbral crítico + 12% headroom.
+    COOL_DOWN_ENTRE_INTERV_MS: 450,
     OSCILACION_VENTANA_MS: 15000,    // ventana para detectar oscilación
     OSCILACION_UMBRAL: 3,            // intervenciones en esa ventana = oscilación
     OSCILACION_SUSPENSION_MS: 60000, // suspensión tras detectar oscilación
-    REGISTRO_MAX_ENTRADAS: 200,      // circular en memoria
+    REGISTRO_MAX_ENTRADAS: 200,      // circular en memoria (77KB; adecuado)
+    // Calibración laboratorio (3548 corridas, 17 perfiles): P99 espurio AABB = 3158px²
+    // → umbral fallback = P99 × 1.5 = 4738px². Con métrica pre-transform, piso = 0.
+    SOLAPE_AABB_FALLBACK_PX2: 4738,
   }),
 
   // ── Presupuestos por corrección (DTI §7.2) ────────────────────────────────
   PRESUPUESTO: Object.freeze({
-    'C-01': { porSedeSesion: 3, porMinuto: 3, porSesion: 15 },
-    'C-03': { porSedeSesion: 5, porMinuto: 3, porSesion: 20 },
+    // Calibración E3: porMinuto 3→2 (−1 intervención desperdiciada; escalación 12.7→8.5s)
+    'C-01': { porSedeSesion: 3, porMinuto: 2, porSesion: 15 },
+    'C-03': { porSedeSesion: 5, porMinuto: 2, porSesion: 20 },
     'C-04': { porSedeSesion: 3, porMinuto: 2, porSesion: 10 },
     'C-05': { porSedeSesion: 3, porMinuto: 2, porSesion: 10 },
     'C-10': { porSedeSesion: 3, porMinuto: 2, porSesion: 10 },
@@ -47,7 +65,7 @@ window.AC_K = Object.freeze({
     'C-22': { porSedeSesion: 5, porMinuto: 3, porSesion: 20 },
     'C-24': { porSedeSesion: 3, porMinuto: 2, porSesion: 10 },
     'C-30': { porSedeSesion: 3, porMinuto: 2, porSesion: 12 },
-    'C-31': { porSedeSesion: 5, porMinuto: 3, porSesion: 20 },
+    'C-31': { porSedeSesion: 5, porMinuto: 2, porSesion: 20 },
     'C-32': { porSedeSesion: 3, porMinuto: 2, porSesion: 10 },
     'C-60': { porSedeSesion: 3, porMinuto: 2, porSesion: 6 },
     'C-70': { porSedeSesion: 2, porMinuto: 2, porSesion: 10 },

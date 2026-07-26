@@ -42,13 +42,17 @@ window.AC_Monitor = (() => {
 
   /**
    * Emite una señal al bus con deduplicación por hash (DTI §4.4 restricción 4).
-   * Si la misma señal ya se emitió hace < TICK_PROACTIVO_MS, solo incrementa contador.
+   * Si la misma señal ya se emitió hace < VENTANA_DEDUP_MS, solo incrementa contador.
+   * D-LAB-2 (DTC §7.5): original usaba TICK_PROACTIVO_MS (= tick). Con timers reales
+   * el delta entre dos ticks puede ser ≥ tick, haciendo que toda condición persistente
+   * se re-emita en cada tick. VENTANA_DEDUP_MS = 2.5× tick garantiza que el delta
+   * siempre quede dentro de la ventana incluso con jitter de ±10%.
    */
   function _emitir(tipo, payload) {
     const hash = tipo + ':' + (payload.hash || JSON.stringify(payload).slice(0, 60));
     const ahora = Date.now();
     const ultima = _ultimasEmisiones.get(hash);
-    if (ultima && (ahora - ultima.ts) < U.TICK_PROACTIVO_MS) {
+    if (ultima && (ahora - ultima.ts) < U.VENTANA_DEDUP_MS) {
       ultima.count++;
       return; // deduplicado
     }
@@ -84,6 +88,7 @@ window.AC_Monitor = (() => {
 
       // Detector de composición (DTI §4.1)
       if (ev.tipo === 'configurar') {
+        _registrarComposicion(); // D-LAB-4: resetear gracia post-composición
         _emitir('composicion', {
           sede: ev.sede, modo: ev.modo, activo: ev.activo, espera: ev.espera,
           cap: ev.cap, hash: 'composicion_' + ev.sede,
@@ -236,8 +241,13 @@ window.AC_Monitor = (() => {
     if (_tickAccesibilidad % 2 !== 0) return;
     _sondaSegura(() => {
       // tabindex en elementos activos
+      // D-LAB-1 (DTC §7.5): la condición original era `!el.tabIndex || el.tabIndex < 0`.
+      // tabIndex=0 es el valor CORRECTO que crearElemento asigna a cada anotación, y
+      // `!0` es true — la sonda trataba a TODOS los elementos activos como si les faltara
+      // tabIndex, generando falsas anomalías en cada tick (origen de 2.747/50 ticks en E2).
+      // La condición correcta es estrictamente < 0.
       _elementosActivos().forEach((el) => {
-        if (!el.tabIndex || el.tabIndex < 0) {
+        if (el.tabIndex < 0) {
           _emitir('accesibilidad.tabindex.ausente', {
             id: el.dataset.testimonioId || el.dataset.tipo || 'el',
             hash: 'tabindex_' + (el.dataset.testimonioId || 'uk'),
@@ -285,7 +295,20 @@ window.AC_Monitor = (() => {
 
   // ── Sonda de consistencia (cada TICK_CONSISTENCIA_MS = 5s) ────────────────
 
+  // Timestamp de la última composición (para GRACIA_POST_COMPOSICION_MS)
+  let _tsUltimaComposicion = 0;
+
+  // Se actualiza en cada evento de composición reactivo (configurar/iniciar)
+  // para reiniciar la gracia post-composición.
+  function _registrarComposicion() {
+    _tsUltimaComposicion = Date.now();
+  }
+
   function _sondaConsistencia() {
+    // D-LAB-4 (DTC §7.5): durante los primeros GRACIA_POST_COMPOSICION_MS tras
+    // una composición, el DOM aún está asentándose (T0 del DTI). La sonda de
+    // consistencia comparando firmas en ese período produce divergencias falsas.
+    if (Date.now() - _tsUltimaComposicion < U.GRACIA_POST_COMPOSICION_MS) return;
     _sondaSegura(() => {
       const sede = _sedeActiva();
       if (!sede) return;
@@ -402,7 +425,7 @@ window.AC_Monitor = (() => {
   function iniciar() {
     if (_activo) return;
     _activo = true;
-
+    _tsUltimaComposicion = Date.now(); // D-LAB-4: la composición T0 ocurre al arrancar
     _iniciarDetectoresReactivos();
 
     // Polling con requestIdleCallback cuando está disponible

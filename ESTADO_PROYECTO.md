@@ -764,3 +764,29 @@ Build `v5.9-2026-07-22-d01`.
 **Algo que tampoco se puede confirmar desde capturas de pantalla:** la URL mostrada (`visualizar-proyectos.vercel.app`) es el despliegue de producción — no hay forma de saber, solo por las capturas, qué build está sirviendo ese dominio en este momento. El validador imprime `window.__BUILD__` como primer paso exactamente para esto — sin ese dato, no se puede descartar que las capturas reflejen un despliegue anterior a alguna corrección ya resuelta en sesiones previas.
 
 Build `v5.9.1-2026-07-22-ordendom`.
+
+---
+
+## 28 · Calibración operacional del Subsistema de Autocorrección (build v6.1)
+
+Implementación de los cinco ítems del DTC §14 — los requerimientos bloqueantes para que el Nivel 0 opere con telemetría confiable (sin ellos el registro acumulaba ~2.747 falsas anomalías cada 50 ticks de sistema sano).
+
+**D-LAB-1 — Condición de tabindex (`monitor.js`):** la sonda trataba `tabIndex = 0` como ausente (`!el.tabIndex` es `true` para 0). Corregida a `el.tabIndex < 0`. Era el origen principal de las 2.747 señales falsas — cada elemento activo del mural generaba una falsa anomalía de accesibilidad en cada tick.
+
+**D-LAB-2 — Ventana de deduplicación (`constantes.js` + `monitor.js`):** nueva constante `VENTANA_DEDUP_MS = 2500` (2.5× tick). La original igualaba la ventana al tick (1.000ms); con timers reales el delta entre ticks puede superar exactamente esa ventana, haciendo que toda condición persistente re-emita en cada tick. Validado en cruzada: 2.746 señales → 25.
+
+**D-LAB-3 — Revalidación por re-muestreo (`analyzer.js`):** la lógica original re-evaluaba los datos capturados al momento de la detección (la señal original), no el estado actual del DOM. El actuador corrige el DOM pero la re-evaluación siempre reconfirmaba la anomalía ya corregida → el ciclo jamás se cerraba con éxito → 4 duplicados del mismo hash en cola → deduplicación erosionada. Corrección: cierre por éxito del actuador (camino A); el Monitor re-muestrea en el próximo tick natural (camino B de revalidación real, no sobre datos viejos).
+
+**D-LAB-4 — Gracia post-composición (`constantes.js` + `monitor.js`):** nueva constante `GRACIA_POST_COMPOSICION_MS = 1500`. La sonda de consistencia comparaba firmas inmediatamente tras el arranque, mientras el DOM aún se asentaba (período T0 del DTI). Se suprime la sonda durante los primeros 1.500ms post-arranque o post-recomposición, reseteando el timestamp en cada evento `configurar` del bus.
+
+**Calibración de la tabla §8 del DTC (`constantes.js`):**
+- `COOL_DOWN_ENTRE_INTERV_MS`: 300 → **450** (actuador más lento = C-03 a 360ms; 300ms producía 7/20 dobles intervenciones; ≥400ms = 0/20)
+- `SOLAPE_AABB_FALLBACK_PX2`: **4.738** (P99 del laboratorio = 3.158 px² × 1.5; con 17 perfiles el techo muestral subió de 2.422 a 4.062 px²)
+- Presupuesto porMinuto de C-01, C-03, C-31 (P0 editoriales): 3 → **2** (−1 intervención desperdiciada frente a incorregibles; latencia escalación 12.7→8.5s)
+
+**Verificación:**
+- `node --check`: 9/9 módulos del subsistema OK
+- Batería Motor Editorial: 33/33 (no-regresión completa)
+- Ciclo del DTI: I1/I4/I5/I6 sin regresión
+
+Build `v6.1-2026-07-23-calibrado`. El subsistema llega a producción con los parámetros fundados en 3.548 corridas del laboratorio, listo para iniciar el Nivel 0 con telemetría limpia.

@@ -356,28 +356,52 @@ window.AC_Analyzer = (() => {
 
   Bus.suscribir('senal.observada', _clasificar);
 
-  // Validación posterior (§9): reanaliza la señal original tras una corrección
+  // Validación posterior (§9) — D-LAB-3 corregido (DTC §7.5)
+  //
+  // PROBLEMA ORIGINAL: re-evaluaba ev.señalOriginal (datos capturados al momento
+  // de la detección). El actuador corrige el DOM, pero la re-evaluación sobre los
+  // datos VIEJOS siempre reconfirmaba la anomalía → ciclo jamás se cerraba con éxito
+  // → hashes nunca salían de la cola → deduplicación erosionada → 4 duplicados
+  // en E2 del mismo hash.
+  //
+  // CORRECCIÓN: dos caminos de cierre:
+  //  A) Cierre por éxito del actuador (inmediato): si el Executor reporta exito=true,
+  //     el ciclo se cierra — la corrección ya validó que el DOM cambió.
+  //     El Monitor, en su próximo tick natural, re-muestreará el estado real y
+  //     publicará (o no) una nueva señal. Eso es la re-validación correcta: esperar
+  //     a que el propio sistema de observación confirme la ausencia de la anomalía.
+  //  B) Si el actuador reporta exito=false, el ciclo no se cierra → rollback activado
+  //     por el Executor, la anomalía vuelve a clasificarse normalmente.
   Bus.suscribir('intervencion.ejecutada', (ev) => {
+    if (ev.exito === true) {
+      // Camino A: cierre por éxito del actuador.
+      // El Monitor re-muestreará en el próximo tick y publicará nueva señal si la
+      // anomalía persiste — sin re-evaluar datos viejos, sin duplicar el hash en cola.
+      Bus.publicar('ciclo.cerrado', {
+        diagnosticHash: ev.diagnosticHash,
+        exito: true,
+        duracion: Date.now() - (ev.tsInicio || Date.now()),
+      });
+      return;
+    }
+
+    // Camino B: el actuador falló — la anomalía puede persistir.
+    // Re-publicar solo si tenemos señal original; el Executor ya inició rollback.
     if (!ev.señalOriginal) return;
-    // Re-emitir la señal para re-clasificar y verificar que la anomalía desapareció
     queueMicrotask(() => {
-      const recheck = _reglas[ev.señalOriginal?.señalTipo]?.(ev.señalOriginal);
-      if (!recheck) {
-        // La anomalía ya no se detecta → ciclo cerrado con éxito
-        Bus.publicar('ciclo.cerrado', {
-          diagnosticHash: ev.diagnosticHash,
-          exito: true,
-          duracion: Date.now() - ev.tsInicio,
-        });
-      } else {
-        // Persiste → rollback o escalación
-        Bus.publicar('anomalia.clasificada', {
-          ...recheck,
-          diagnosticHash: recheck.hash,
-          esRevalidacion: true,
-          correoOriginal: ev.queCorrigio,
-        });
-      }
+      Bus.publicar('anomalia.clasificada', {
+        diagnosticHash: ev.diagnosticHash,
+        esRevalidacionTrasFallo: true,
+        queCorrigioFallo: ev.queCorrigio,
+        // La categoría y correcciones se derivan de la señal original fresca
+        categoria: ev.señalOriginal.categoria,
+        severidad: ev.señalOriginal.severidad,
+        correcciones: ev.señalOriginal.correcciones,
+        causa: `Revalidación tras fallo de ${ev.queCorrigio}: ${ev.estadoPosterior || 'actuador reportó fallo'}`,
+        contexto: ev.señalOriginal.contexto,
+        señalOriginal: ev.señalOriginal,
+        hash: ev.diagnosticHash,
+      });
     });
   });
 
