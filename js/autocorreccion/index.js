@@ -11,7 +11,7 @@
   'use strict';
 
   // Guard: si algún módulo crítico no cargó, no arrancar (no lanzar excepción global)
-  const modulos = ['AC_K', 'AC_Bus', 'AC_Logger', 'AC_Monitor', 'AC_Analyzer', 'AC_Planner', 'AC_Executor'];
+  const modulos = ['AC_K', 'AC_Bus', 'AC_Logger', 'AC_Monitor', 'AC_Analyzer', 'AC_Planner', 'AC_Executor', 'AC_EvidenceEngine', 'AC_DriftDetector', 'AC_ProfileLearner', 'AC_CalibrationEngine'];
   const faltantes = modulos.filter((m) => !window[m]);
   if (faltantes.length) {
     console.warn('[Autocorrección] No se puede iniciar — módulos faltantes:', faltantes.join(', '));
@@ -50,6 +50,14 @@
       // Montar el panel si corresponde
       if (new URLSearchParams(location.search).get('panel')) {
         window.AC_Panel?.iniciar();
+
+      // Nivel 4: inicializar el stack de aprendizaje
+      // ProfileLearner detecta la clase del dispositivo al arranque
+      const claseDispositivo = window.AC_ProfileLearner?.claseActual() || 'global';
+      // DriftDetector usa la calibración de referencia persistida
+      window.AC_DriftDetector?.cargarReferencia?.();
+      // Publicar el perfil actual al bus para que los módulos lo usen
+      BUS?.publicar('perfil.detectado', { clase: claseDispositivo, perfil: window.AC_ProfileLearner?.perfilActual() });
       }
 
       // Exponer una API de control minimal para debugging en consola
@@ -61,6 +69,12 @@
         cola: () => window.AC_Planner.obtenerCola(),
         detener: () => window.AC_Monitor.detener(),
         iniciar: () => window.AC_Monitor.iniciar(),
+        // Nivel 4
+        perfil: () => window.AC_ProfileLearner?.perfilActual(),
+        deriva: () => window.AC_DriftDetector?.evaluarTodos(),
+        evidencia: () => window.AC_EvidenceEngine?.resumen(),
+        recalibrar: (clase) => window.AC_CalibrationEngine?.recalibrar(clase || window.AC_ProfileLearner?.claseActual()),
+        historialCalibraciones: () => window.AC_CalibrationEngine?.leerHistorial(),
       };
 
       console.info(

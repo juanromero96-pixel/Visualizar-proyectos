@@ -43,6 +43,7 @@ window.AC_Panel = (() => {
         <section id="ac-sec-ultimas"><h3>Últimas intervenciones</h3><table id="ac-tabla-ultimas"><thead><tr><th>Hora</th><th>Código</th><th>Resultado</th><th>Sede</th></tr></thead><tbody></tbody></table></section>
         <section id="ac-sec-contadores"><h3>Contadores por corrección</h3><div id="ac-contadores-contenido"></div></section>
         <section id="ac-sec-escalaciones"><h3>Problemas escalados</h3><div id="ac-escalaciones-contenido"></div></section>
+        <section id="ac-sec-nivel4"><h3>Nivel 4 — Aprendizaje</h3><div id="ac-nivel4-contenido"></div></section>
         ${MODO !== 'lectura' ? `
         <section id="ac-sec-controles">
           <h3>Control operativo</h3>
@@ -168,6 +169,33 @@ window.AC_Panel = (() => {
             ${MODO !== 'lectura' ? `<button onclick="window.AC_Logger.reconocerEscalacion(${i})" style="margin-left:8px;font-size:10px">Reconocer</button>` : ''}
           </div>`).join(''))
         : (escEl.innerHTML = '<p>Sin escalaciones pendientes. ✅</p>');
+    }
+
+    // Nivel 4: Aprendizaje, deriva y calibración
+    const n4El = _panelEl.querySelector('#ac-nivel4-contenido');
+    if (n4El) {
+      const perfil = window.AC_ProfileLearner?.perfilActual();
+      const deriva = window.AC_DriftDetector?.evaluar(perfil?.clase || 'global');
+      const calActiva = window.AC_CalibrationEngine?.leerActiva();
+      n4El.innerHTML = `
+        <p>Clase de dispositivo: <strong>${perfil?.clase || '—'}</strong>
+           (${perfil?.anchoCSS || '?'}×${perfil?.altoCSS || '?'} CSS, DPR=${perfil?.DPR || '?'})</p>
+        <p>Deriva global: <strong style="color:${(deriva?.derivaGlobal||0) > 0.3 ? '#e03c3c' : '#4caf50'}">${((deriva?.derivaGlobal||0)*100).toFixed(1)}%</strong>
+           — ${deriva?.descripcion || 'sin datos'}</p>
+        ${deriva?.enAlerta?.length ? `<p style="color:#e09a3c">⚠️ Métricas en alerta: ${deriva.enAlerta.join(', ')}</p>` : ''}
+        <p>Calibración activa: <strong>v${calActiva?.version || '(base)'}</strong>
+           ${calActiva ? `(${new Date(calActiva.ts).toLocaleTimeString('es-AR')})` : ''}</p>
+        <p>Evidencia acumulada: <strong>${window.AC_EvidenceEngine?.resumen().length || 0}</strong> métricas</p>
+        ${MODO !== 'lectura' ? `<button id="ac-btn-recalibrar" style="margin-top:4px">Recalibrar ahora</button>` : ''}`;
+      if (MODO !== 'lectura') {
+        const btnRec = n4El.querySelector('#ac-btn-recalibrar');
+        if (btnRec) btnRec.addEventListener('click', () => {
+          const clase = window.AC_ProfileLearner?.claseActual() || 'global';
+          window.AC_CalibrationEngine?.recalibrar(clase).then((r) => {
+            alert(`Recalibración: ${r.accion} (puntaje: ${r.puntaje || '—'})\n${r.razon || (r.criterios||[]).join('\n')}`);
+          });
+        });
+      }
     }
 
     // Reprogramar el próximo frame si el panel sigue abierto

@@ -17,7 +17,7 @@ window.AC_K = Object.freeze({
   //   4 = auto-ajuste presupuestos (requiere 30 días en nivel 3 — DTI §12)
   // La calibración del laboratorio (3.548 corridas, 17 perfiles) es evidencia
   // equivalente a los 7 días de observación requeridos por DTI §15 Fase 1.
-  NIVEL_AUTONOMIA: 2,
+  NIVEL_AUTONOMIA: 3,
 
   // ── Umbrales de detección (DTI §5.1) ─────────────────────────────────────
   UMBRAL: Object.freeze({

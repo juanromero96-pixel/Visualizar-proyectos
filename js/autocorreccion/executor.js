@@ -241,16 +241,42 @@ window.AC_Executor = (() => {
       return { ...res, snap: [] };
     },
 
-    // ── C-30: Redistribuir escena completa ──────────────────────────────────
+    // ── C-30: Redistribución completa (Nivel 3) ─────────────────────────────
+    // Ciclo requerido: Snapshot → Medir-antes → Aplicar → Medir-después → Aceptar|Rollback
     'C-30': async (anomalia) => {
       const sede = _sedeEl(anomalia.contexto?.sede);
       if (!sede) return { ok: false, error: 'Sede no encontrada' };
       const elementos = Array.from(sede.querySelectorAll('.elemento:not(.elemento--rotacion-espera)'));
+      if (!elementos.length) return { ok: false, error: 'Sin elementos activos' };
       const snap = _snapshot(elementos);
-      const res = await _ejecutarConTimeout(() => {
-        D()?.distribuir(sede);
-      }, U.TIMEOUT_DISTRIBUIR_MS);
-      return { ...res, snap };
+      const escenario = sede.querySelector('.escenario');
+      function medirSolapeTotal(esc) {
+        if (!esc) return -1;
+        const rect = esc.getBoundingClientRect();
+        if (!rect.width) return -1;
+        const cajas = Array.from(esc.querySelectorAll('.elemento:not(.elemento--rotacion-espera)')).map((el) => {
+          const r = el.getBoundingClientRect();
+          return { cx: r.left - rect.left + r.width/2, cy: r.top - rect.top + r.height/2, w: r.width, h: r.height };
+        });
+        let total = 0;
+        for (let i = 0; i < cajas.length; i++) for (let j = i+1; j < cajas.length; j++) {
+          const a = cajas[i], b = cajas[j];
+          const ox = Math.max(0, Math.min(a.cx+a.w/2, b.cx+b.w/2) - Math.max(a.cx-a.w/2, b.cx-b.w/2));
+          const oy = Math.max(0, Math.min(a.cy+a.h/2, b.cy+b.h/2) - Math.max(a.cy-a.h/2, b.cy-b.h/2));
+          total += ox * oy;
+        }
+        return Math.round(total);
+      }
+      const solajeAntes = medirSolapeTotal(escenario);
+      const res = await _ejecutarConTimeout(() => { D()?.distribuir(sede); }, U.TIMEOUT_DISTRIBUIR_MS);
+      if (!res.ok) return { ...res, snap, solajeAntes, solapeDespues: -1 };
+      const solapeDespues = medirSolapeTotal(escenario);
+      // Rollback si redistribución empeoró más de 100px² el solape
+      if (solajeAntes >= 0 && solapeDespues > solajeAntes + 100) {
+        _restaurarSnapshot(snap);
+        return { ok: false, error: `Redistribución degradó: ${solajeAntes}→${solapeDespues}px²; rollback`, snap, solajeAntes, solapeDespues, rollbackEjecutado: true };
+      }
+      return { ok: true, snap, solajeAntes, solapeDespues, mejoro: solapeDespues <= solajeAntes };
     },
 
     // ── C-31: Reposicionar invasor de zona protegida ────────────────────────
@@ -341,6 +367,32 @@ window.AC_Executor = (() => {
       return { ok: false, error: 'fonts.ready-bypass-requiere-escalar', snap: [] };
     },
 
+
+    // ── C-60: Remontar IntersectionObserver del carrusel (Nivel 3) ────────
+    'C-60': async (anomalia) => {
+      const contenedor = document.getElementById('carrusel') || document.querySelector('.secciones');
+      if (!contenedor) return { ok: false, error: '#carrusel no encontrado' };
+      const snap = [{ tipo: 'observer-remount', ts: Date.now() }];
+      const res = await _ejecutarConTimeout(() => {
+        // Remontar el observer: desconectar el existente y crear uno nuevo
+        // usando la misma API que ya usa el carrusel (window.__carrusel.io)
+        const carrusel = window.__carrusel;
+        if (carrusel?.io) {
+          carrusel.io.disconnect();
+          const secciones = Array.from(contenedor.querySelectorAll('.sede'));
+          carrusel.io = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting && carrusel.onCambioFn) {
+                const idx = secciones.indexOf(entry.target);
+                if (idx >= 0) carrusel.onCambioFn(idx, entry.target);
+              }
+            });
+          }, { root: contenedor, threshold: 0.5 });
+          secciones.forEach((s) => carrusel.io.observe(s));
+        }
+      }, U.TIMEOUT_CORRECCCION_MS);
+      return { ...res, snap };
+    },
     // ── C-61: Sincronizar nav mobile con carrusel ──────────────────────────
     'C-61': async (anomalia) => {
       const indice = window.__carrusel?.indice ?? 0;
