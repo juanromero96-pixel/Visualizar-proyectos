@@ -237,6 +237,15 @@
     },
   };
 
+  /** Capacidad real que el LAE calcula para una sede. Solo lectura. */
+  function _capacidadDe(sedeEl) {
+    try {
+      if (!window.esMobile?.() || !window.AC_LAE_Mobile) return null;
+      const rep = window.AC_LAE_Mobile.medir(sedeEl);
+      return rep ? rep.capacidadReal : null;
+    } catch (e) { return null; }
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   // ④ GRABADOR DE LÍNEA TEMPORAL
   // ══════════════════════════════════════════════════════════════════════════
@@ -253,7 +262,16 @@
     /** Registra un evento discreto en la línea temporal. */
     evento(tipo, datos) {
       if (!this.activo || this.eventos.length >= CFG.MAX_EVENTOS) return;
-      this.eventos.push({ t: +(performance.now() - this.t0).toFixed(1), tipo, ...datos });
+      // El payload se anida en `datos` en lugar de expandirse en la raíz.
+      // Con el spread anterior, cualquier payload que contuviera una clave
+      // `tipo` sobrescribía el tipo del evento: un `orientationchange` cuyo
+      // payload llevaba { tipo: 'portrait-primary' } se registraba con ese
+      // nombre y el evento quedaba irreconocible para el análisis.
+      this.eventos.push({
+        t: +(performance.now() - this.t0).toFixed(1),
+        tipo,
+        datos: datos || {},
+      });
     },
 
     /** Captura un frame: estado geométrico completo en este instante. */
@@ -274,9 +292,18 @@
         },
         orientacion: screen.orientation?.type || null,
         DPR: window.devicePixelRatio,
+        lectorAbierto: (() => {
+          const l = document.querySelector(
+            '#lector, .lector, .lector-sheet, [data-lector], .lem, .lem--escritorio');
+          if (!l) return false;
+          try { return l.classList.contains('abierto') ||
+                       l.getAttribute('aria-hidden') === 'false'; } catch (e) { return false; }
+        })(),
         sedes: sedes.map((s) => {
           const esc = s.querySelector('.escenario');
           const r = esc ? esc.getBoundingClientRect() : null;
+          const chipEl = s.querySelector('.marca-chip');
+          const zonaRect = chipEl ? chipEl.getBoundingClientRect() : null;
           const activos = Array.from(
             s.querySelectorAll('.elemento:not(.elemento--rotacion-espera)')
           );
@@ -303,6 +330,79 @@
               } catch (err) {}
             });
           }
+          // A3 · Geometría POR ELEMENTO en cada frame
+          const elementos = activos.map((e, i) => {
+            const rr = rects[i];
+            const int = e.querySelector('.elemento-interior');
+            const oh = int ? int.offsetHeight : e.offsetHeight;
+            const ow = int ? int.offsetWidth  : e.offsetWidth;
+            // Oclusión real de ESTE elemento
+            let ocl = false;
+            if (activos.length <= 12 && rr.width >= 2) {
+              try {
+                const en = document.elementFromPoint(rr.left + rr.width/2, rr.top + rr.height/2);
+                const otro = en && en.closest ? en.closest('.elemento') : null;
+                ocl = !!(otro && otro !== e && !e.contains(en));
+              } catch (err) {}
+            }
+            // Solapes de ESTE elemento
+            const sol = [];
+            for (let j = 0; j < rects.length; j++) {
+              if (j === i) continue;
+              const a = rr, b = rects[j];
+              const ox = Math.max(0, Math.min(a.right,b.right) - Math.max(a.left,b.left));
+              const oy = Math.max(0, Math.min(a.bottom,b.bottom) - Math.max(a.top,b.top));
+              if (ox*oy > 0) sol.push({ con: activos[j].dataset.testimonioId || activos[j].dataset.tipo,
+                                        area: Math.round(ox*oy) });
+            }
+            return {
+              id: e.dataset.testimonioId || e.dataset.tipo || null,
+              tipo: e.dataset.tipo || null,
+              permanente: e.dataset.permanente === 'true',
+              rect: { l:+rr.left.toFixed(1), t:+rr.top.toFixed(1),
+                      w:+rr.width.toFixed(1), h:+rr.height.toFixed(1) },
+              cajaLayout: { w: ow, h: oh },
+              deltaMetrica: +(Math.max(rr.width, rr.height) - Math.max(ow, oh)).toFixed(2),
+              posCSS: { x: e.style.getPropertyValue('--x') || null,
+                        y: e.style.getPropertyValue('--y') || null },
+              escala: e.style.getPropertyValue('--escala') || null,
+              oclusionReal: ocl,
+              zonaProtegida: !!zonaRect && (rr.left < zonaRect.right && rr.right > zonaRect.left &&
+                                            rr.top < zonaRect.bottom && rr.bottom > zonaRect.top),
+              solapes: sol,
+            };
+          });
+
+          // B3 · Score compositivo de este frame
+          let comp = null;
+          const COMP = window.__CALIBRAR_COMPOSICION__;
+          if (COMP && r && r.width) {
+            try {
+              const esMob = !!window.esMobile?.();
+              const mTop = esMob ? 92 : 0, mBot = esMob ? 52 : 0;
+              const lienzo = { left:r.left, right:r.right, top:r.top+mTop,
+                               bottom:r.bottom-mBot, width:r.width,
+                               height: Math.max(1, r.height - mTop - mBot) };
+              const els = elementos.map((e) => ({
+                id: e.id, tipo: e.tipo, permanente: e.permanente,
+                rect: { left:e.rect.l, top:e.rect.t, right:e.rect.l+e.rect.w,
+                        bottom:e.rect.t+e.rect.h, width:e.rect.w, height:e.rect.h },
+              }));
+              const ev = COMP.evaluar(els, lienzo);
+              if (ev.valido) {
+                comp = { score: ev.scoreCompositivo, componentes: ev.componentes,
+                         ocupacion: ev.metricas['M-C1_ocupacionUtil'].valor,
+                         muerto: ev.metricas['M-C2_espacioMuerto'].valor,
+                         balH: ev.metricas['M-C3_balanceH'].valor,
+                         balV: ev.metricas['M-C4_balanceV'].valor,
+                         frag: ev.metricas['M-C5_fragmentacion'].valor,
+                         resp: ev.metricas['M-C6_respiracion'].valor,
+                         cont: ev.metricas['M-C7_continuidad'].valor,
+                         centroMasa: ev.centroMasa, heatmap: ev.heatmap };
+              }
+            } catch (err) {}
+          }
+
           return {
             id: s.dataset.sede,
             escH: r ? +r.height.toFixed(1) : null,
@@ -312,11 +412,13 @@
             permanentes: s.querySelectorAll('.elemento[data-permanente="true"]').length,
             paresSolape, areaSolape: Math.round(areaSolape),
             oclusiones,
-            // Alturas de los elementos activos (para el análisis de estabilidad)
+            capacidadReal: _capacidadDe(s),
             alturas: activos.map((e) => {
               const int = e.querySelector('.elemento-interior');
               return int ? int.offsetHeight : e.offsetHeight;
             }),
+            elementos,
+            composicion: comp,
           };
         }),
       };
@@ -400,7 +502,41 @@
             this.evento('sistema.intervencion', { correccion: ev.queCorrigio, exito: ev.exito }));
           window.AC_Bus.suscribir('lae.adaptacion.completada', (ev) =>
             this.evento('lae.adaptacion', { causa: ev.diagnostico, escalon: ev.escalon,
-                                            desenlace: ev.desenlace }));
+                                            desenlace: ev.desenlace,
+                                            reintentos: (ev.historial?.length || 1) - 1,
+                                            duracion: ev.duracion }));
+          window.AC_Bus.suscribir('ciclo.cerrado', (ev) =>
+            this.evento('sistema.cicloCerrado', { exito: ev.exito, hash: ev.diagnosticHash }));
+        } catch (e) {}
+      }
+
+      // A4 · Apertura y cierre del Lector.
+      // El Lector NO existe en el DOM inicial: `lector.js` lo crea al abrirlo
+      // (`section.lem` + `div.lem-velo`). Por eso no se puede observar un nodo
+      // preexistente; hay que vigilar la aparición y desaparición en el body.
+      this._lectorPrev = !!document.querySelector('.lem');
+      try {
+        this._moLector = new MutationObserver(() => {
+          const el = document.querySelector('.lem');
+          const abierto = !!el && !el.classList.contains('lem--cerrando');
+          if (abierto !== this._lectorPrev) {
+            this._lectorPrev = abierto;
+            this.evento(abierto ? 'lector.abierto' : 'lector.cerrado',
+                        { via: 'mutacion-dom' });
+          }
+        });
+        this._moLector.observe(document.body, { childList: true, subtree: false });
+      } catch (e) {}
+
+      // Vía complementaria: el Motor emite eventos de Lector por DIAG,
+      // que el Monitor reexpone en el bus. Es más precisa que el DOM.
+      if (window.AC_Bus?.suscribir) {
+        try {
+          window.AC_Bus.suscribir('senal.observada', (ev) => {
+            if (ev?.señalTipo === 'lector.abierto' || ev?.señalTipo === 'lector.cerrado') {
+              this.evento(ev.señalTipo, { via: 'bus' });
+            }
+          });
         } catch (e) {}
       }
 
@@ -427,6 +563,7 @@
       clearInterval(this._timer); this._timer = null;
       try { this._mo?.disconnect(); } catch (e) {}
       try { this._ro?.disconnect(); } catch (e) {}
+      try { this._moLector?.disconnect(); } catch (e) {}
       this._handlers.forEach(([t, tipo, fn]) => { try { t.removeEventListener(tipo, fn); } catch(e){} });
       this._handlers = [];
       this._ultimoAnalisis = this.analizar();
@@ -686,6 +823,67 @@
                 exportado: new Date().toISOString(), build: window.__BUILD__ },
         ...Dataset.exportar(),
       };
+    },
+
+    /** CSV por frame: una fila por frame y sede. */
+    csvPorFrame(a) {
+      if (!a?.timeline?.frames) return '';
+      const cab = ['tMs','frameIndex','sede','innerW','innerH','vvH','escH','escW',
+                   'visibles','enEspera','permanentes','capacidadReal','paresSolape',
+                   'areaSolape','oclusiones','lectorAbierto','score','ocupacion',
+                   'muerto','balH','balV','frag','resp','cont'];
+      const filas = [cab.join(',')];
+      a.timeline.frames.forEach((f, idx) => {
+        (f.sedes || []).forEach((s) => {
+          const c = s.composicion || {};
+          filas.push([
+            f.t, idx, s.id, f.viewport.iw, f.viewport.ih, f.viewport.vvh ?? '',
+            s.escH ?? '', s.escW ?? '', s.visibles, s.enEspera, s.permanentes,
+            s.capacidadReal ?? '', s.paresSolape, s.areaSolape, s.oclusiones,
+            f.lectorAbierto ? 1 : 0,
+            c.score ?? '', c.ocupacion ?? '', c.muerto ?? '', c.balH ?? '',
+            c.balV ?? '', c.frag ?? '', c.resp ?? '', c.cont ?? '',
+          ].join(','));
+        });
+      });
+      return filas.join('\n');
+    },
+
+    /** CSV por elemento: una fila por elemento, frame y sede. */
+    csvPorElemento(a) {
+      if (!a?.timeline?.frames) return '';
+      const cab = ['tMs','frameIndex','sede','id','tipo','permanente','rectL','rectT',
+                   'rectW','rectH','layoutW','layoutH','deltaMetrica','posX','posY',
+                   'escala','oclusionReal','zonaProtegida','nSolapes','areaSolapeTotal'];
+      const filas = [cab.join(',')];
+      a.timeline.frames.forEach((f, idx) => {
+        (f.sedes || []).forEach((s) => {
+          (s.elementos || []).forEach((e) => {
+            const areaSol = (e.solapes || []).reduce((x, y) => x + y.area, 0);
+            filas.push([
+              f.t, idx, s.id, e.id ?? '', e.tipo ?? '', e.permanente ? 1 : 0,
+              e.rect.l, e.rect.t, e.rect.w, e.rect.h,
+              e.cajaLayout.w, e.cajaLayout.h, e.deltaMetrica,
+              (e.posCSS.x || '').replace(/,/g, ';'), (e.posCSS.y || '').replace(/,/g, ';'),
+              e.escala || '', e.oclusionReal ? 1 : 0, e.zonaProtegida ? 1 : 0,
+              (e.solapes || []).length, areaSol,
+            ].join(','));
+          });
+        });
+      });
+      return filas.join('\n');
+    },
+
+    /** Descarga un texto plano como archivo. */
+    descargarTexto(texto, sufijo, ext) {
+      const blob = new Blob([texto], { type: ext === 'csv' ? 'text/csv' : 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+      a.href = url;
+      a.download = `${sufijo}_${window.__BUILD__ || 'build'}_${ts}.${ext}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     },
 
     /** Descarga cualquiera de las tres. */

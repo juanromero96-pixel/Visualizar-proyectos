@@ -482,12 +482,15 @@
   // ══════════════════════════════════════════════════════════════════════════
   let _panel, _resumen, _sedeIndex = 0;
   let _ultimoAnalisisTemporal = null;
+  let _ultimoCompositivo = null;
 
   /** Renderiza el resumen de la última grabación temporal. */
   function renderTemporal(a) {
     const el = document.getElementById('cal-temporal');
     if (!el || !a) return;
     el.hidden = false;
+    dibujarLineaTiempo(a);
+    renderEventos(a);
     const h = a.hitos || {}, p = a.performance || {};
     const sedes = Object.entries(a.estabilidad?.porSede || {});
     el.innerHTML = `
@@ -525,6 +528,10 @@
       #calibrar-panel button.cal-export2{background:#8957e5;border-color:#a371f7}
       #calibrar-panel button.cal-export3{background:#6e7681;border-color:#8b949e}
       #calibrar-panel button.cal-rec{background:#a40e26;border-color:#da3633}
+      #calibrar-panel button.cal-csv{background:#30363d;border-color:#484f58;font-size:11px}
+      #calibrar-panel #cal-canvas{width:100%;height:auto;display:block;margin-top:8px;
+        background:#0d1117;border:1px solid #21262d;border-radius:6px}
+      #calibrar-panel .cal-metricas em{color:#6e7681;font-style:normal;font-size:10px}
       #calibrar-panel button:disabled{opacity:.55}
       #calibrar-panel .cal-row--export button{min-width:0;font-size:12px;padding:11px 4px}
       #calibrar-panel .cal-metricas{background:#161b22;border:1px solid #21262d;
@@ -563,11 +570,22 @@
         <button id="cal-exportar-resumen" class="cal-export2">⭳ Resumen</button>
         <button id="cal-exportar-dataset" class="cal-export3">⭳ Dataset</button>
       </div>
+      <div class="cal-row cal-row--export">
+        <button id="cal-csv-frame" class="cal-csv">⭳ CSV frames</button>
+        <button id="cal-csv-elem" class="cal-csv">⭳ CSV elem.</button>
+        <button id="cal-png" class="cal-csv">⭳ PNG mapa</button>
+      </div>
       <div class="cal-row">
+        <button id="cal-analizar">⌸ Analizar JSON…</button>
         <button id="cal-limpiar">✕ Reiniciar sesión</button>
       </div>
+      <input type="file" id="cal-file" accept=".json" multiple hidden />
       <div class="cal-metricas" id="cal-resumen"></div>
+      <div class="cal-metricas" id="cal-compositivo"></div>
+      <canvas id="cal-canvas" width="280" height="150"></canvas>
       <div class="cal-metricas" id="cal-temporal" hidden></div>
+      <div class="cal-metricas" id="cal-eventos" hidden></div>
+      <div class="cal-metricas" id="cal-analisis" hidden></div>
     `;
     document.body.appendChild(_panel);
 
@@ -627,6 +645,55 @@
       T().Exportar.descargar(T().Exportar.dataset(), 'dataset');
       _toast(`Dataset exportado: ${st.sesionesTotales} sesiones, ${st.dispositivos} dispositivos`, 'ok');
     });
+    // ── D2 · Exportaciones CSV y PNG ───────────────────────────────────
+    document.getElementById('cal-csv-frame').addEventListener('click', () => {
+      if (!T() || !_ultimoAnalisisTemporal) { _toast('Grabá una sesión primero', 'warn'); return; }
+      const csv = T().Exportar.csvPorFrame(_ultimoAnalisisTemporal);
+      if (!csv) { _toast('Sin datos de frames', 'warn'); return; }
+      T().Exportar.descargarTexto(csv, 'frames', 'csv');
+      _toast(`CSV exportado (${csv.split('\n').length - 1} filas)`, 'ok');
+    });
+    document.getElementById('cal-csv-elem').addEventListener('click', () => {
+      if (!T() || !_ultimoAnalisisTemporal) { _toast('Grabá una sesión primero', 'warn'); return; }
+      const csv = T().Exportar.csvPorElemento(_ultimoAnalisisTemporal);
+      if (!csv) { _toast('Sin datos de elementos', 'warn'); return; }
+      T().Exportar.descargarTexto(csv, 'elementos', 'csv');
+      _toast(`CSV exportado (${csv.split('\n').length - 1} filas)`, 'ok');
+    });
+    document.getElementById('cal-png').addEventListener('click', () => {
+      const cv = document.getElementById('cal-canvas');
+      if (!cv) return;
+      try {
+        cv.toBlob((blob) => {
+          if (!blob) { _toast('No se pudo generar el PNG', 'warn'); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+          a.href = url; a.download = `mapa_${window.__BUILD__ || 'build'}_${ts}.png`;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          _toast('PNG del mapa exportado', 'ok');
+        }, 'image/png');
+      } catch (e) { _toast('PNG no disponible en este navegador', 'warn'); }
+    });
+
+    // ── C1 · Cargar y analizar JSON ────────────────────────────────────
+    const fileInput = document.getElementById('cal-file');
+    document.getElementById('cal-analizar').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (ev) => {
+      const A = window.__CALIBRAR_ANALISIS__;
+      if (!A) { _toast('Módulo de análisis no disponible', 'warn'); return; }
+      const files = ev.target.files;
+      if (!files?.length) return;
+      _toast(`Analizando ${files.length} archivo(s)…`, 'ok');
+      A.cargarDesdeArchivos(files).then((res) => {
+        const prop = A.proponerRecalibracion(res.consolidado);
+        renderAnalisis(res, prop);
+        _toast(`Análisis: ${res.validos}/${res.total} válidos · ${prop.resumen.conCambio} cambios propuestos`, 'ok');
+      }).catch((e) => _toast('Error: ' + e.message, 'warn'));
+      ev.target.value = '';
+    });
+
     document.getElementById('cal-limpiar').addEventListener('click', () => {
       sesion.muestras = [];
       sesion.sedesRecorridas.clear();
@@ -691,6 +758,184 @@
     `;
   }
 
+  // ════════════════════════════════════════════════════════════════════════
+  // D1 · VISUALIZACIONES — canvas local, sin dependencias
+  // ════════════════════════════════════════════════════════════════════════
+
+  /** Panel compositivo: score, métricas M-C1..M-C7 y veredicto por objetivo. */
+  function renderCompositivo() {
+    const el = document.getElementById('cal-compositivo');
+    const COMP = window.__CALIBRAR_COMPOSICION__;
+    if (!el || !COMP) return;
+    const sedeEl = _sedeVisible();
+    if (!sedeEl) { el.innerHTML = '<p class="cal-mut">Sin sede visible.</p>'; return; }
+    const r = COMP.evaluarSede(sedeEl);
+    if (!r.valido) { el.innerHTML = `<p class="cal-mut">Composición no medible (${r.razon}).</p>`; return; }
+
+    const m = r.metricas, o = r.objetivos;
+    const cls = (ok) => ok ? 'cal-ok' : 'cal-err';
+    const pct = (v) => (v * 100).toFixed(1) + '%';
+    const scoreCls = r.scoreCompositivo >= 85 ? 'cal-ok' : r.scoreCompositivo >= 70 ? 'cal-warn' : 'cal-err';
+
+    el.innerHTML = `
+      <div><span class="cal-mut">── COMPOSICIÓN ──</span><span class="${scoreCls}">score ${r.scoreCompositivo}/100</span></div>
+      <div><span class="cal-mut">M-C1 ocupación</span><span class="${cls(o.ocupacionEnRango)}">${pct(m['M-C1_ocupacionUtil'].valor)} <em>(50–56%)</em></span></div>
+      <div><span class="cal-mut">M-C2 esp. muerto</span><span class="${cls(o.muertoBajoTecho)}">${pct(m['M-C2_espacioMuerto'].valor)} <em>(≤32%)</em></span></div>
+      <div><span class="cal-mut">M-C3 balance H</span><span class="${cls(o.balanceHOk)}">${(m['M-C3_balanceH'].valor*100).toFixed(1)}% <em>(≤12%)</em></span></div>
+      <div><span class="cal-mut">M-C4 balance V</span><span class="${cls(o.balanceVOk)}">${(m['M-C4_balanceV'].valor*100).toFixed(1)}% <em>(≤15%)</em></span></div>
+      <div><span class="cal-mut">M-C5 fragmentación</span><span>${m['M-C5_fragmentacion'].valor.toFixed(2)} <em>CV</em></span></div>
+      <div><span class="cal-mut">M-C6 respiración</span><span>${pct(m['M-C6_respiracion'].valor)} <em>gap mín ${m['M-C6_respiracion'].minGap ?? '—'}px</em></span></div>
+      <div><span class="cal-mut">M-C7 continuidad</span><span>${pct(m['M-C7_continuidad'].valor)} <em>${m['M-C7_continuidad'].aislados} aisl.</em></span></div>`;
+    _ultimoCompositivo = r;
+    dibujarMapa(r);
+  }
+
+  /** Heatmap de ocupación + mapa de masa visual, en un solo canvas. */
+  function dibujarMapa(r) {
+    const cv = document.getElementById('cal-canvas');
+    if (!cv || !r?.heatmap) return;
+    const ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const filas = r.heatmap.length, cols = r.heatmap[0].length;
+    const cw = W / cols, ch = (H - 18) / filas;
+
+    // Heatmap: verde intenso = ocupado, oscuro = muerto
+    for (let f = 0; f < filas; f++) {
+      for (let c = 0; c < cols; c++) {
+        const v = r.heatmap[f][c];
+        const muerta = v < 0.05;
+        ctx.fillStyle = muerta ? '#2d1418'
+          : `rgba(47,129,247,${0.18 + Math.min(1, v) * 0.72})`;
+        ctx.fillRect(c * cw, f * ch, cw - 1, ch - 1);
+        if (muerta) {
+          ctx.strokeStyle = '#f85149'; ctx.lineWidth = 0.6;
+          ctx.strokeRect(c * cw + 0.5, f * ch + 0.5, cw - 2, ch - 2);
+        }
+      }
+    }
+
+    // Mapa de masa visual: centro geométrico vs centro de masa
+    const gx = W / 2, gy = (H - 18) / 2;
+    ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H - 18);
+    ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+
+    const bh = r.metricas['M-C3_balanceH'].valor;
+    const bv = r.metricas['M-C4_balanceV'].valor;
+    const mx = gx + bh * (W / 2), my = gy + bv * ((H - 18) / 2);
+    const fuera = Math.abs(bh) > 0.12 || Math.abs(bv) > 0.15;
+    ctx.beginPath(); ctx.arc(mx, my, 6, 0, Math.PI * 2);
+    ctx.fillStyle = fuera ? '#f85149' : '#3fb950'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(mx, my);
+    ctx.strokeStyle = fuera ? '#f85149' : '#3fb950'; ctx.lineWidth = 1.4; ctx.stroke();
+
+    ctx.fillStyle = '#8b949e'; ctx.font = '9px ui-monospace,monospace';
+    ctx.fillText(`heatmap · muertas ${r.metricas['M-C2_espacioMuerto'].celdasMuertas}/${r.metricas['M-C2_espacioMuerto'].total}`, 2, H - 6);
+    ctx.fillText(`masa ${(bh*100).toFixed(0)}%,${(bv*100).toFixed(0)}%`, W - 88, H - 6);
+  }
+
+  /** Línea de tiempo: score, solape, ocupación y capacidad sobre el eje t. */
+  function dibujarLineaTiempo(a) {
+    const cv = document.getElementById('cal-canvas');
+    if (!cv || !a?.timeline?.frames?.length) return;
+    const ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const F = a.timeline.frames;
+    const tMax = F[F.length - 1].t || 1;
+    const G = { l: 24, r: 4, t: 6, b: 16 };
+    const pw = W - G.l - G.r, ph = H - G.t - G.b;
+    const X = (t) => G.l + (t / tMax) * pw;
+    const Y = (v) => G.t + (1 - Math.max(0, Math.min(1, v))) * ph;
+
+    // Rejilla
+    ctx.strokeStyle = 'rgba(255,255,255,.09)'; ctx.lineWidth = 1;
+    [0, .25, .5, .75, 1].forEach((v) => {
+      ctx.beginPath(); ctx.moveTo(G.l, Y(v)); ctx.lineTo(W - G.r, Y(v)); ctx.stroke();
+    });
+
+    const serie = (fn, color, ancho) => {
+      ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = ancho || 1.4;
+      let primero = true;
+      F.forEach((f) => {
+        const v = fn(f);
+        if (v == null) return;
+        const x = X(f.t), y = Y(v);
+        primero ? (ctx.moveTo(x, y), primero = false) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    };
+
+    const sedePrim = (f) => (f.sedes || [])[0];
+    // score compositivo (0-100 → 0-1)
+    serie((f) => { const s = sedePrim(f); return s?.composicion ? s.composicion.score / 100 : null; }, '#3fb950', 1.8);
+    // ocupación
+    serie((f) => { const s = sedePrim(f); return s?.composicion ? s.composicion.ocupacion : null; }, '#2f81f7');
+    // solape normalizado (área / 30000)
+    serie((f) => { const s = sedePrim(f); return s ? Math.min(1, (s.areaSolape || 0) / 30000) : null; }, '#f85149');
+    // capacidad normalizada (visibles / 12)
+    serie((f) => { const s = sedePrim(f); return s ? Math.min(1, (s.visibles || 0) / 12) : null; }, '#d29922');
+
+    // Marcas de eventos relevantes
+    (a.timeline.eventos || []).forEach((e) => {
+      if (!/lae\.adaptacion|lector\.|orientationchange|fonts\.ready/.test(e.tipo)) return;
+      const x = X(e.t);
+      ctx.strokeStyle = 'rgba(139,148,158,.6)'; ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]); ctx.beginPath();
+      ctx.moveTo(x, G.t); ctx.lineTo(x, G.t + ph); ctx.stroke(); ctx.setLineDash([]);
+    });
+
+    ctx.fillStyle = '#8b949e'; ctx.font = '8px ui-monospace,monospace';
+    ctx.fillText('0', G.l - 6, H - 5);
+    ctx.fillText(`${(tMax/1000).toFixed(1)}s`, W - 26, H - 5);
+    ctx.fillText('100', 2, Y(1) + 3); ctx.fillText('0', 8, Y(0) + 3);
+    ctx.fillStyle = '#3fb950'; ctx.fillText('score', G.l + 2, G.t + 8);
+    ctx.fillStyle = '#2f81f7'; ctx.fillText('ocup', G.l + 34, G.t + 8);
+    ctx.fillStyle = '#f85149'; ctx.fillText('solape', G.l + 62, G.t + 8);
+    ctx.fillStyle = '#d29922'; ctx.fillText('vis', G.l + 100, G.t + 8);
+  }
+
+  /** Historial cronológico de eventos. */
+  function renderEventos(a) {
+    const el = document.getElementById('cal-eventos');
+    if (!el || !a?.timeline?.eventos) return;
+    el.hidden = false;
+    const ev = a.timeline.eventos;
+    const relevantes = ev.filter((e) => !/dom\.mutacion|scroll/.test(e.tipo));
+    const muestra = relevantes.slice(-14);
+    el.innerHTML = `<div><span class="cal-mut">── EVENTOS (${ev.length} total, ${relevantes.length} relevantes) ──</span><span></span></div>` +
+      muestra.map((e) => {
+        const extra = e.causa ? ` ${e.causa}` : e.escalon ? ` ${e.escalon}` : '';
+        return `<div><span class="cal-mut">${String(e.t).padStart(7)} ms</span><span>${e.tipo}${extra}</span></div>`;
+      }).join('');
+  }
+
+  /** Resultado del pipeline de análisis y la propuesta de recalibración. */
+  function renderAnalisis(res, prop) {
+    const el = document.getElementById('cal-analisis');
+    if (!el) return;
+    el.hidden = false;
+    const disp = res.consolidado.map((d) => {
+      const lat = d.latencias.length ? `${Math.round(d.latencias.reduce((a,b)=>a+b,0)/d.latencias.length)}ms` : '—';
+      return `<div><span class="cal-mut">${d.clave.slice(0, 26)}</span><span>${d.sesiones} ses · LAE ${lat}</span></div>`;
+    }).join('');
+    const props = prop.propuestas.map((p) => {
+      const cambio = p.valorAnterior !== p.valorPropuesto;
+      const cls = cambio ? 'cal-warn' : 'cal-mut';
+      const txt = cambio ? `${p.valorAnterior} → ${p.valorPropuesto}` : 'sin cambio';
+      return `<div><span class="cal-mut">${p.parametro.slice(0, 24)}</span><span class="${cls}">${txt}</span></div>`;
+    }).join('');
+    el.innerHTML = `
+      <div><span class="cal-mut">── ANÁLISIS DE JSON ──</span><span>${res.validos}/${res.total} válidos</span></div>
+      ${disp}
+      <div><span class="cal-mut">── RECALIBRACIÓN PROPUESTA ──</span><span class="cal-ok">autoaplicación: NO</span></div>
+      ${props}
+      <div><span class="cal-mut">evidencia</span><span>${prop.baseEvidencia.dispositivos} disp · ${prop.baseEvidencia.sesiones} ses</span></div>`;
+  }
+
   function _toast(msg, tipo) {
     const t = document.getElementById('calibrar-toast');
     if (!t) return;
@@ -713,7 +958,7 @@
         clearInterval(t);
         montarUI();
         // Auto-refresh del resumen cada 1.5s mientras el panel está abierto
-        setInterval(renderResumen, 1500);
+        setInterval(() => { renderResumen(); renderCompositivo(); }, 1500);
       }
     }, 250);
   }
