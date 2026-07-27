@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/calibrar", "destination": "/index.html" }
+  ]
+}
