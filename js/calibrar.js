@@ -343,6 +343,13 @@
     return null;
   }
   function _capacidadRealMedida(elementos, rectEsc) {
+    // [B2-3] La fórmula de 2 columnas es EXCLUSIVA del canal mobile.
+    // Evidencia (9 sesiones): en desktop daba cap=3 con 8 elementos sin solape
+    // en 7/9 casos. Aplicarla fuera de mobile produce un diagnóstico falso.
+    if (!window.esMobile?.()) {
+      return { cap: null, altRef: null, altUtil: null, margenTop: null,
+               margenBot: null, noAplica: 'canal-desktop' };
+    }
     // Fórmula §4.5: capacidad con alturas reales medidas
     if (!rectEsc || !elementos.length) {
       return { cap: null, altRef: null, altUtil: null, margenTop: null, margenBot: null };
@@ -474,6 +481,27 @@
   // INTERFAZ TÉCNICA (sobria, táctil, mobile-first)
   // ══════════════════════════════════════════════════════════════════════════
   let _panel, _resumen, _sedeIndex = 0;
+  let _ultimoAnalisisTemporal = null;
+
+  /** Renderiza el resumen de la última grabación temporal. */
+  function renderTemporal(a) {
+    const el = document.getElementById('cal-temporal');
+    if (!el || !a) return;
+    el.hidden = false;
+    const h = a.hitos || {}, p = a.performance || {};
+    const sedes = Object.entries(a.estabilidad?.porSede || {});
+    el.innerHTML = `
+      <div><span class="cal-mut">── LÍNEA TEMPORAL ──</span><span>${a.config.framesCapturados} frames · ${a.config.eventosRegistrados} eventos</span></div>
+      <div><span class="cal-mut">Primer layout</span><span>${h.primerLayout ?? '—'} ms</span></div>
+      <div><span class="cal-mut">Layout estable</span><span class="${h.layoutEstableMs!=null?'cal-ok':'cal-warn'}">${h.layoutEstableMs ?? 'no alcanzado'} ms</span></div>
+      <div><span class="cal-mut">fonts.ready</span><span>${h.fontsReadyMs ?? p.fontsReady ?? '—'} ms</span></div>
+      <div><span class="cal-mut">FCP / LCP</span><span>${p.firstContentfulPaint ?? '—'} / ${p.largestContentfulPaint ?? '—'} ms</span></div>
+      <div><span class="cal-mut">Último solape</span><span class="${h.ultimoSolapeMs==null?'cal-ok':'cal-err'}">${h.ultimoSolapeMs ?? 'ninguno'} ${h.ultimoSolapeMs!=null?'ms':''}</span></div>
+      <div><span class="cal-mut">Última oclusión</span><span class="${h.ultimaOclusionMs==null?'cal-ok':'cal-err'}">${h.ultimaOclusionMs ?? 'ninguna'} ${h.ultimaOclusionMs!=null?'ms':''}</span></div>
+      ${sedes.map(([id,s]) => `
+      <div><span class="cal-mut">${id}</span><span>escH σ=${s.alturaEscenario?.desvio ?? '—'} · vis=${s.elementosVisibles?.valorFinal ?? '—'} · solape ${s.solape?.resueltoAlFinal?'✓':'✗'}</span></div>`).join('')}
+    `;
+  }
 
   function montarUI() {
     const estilo = document.createElement('style');
@@ -494,6 +522,11 @@
       #calibrar-panel button:active{background:#30363d;transform:scale(.97)}
       #calibrar-panel button.cal-primary{background:#238636;border-color:#2ea043}
       #calibrar-panel button.cal-export{background:#1f6feb;border-color:#2f81f7}
+      #calibrar-panel button.cal-export2{background:#8957e5;border-color:#a371f7}
+      #calibrar-panel button.cal-export3{background:#6e7681;border-color:#8b949e}
+      #calibrar-panel button.cal-rec{background:#a40e26;border-color:#da3633}
+      #calibrar-panel button:disabled{opacity:.55}
+      #calibrar-panel .cal-row--export button{min-width:0;font-size:12px;padding:11px 4px}
       #calibrar-panel .cal-metricas{background:#161b22;border:1px solid #21262d;
         border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px}
       #calibrar-panel .cal-metricas div{display:flex;justify-content:space-between;
@@ -516,16 +549,25 @@
     _panel = document.createElement('div');
     _panel.id = 'calibrar-panel';
     _panel.innerHTML = `
-      <h1>⬡ CALIBRAR <span class="cal-badge" id="cal-build"></span></h1>
+      <h1>⬡ LABORATORIO <span class="cal-badge" id="cal-build"></span></h1>
       <div class="cal-row">
         <button id="cal-sede">↔ Sede: —</button>
         <button id="cal-capturar" class="cal-primary">◉ Capturar</button>
       </div>
       <div class="cal-row">
-        <button id="cal-exportar" class="cal-export">⭳ Exportar JSON</button>
-        <button id="cal-limpiar">✕ Reiniciar</button>
+        <button id="cal-grabar" class="cal-rec">⏺ Grabar 5s</button>
+        <button id="cal-grabar-largo">⏺ Grabar 15s</button>
+      </div>
+      <div class="cal-row cal-row--export">
+        <button id="cal-exportar" class="cal-export">⭳ Completa</button>
+        <button id="cal-exportar-resumen" class="cal-export2">⭳ Resumen</button>
+        <button id="cal-exportar-dataset" class="cal-export3">⭳ Dataset</button>
+      </div>
+      <div class="cal-row">
+        <button id="cal-limpiar">✕ Reiniciar sesión</button>
       </div>
       <div class="cal-metricas" id="cal-resumen"></div>
+      <div class="cal-metricas" id="cal-temporal" hidden></div>
     `;
     document.body.appendChild(_panel);
 
@@ -543,6 +585,48 @@
       renderResumen();
     });
     document.getElementById('cal-exportar').addEventListener('click', exportarJSON);
+
+    // ── Grabación temporal (BLOQUE 1) ──────────────────────────────────
+    const T = () => window.__CALIBRAR_TEMPORAL__;
+    function grabar(ms) {
+      if (!T()) { _toast('Módulo temporal no disponible', 'warn'); return; }
+      if (T().estaGrabando()) { _toast('Ya hay una grabación en curso', 'warn'); return; }
+      T().iniciarGrabacion(ms);
+      _toast(`Grabando ${ms/1000}s — recorré las sedes ahora`, 'ok');
+      const btn1 = document.getElementById('cal-grabar');
+      const btn2 = document.getElementById('cal-grabar-largo');
+      [btn1,btn2].forEach(b => b && (b.disabled = true));
+      const t0 = Date.now();
+      const iv = setInterval(() => {
+        const rest = Math.max(0, ms - (Date.now()-t0));
+        if (btn1) btn1.textContent = `⏺ ${(rest/1000).toFixed(1)}s`;
+        if (rest <= 0) {
+          clearInterval(iv);
+          const analisis = T().detenerGrabacion();
+          _ultimoAnalisisTemporal = analisis;
+          [btn1,btn2].forEach(b => b && (b.disabled = false));
+          if (btn1) btn1.textContent = '⏺ Grabar 5s';
+          _toast(`Grabación completa: ${analisis?.config?.framesCapturados||0} frames`, 'ok');
+          renderTemporal(analisis);
+        }
+      }, 100);
+    }
+    document.getElementById('cal-grabar').addEventListener('click', () => grabar(5000));
+    document.getElementById('cal-grabar-largo').addEventListener('click', () => grabar(15000));
+
+    // ── Exportaciones adicionales ──────────────────────────────────────
+    document.getElementById('cal-exportar-resumen').addEventListener('click', () => {
+      if (!T()) { _toast('Módulo temporal no disponible', 'warn'); return; }
+      T().Exportar.descargar(T().Exportar.resumen(_ultimoAnalisisTemporal), 'resumen');
+      _toast('Resumen ejecutivo exportado', 'ok');
+    });
+    document.getElementById('cal-exportar-dataset').addEventListener('click', () => {
+      if (!T()) { _toast('Módulo temporal no disponible', 'warn'); return; }
+      const st = T().Dataset.estadisticas();
+      if (!st.sesionesTotales) { _toast('Dataset vacío — grabá al menos una sesión', 'warn'); return; }
+      T().Exportar.descargar(T().Exportar.dataset(), 'dataset');
+      _toast(`Dataset exportado: ${st.sesionesTotales} sesiones, ${st.dispositivos} dispositivos`, 'ok');
+    });
     document.getElementById('cal-limpiar').addEventListener('click', () => {
       sesion.muestras = [];
       sesion.sedesRecorridas.clear();

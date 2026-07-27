@@ -11,12 +11,15 @@
        ya declarados arriba y el logo institucional ya existente en el
        proyecto — ningún texto ni imagen nuevos, solo exponerlos en el
        protocolo que las redes/mensajería usan para la vista previa. -->
-  <link rel="icon" href="assets/logos/unam-badge.svg" type="image/svg+xml" />
+  <link rel="icon" href="assets/logos/favicon.ico" sizes="any" />
+  <link rel="icon" href="assets/logos/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="assets/logos/favicon-16.png" type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="assets/logos/apple-touch-icon.png" sizes="180x180" />
   <meta property="og:title" content="Semana Regional de la Extensión UNaM" />
   <meta property="og:description" content="Compendio digital de la Primera Semana Regional de la Extensión Universitaria de la Universidad Nacional de Misiones. Posadas · Oberá · Eldorado, mayo 2026." />
   <meta property="og:image" content="assets/logos/unam-logo-oficial.png" />
   <meta property="og:type" content="website" />
-  <meta name="build" content="v6.3-2026-07-27-calibrado" />
+  <meta name="build" content="v7.0-2026-07-27-laboratorio" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -92,7 +95,7 @@
 
     <!-- Cabecera del modal -->
     <div class="cajero-cabecera">
-      <img src="assets/logos/unam-badge.svg" alt="UNaM" class="cajero-logo" width="28" height="28" />
+      <img src="assets/logos/LogoMiniatura.png" alt="Universidad Nacional de Misiones" class="cajero-logo" height="28" />
       <span class="cajero-cabecera-titulo">Compendio Digital · Semana Regional de la Extensión</span>
       <button class="cajero-cerrar-btn" id="cajero-cerrar" aria-label="Cerrar panel institucional">✕</button>
     </div>
@@ -125,6 +128,15 @@
         aria-selected="false"
         aria-controls="panel-compendio"
       >El Compendio Digital</button>
+
+      <button
+        class="cajero-tab"
+        role="tab"
+        id="tab-numeros"
+        data-panel="numeros"
+        aria-selected="false"
+        aria-controls="panel-numeros"
+      >La semana en números</button>
 
       <button
         class="cajero-tab"
@@ -241,6 +253,105 @@
       </section>
 
       <!-- ── Panel 4: Acerca de ─────────────────────────────────────── -->
+
+      <!-- ── Panel: La semana en números ─────────────────────────────────
+           Cifras verificadas contra el corpus (data/*.json) al 2026-07-27.
+           25 testimonios + 13 registros + 8 piezas audiovisuales = 46 piezas. -->
+      <section class="cajero-panel" id="panel-numeros" role="tabpanel" aria-labelledby="tab-numeros" hidden>
+
+        <h2 class="cajero-seccion-titulo">La semana en números</h2>
+        <p class="cajero-seccion-subtitulo">Primera Edición · 26 al 29 de mayo de 2026</p>
+        <div class="cajero-acento"></div>
+
+        <div class="cajero-seccion-texto">
+          <p>Cuatro días de trabajo extensionista documentados en tres sedes. Estas cifras describen el alcance del archivo: cada pieza fue transcrita de registros originales, verificada contra fuentes primarias y atribuida a su unidad académica.</p>
+        </div>
+
+        <div class="numeros-grid" role="list">
+          <div class="numeros-kpi numeros-kpi--destacado" role="listitem">
+            <span class="numeros-cifra" data-contador="46">46</span>
+            <span class="numeros-etiqueta">piezas documentales</span>
+            <span class="numeros-detalle">testimonios, registros y audiovisuales</span>
+          </div>
+          <div class="numeros-kpi" role="listitem">
+            <span class="numeros-cifra" data-contador="3">3</span>
+            <span class="numeros-etiqueta">sedes regionales</span>
+            <span class="numeros-detalle">Posadas · Oberá · Eldorado</span>
+          </div>
+          <div class="numeros-kpi" role="listitem">
+            <span class="numeros-cifra" data-contador="7">7</span>
+            <span class="numeros-etiqueta">unidades académicas</span>
+            <span class="numeros-detalle">seis facultades y la EAE</span>
+          </div>
+          <div class="numeros-kpi" role="listitem">
+            <span class="numeros-cifra" data-contador="15">15</span>
+            <span class="numeros-etiqueta">voces registradas</span>
+            <span class="numeros-detalle">autoridades, docentes y equipos</span>
+          </div>
+        </div>
+
+        <p class="cajero-sub">Composición del archivo</p>
+        <div class="numeros-barras">
+          <div class="numeros-barra-fila">
+            <span class="numeros-barra-nombre">Testimonios</span>
+            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:100%"></div></div>
+            <span class="numeros-barra-valor">25</span>
+          </div>
+          <div class="numeros-barra-fila">
+            <span class="numeros-barra-nombre">Registros</span>
+            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:52%"></div></div>
+            <span class="numeros-barra-valor">13</span>
+          </div>
+          <div class="numeros-barra-fila">
+            <span class="numeros-barra-nombre">Audiovisuales</span>
+            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:32%"></div></div>
+            <span class="numeros-barra-valor">8</span>
+          </div>
+        </div>
+
+        <p class="cajero-sub">Distribución territorial</p>
+        <div class="numeros-sedes">
+          <div class="numeros-sede">
+            <span class="numeros-sede-nombre">Posadas</span>
+            <span class="numeros-sede-cifra">20</span>
+            <span class="numeros-sede-desglose">9 testimonios · 5 registros · 6 audiovisuales</span>
+          </div>
+          <div class="numeros-sede">
+            <span class="numeros-sede-nombre">Oberá</span>
+            <span class="numeros-sede-cifra">14</span>
+            <span class="numeros-sede-desglose">8 testimonios · 4 registros · 2 audiovisuales</span>
+          </div>
+          <div class="numeros-sede">
+            <span class="numeros-sede-nombre">Eldorado</span>
+            <span class="numeros-sede-cifra">12</span>
+            <span class="numeros-sede-desglose">8 testimonios · 4 registros</span>
+          </div>
+        </div>
+
+        <p class="cajero-sub">Densidad documental</p>
+        <div class="numeros-grid numeros-grid--secundaria" role="list">
+          <div class="numeros-kpi numeros-kpi--pequeno" role="listitem">
+            <span class="numeros-cifra" data-contador="68">68</span>
+            <span class="numeros-etiqueta">citas textuales</span>
+          </div>
+          <div class="numeros-kpi numeros-kpi--pequeno" role="listitem">
+            <span class="numeros-cifra" data-contador="27">27</span>
+            <span class="numeros-etiqueta">proyectos referidos</span>
+          </div>
+          <div class="numeros-kpi numeros-kpi--pequeno" role="listitem">
+            <span class="numeros-cifra" data-contador="8">8</span>
+            <span class="numeros-etiqueta">instituciones</span>
+          </div>
+          <div class="numeros-kpi numeros-kpi--pequeno" role="listitem">
+            <span class="numeros-cifra" data-contador="4">4</span>
+            <span class="numeros-etiqueta">días de jornadas</span>
+          </div>
+        </div>
+
+        <p class="numeros-nota">Cifras verificadas contra el corpus documental al 27 de julio de 2026. Cada pieza conserva su atribución de fuente primaria.</p>
+
+      </section>
+
       <section class="cajero-panel" id="panel-acerca" role="tabpanel" aria-labelledby="tab-acerca" hidden>
 
         <h2 class="cajero-seccion-titulo">Acerca de este proyecto</h2>
@@ -276,14 +387,18 @@
                 <span class="cajero-credito-rol">Secretario General</span>
                 <span class="cajero-credito-nombre">Mauricio Franco</span>
               </li>
+              <li class="cajero-credito-entrada">
+                <span class="cajero-credito-rol">Personal Extensión</span>
+                <span class="cajero-credito-nombre">Fernanda Manufelen</span>
+              </li>
             </ul>
           </div>
 
           <div class="cajero-credito-bloque">
-            <p class="cajero-credito-area">Secretaría General Académica</p>
+            <p class="cajero-credito-area">Área de Sistemas</p>
             <ul class="cajero-credito-entradas">
               <li class="cajero-credito-entrada">
-                <span class="cajero-credito-nombre">Gisela Spasiuk</span>
+                <span class="cajero-credito-nombre">Ing. Roque Horacio Picaza</span>
               </li>
             </ul>
           </div>
@@ -445,6 +560,7 @@
   <!-- ═══ HERRAMIENTA DE CALIBRACIÓN (solo se monta en /calibrar) ═══════════
        Instrumentación de dispositivo real. No corrige el motor, solo mide.
        Inerte en cualquier ruta que no sea /calibrar, #calibrar o ?calibrar=1 -->
-  <script src="js/calibrar.js?v=1.0.0"></script>
+  <script src="js/calibrar.js?v=2.0.0"></script>
+  <script src="js/calibrar-temporal.js?v=2.0.0"></script>
 </body>
 </html>

@@ -151,10 +151,14 @@ window.AC_K = Object.freeze({
     MIN_VISIBLE:   3,             // mínimo editorial: los 3 narradores UA de la sede
     PERCENTIL_ALTURA_CAP: 75,     // S-1: mejor balance entre uso y prevención de overflow
     // Alturas de referencia (offsetHeight real medido en dispositivo)
-    ALTURA_TESTIMONIO: 140,       // medida en dispositivo (corpus compacto + fuentes)
-    ALTURA_REGISTRO_UA: 186,      // medida en dispositivo: 140 texto + 46 portada
-    ALTURA_VIDEO:       200,      // estimada
-    ALTURA_CONCEPTUAL:  160,      // estimada
+    ALTURA_TESTIMONIO: 102,       // [B2 N=30 σ=0.8] medido real: 101-104. Estimado previo 140 (-27%)
+    ALTURA_REGISTRO_UA: 187,      // [B2 N=26 σ=0.7] medido real: 185-187. Estimado previo 186 (+1%, confirmado)
+    ALTURA_VIDEO:        96,      // [B2 N=2 σ=6.5] medido real: 83-96. Estimado previo 200 (-52%). Confianza MEDIA por N bajo
+    ALTURA_CONCEPTUAL:  128,      // [B2 N=2] medido real: 119-137 (en espera). Estimado previo 160 (-20%)
+    // Alturas DESKTOP medidas (canal Monte Carlo — solo referencia, no usadas por la fórmula de 2 columnas)
+    ALTURA_DESKTOP_REGISTRO_UA: 308,  // [B2 N=15 σ=0] extremadamente estable
+    ALTURA_DESKTOP_TESTIMONIO:  175,  // [B2 N=29] rango 175-233
+    ALTURA_DESKTOP_VIDEO:       260,  // [B2 N=4 σ=0]
     // Umbrales de diagnóstico
     SOLAPE_ESPURIO_AABB:   3200,  // S-3: P99 laboratorio (3158px²) + 1.3% margen
     SOLAPE_REAL_UMBRAL:    200,   // pre-transform, mismo que SOLAPE_TARJETAS_PX2

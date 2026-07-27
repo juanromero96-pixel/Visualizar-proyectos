@@ -1512,3 +1512,195 @@ body.lector-bloqueando-scroll {
     transition: none !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   B3-3 · PANEL "LA SEMANA EN NÚMEROS"
+   Dashboard museográfico. Cifras verificadas contra el corpus.
+   Sin dependencias externas; usa las variables del sistema editorial.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.numeros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 12px;
+  margin: 18px 0 26px;
+}
+
+.numeros-kpi {
+  background: linear-gradient(160deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  padding: 18px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.numeros-kpi::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--acento, #2f81f7);
+  opacity: .55;
+}
+
+.numeros-kpi--destacado {
+  grid-column: 1 / -1;
+  background: linear-gradient(160deg, rgba(47,129,247,.14), rgba(47,129,247,.04));
+  border-color: rgba(47,129,247,.28);
+}
+
+.numeros-kpi--destacado::before { opacity: 1; width: 4px; }
+
+.numeros-cifra {
+  font-size: clamp(2.1rem, 7vw, 3rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-fuerte, #f0f6fc);
+}
+
+.numeros-kpi--destacado .numeros-cifra {
+  font-size: clamp(2.8rem, 11vw, 4.2rem);
+  color: var(--acento, #2f81f7);
+}
+
+.numeros-kpi--pequeno .numeros-cifra { font-size: clamp(1.5rem, 5vw, 2rem); }
+
+.numeros-etiqueta {
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--texto-medio, #c9d1d9);
+  text-transform: lowercase;
+}
+
+.numeros-detalle {
+  font-size: .72rem;
+  color: var(--texto-tenue, #8b949e);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.numeros-grid--secundaria { gap: 10px; margin-bottom: 20px; }
+.numeros-kpi--pequeno { padding: 13px 13px 11px; }
+
+/* ── Barras de composición ─────────────────────────────────────────────── */
+.numeros-barras { display: flex; flex-direction: column; gap: 11px; margin: 14px 0 26px; }
+
+.numeros-barra-fila {
+  display: grid;
+  grid-template-columns: 96px 1fr 34px;
+  align-items: center;
+  gap: 11px;
+}
+
+.numeros-barra-nombre {
+  font-size: .8rem;
+  color: var(--texto-medio, #c9d1d9);
+  font-weight: 500;
+}
+
+.numeros-barra-pista {
+  height: 9px;
+  background: rgba(255,255,255,.07);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.numeros-barra-relleno {
+  height: 100%;
+  width: var(--pct, 0%);
+  background: linear-gradient(90deg, var(--acento, #2f81f7), rgba(47,129,247,.55));
+  border-radius: 5px;
+  transform-origin: left;
+  animation: numeros-crecer .9s cubic-bezier(.22,.61,.36,1) both;
+}
+
+@keyframes numeros-crecer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.numeros-barra-valor {
+  font-size: .84rem;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-fuerte, #f0f6fc);
+}
+
+/* ── Distribución territorial ──────────────────────────────────────────── */
+.numeros-sedes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  gap: 10px;
+  margin: 14px 0 26px;
+}
+
+.numeros-sede {
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(255,255,255,.08);
+  border-left: 3px solid var(--acento, #2f81f7);
+  border-radius: 9px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.numeros-sede-nombre {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--texto-medio, #c9d1d9);
+  letter-spacing: .01em;
+}
+
+.numeros-sede-cifra {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-fuerte, #f0f6fc);
+}
+
+.numeros-sede-desglose {
+  font-size: .69rem;
+  color: var(--texto-tenue, #8b949e);
+  line-height: 1.4;
+}
+
+.numeros-nota {
+  font-size: .72rem;
+  color: var(--texto-tenue, #8b949e);
+  font-style: italic;
+  line-height: 1.5;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.07);
+  margin-top: 8px;
+}
+
+/* ── Miniatura institucional del encabezado (B3-1) ─────────────────────── */
+.cajero-logo {
+  height: 28px;
+  width: auto;
+  max-width: 74px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* ── Respeto por prefers-reduced-motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .numeros-barra-relleno { animation: none; }
+}
+
+/* ── Mobile: ajustes de densidad ───────────────────────────────────────── */
+@media (max-width: 560px) {
+  .numeros-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  .numeros-kpi { padding: 14px 12px 12px; }
+  .numeros-barra-fila { grid-template-columns: 84px 1fr 30px; gap: 8px; }
+  .numeros-sedes { grid-template-columns: 1fr; }
+  .cajero-logo { height: 24px; max-width: 62px; }
+}

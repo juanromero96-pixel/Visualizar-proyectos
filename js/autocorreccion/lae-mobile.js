@@ -171,6 +171,12 @@ window.AC_LAE_Mobile = (() => {
   // HELPERS: capacidad real (§4.5 del plan)
   // ══════════════════════════════════════════════════════════════════════════
   function _calcularCapacidad(alturasReales, altUtil) {
+    // [B2-3] EVIDENCIA: la fórmula de 2 columnas es EXCLUSIVA del canal mobile.
+    // En desktop el motor usa Monte Carlo (ubicarPorBusqueda), no una grilla.
+    // Medición real (9 sesiones): en desktop 1366x607, la fórmula daba cap=3
+    // mientras el motor mostraba 8 elementos SIN solape en 7/9 casos (78%).
+    // Aplicarla en desktop produciría reducciones injustificadas.
+    if (!window.esMobile?.()) return { cap: null, altRef: null, noAplica: 'canal-desktop' };
     if (!alturasReales.length || altUtil <= 0) return { cap: M.CAP_ESTANDAR, altRef: M.ALTURA_REGISTRO_UA };
     // P75 de las alturas medidas
     const sorted = [...alturasReales].sort((a, b) => a.h - b.h);
@@ -246,7 +252,8 @@ window.AC_LAE_Mobile = (() => {
 
       // Discriminante exacto: CM-01 (capacidad excedida)
       if (!excluidas.includes('CM-01')) {
-        if (report.N > report.capacidadReal) {
+        // capacidadReal es null en desktop (B2-3): CM-01 no aplica fuera de mobile
+        if (report.capacidadReal !== null && report.N > report.capacidadReal) {
           return {
             causa: 'CM-01', confianza: 'alta',
             escalonSugerido: 'E4',
@@ -729,6 +736,48 @@ window.AC_LAE_Mobile = (() => {
     }
 
     return { diagnostico, historialCiclo, desenlace, duracion, report };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ⑧ ADAPTACIÓN PROACTIVA AL CAMBIO DE SEDE  [B2-5]
+  //
+  // EVIDENCIA (9 sesiones de dispositivo real, 2026-07-27):
+  //   El usuario recorrió solo Posadas (sedesRecorridas: ['posadas']).
+  //   Posadas se adaptó correctamente: 8 visibles → 4 = capacidad → 0 solapes.
+  //   Oberá y Eldorado quedaron en 7 visibles con capacidad 4 y 3 pares de
+  //   solape cada una, porque el LAE solo adapta la sede ACTIVA.
+  //   El visitante que navega a Oberá ve el solape hasta que el ciclo del
+  //   Monitor lo detecta (hasta 2 s después).
+  //
+  // CORRECCIÓN: adaptar en el momento del cambio de sede, antes de que el
+  // visitante llegue a ver la escena mal compuesta. Se dispara con debounce
+  // para no competir con la animación de scroll del carrusel.
+  // ══════════════════════════════════════════════════════════════════════════
+  let _debounceSede = null;
+  let _ultimaSedeAdaptada = null;
+
+  function _engancharCambioSede() {
+    if (!Bus) return;
+    // El Monitor re-emite el 'onCambio' del carrusel como señal 'cambio.sede'
+    Bus.suscribir('senal.observada', (ev) => {
+      if (ev?.señalTipo !== 'cambio.sede') return;
+      const sedeId = ev.sede;
+      if (!sedeId || sedeId === _ultimaSedeAdaptada) return;
+      clearTimeout(_debounceSede);
+      // El carrusel usa scroll suave; esperar a que la escena esté asentada.
+      _debounceSede = setTimeout(() => {
+        if (!window.esMobile?.()) return;
+        const sedeEl = document.querySelector(`.sede[data-sede="${sedeId}"]`);
+        if (!sedeEl) return;
+        _ultimaSedeAdaptada = sedeId;
+        adaptar(sedeEl).catch(() => {});
+      }, M.GRACIA_MEDICION_MS);
+    });
+  }
+
+  // Enganchar cuando el bus esté listo
+  if (Bus) {
+    try { _engancharCambioSede(); } catch (e) { /* fail-open */ }
   }
 
   // ══════════════════════════════════════════════════════════════════════════

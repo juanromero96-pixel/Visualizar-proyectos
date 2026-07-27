@@ -252,6 +252,31 @@ const Cajero = (() => {
     const tab   = document.getElementById(`tab-${panelId}`);
     if (panel) { panel.hidden = false; panel.classList.add('cajero-panel--activa'); }
     if (tab)   { tab.classList.add('cajero-tab--activa'); tab.setAttribute('aria-selected', 'true'); }
+
+    // B3-3: contadores animados del panel "La semana en números".
+    // Solo decorativo; respeta prefers-reduced-motion. No toca el layout.
+    if (panelId === 'numeros' && panel) animarContadores(panel);
+  }
+
+  /** Anima las cifras del dashboard desde 0 hasta su valor final. */
+  function animarContadores(panel) {
+    const reducido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    panel.querySelectorAll('.numeros-cifra[data-contador]').forEach((el) => {
+      const destino = parseInt(el.dataset.contador, 10);
+      if (!Number.isFinite(destino)) return;
+      if (reducido) { el.textContent = destino; return; }
+      const DURACION = 900;
+      const t0 = performance.now();
+      function paso(t) {
+        const p = Math.min(1, (t - t0) / DURACION);
+        // easing out-cubic: rápido al inicio, se asienta al final
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(destino * e);
+        if (p < 1) requestAnimationFrame(paso);
+        else el.textContent = destino;
+      }
+      requestAnimationFrame(paso);
+    });
   }
 
   function configurarTrampaDeFoco(cajero) {
