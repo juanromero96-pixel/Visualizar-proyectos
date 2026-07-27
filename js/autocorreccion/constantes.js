@@ -127,9 +127,56 @@ window.AC_K = Object.freeze({
     'C-64': { descripcion: 'Resetear scroll del Lector', nivelMin: 2, idempotente: true, reversible: true },
     'C-70': { descripcion: 'Rehidratar configurar() por firma divergente', nivelMin: 2, idempotente: true, reversible: true },
     'C-71': { descripcion: 'Corregir clase --rotacion-espera divergente', nivelMin: 2, idempotente: true, reversible: true },
+    // LAE Mobile — Fase 1-4 del Plan Técnico de Aplicación
+    'C-37': { descripcion: 'E4-mobile: redistribución con capacidad real', nivelMin: 2, idempotente: true, reversible: true },
+    'C-38': { descripcion: 'E1-mobile: ajuste de posición de 1 elemento (≤32px)', nivelMin: 2, idempotente: true, reversible: true },
+    'C-39': { descripcion: 'E2-mobile: separación de par en conflicto', nivelMin: 2, idempotente: true, reversible: true },
     'C-72': { descripcion: 'Reconstruir cicloOrden corrupto', nivelMin: 3, idempotente: true, reversible: true },
   }),
 
   // ── Prefijo de claves de persistencia ─────────────────────────────────────
   PREFIJO_STORAGE: 'unam_semana_regional_autocorreccion_',
+  // ── LAE Mobile: constantes calibradas por simulación ────────────────────────
+  // S-1 (barrido percentil): P75 con altura ref=186px produce cap=4-6-8 por perfil.
+  // S-2 (validación fórmula): coincide con límites empíricos de los 12 perfiles.
+  // S-3 (diagnóstico): los 4 discriminantes exactos tienen confianza ALTA.
+  // Ningún valor en esta sección es arbitrario — cada uno tiene su simulación.
+  MOBILE: Object.freeze({
+    // Perfiles de layout mobile (por altUtil = altoEscenario - margenes)
+    PERFIL_CRITICO_LIMITE: 560,   // altUtil < 560 → mobile-critico (iPhone SE: 523)
+    PERFIL_AMPLIO_LIMITE:  760,   // altUtil ≥ 760 → mobile-amplio  (Pixel 8: 771)
+    CAP_CRITICO:   4,             // iPhone SE: ⌊523/(186+8)⌋×2 = 4
+    CAP_ESTANDAR:  6,             // Galaxy A34-S24, Moto, Redmi, iPhones: = 6
+    CAP_AMPLIO:    8,             // Pixel 8 y similares
+    MIN_VISIBLE:   3,             // mínimo editorial: los 3 narradores UA de la sede
+    PERCENTIL_ALTURA_CAP: 75,     // S-1: mejor balance entre uso y prevención de overflow
+    // Alturas de referencia (offsetHeight real medido en dispositivo)
+    ALTURA_TESTIMONIO: 140,       // medida en dispositivo (corpus compacto + fuentes)
+    ALTURA_REGISTRO_UA: 186,      // medida en dispositivo: 140 texto + 46 portada
+    ALTURA_VIDEO:       200,      // estimada
+    ALTURA_CONCEPTUAL:  160,      // estimada
+    // Umbrales de diagnóstico
+    SOLAPE_ESPURIO_AABB:   3200,  // S-3: P99 laboratorio (3158px²) + 1.3% margen
+    SOLAPE_REAL_UMBRAL:    200,   // pre-transform, mismo que SOLAPE_TARJETAS_PX2
+    VIEWPORT_DELTA_PX:     24,    // [S-5 ALTA] Entre ruido max 8px y señal mínima 26px; Δreal=144px >> 24px
+    AFECTADOS_PCT_CM03:    0.40,  // ≥40% elementos afectados → CM-03 (no défaut local)
+    DPR_DRIFT_SOLAPE_MAX:  500,   // CM-05: solape sub-pixel <500px²
+    DPR_DRIFT_PARES_MIN:   2,     // CM-05: mínimo de pares afectados simultáneos
+    TARGET_TACTIL_MIN:     44,    // WCAG 2.5.5 (normativo)
+    // Escalones de intervención
+    MAX_DESPL_E1: 32,             // [S-4 ALTA] margen zona(20)+tolerancia(5)+buffer(7); bajo umbral perceptual 25%=41px
+    MAX_DESPL_E2: 48,             // [S-4 ALTA] 1.5×E1; cada elemento se mueve 16px → 5× el drift DPR máx
+    // Reintento y aceptación
+    MAX_REINTENTOS:          2,   // 3 intentos visible como parpadeo en mobile pequeño
+    UMBRAL_GANANCIA_MIN:  0.15,   // [S-6 MEDIA-ALTA] barrido óptimo λ=1; no ignora solape moderado ni severo
+    GRACIA_MEDICION_MS:   1500,   // reutiliza GRACIA_POST_COMPOSICION_MS calibrado
+    // Safe-area por defecto cuando env() no está disponible
+    SAFE_AREA_DEFAULT: { top: 0, right: 0, bottom: 0, left: 0 },
+    // Debounce de viewport change
+    DEBOUNCE_VIEWPORT_MS: 250,
+    // Reconciliación mínima (§11 plan — solo en RAM, solo sesión)
+    RECONCIL_VENTANA:   10,       // mediciones para mediana
+    RECONCIL_MIN:        5,       // mínimo antes de aplicar corrección
+    RECONCIL_TOL:       1.25,     // razón F_real/F_predicho admisible
+  }),
 });

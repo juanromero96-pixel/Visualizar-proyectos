@@ -418,6 +418,55 @@ window.AC_Executor = (() => {
       return { ...res, snap: [] };
     },
 
+    // ── C-37: E4-mobile — Redistribución con capacidad real (PA-01, PA-02) ───
+    // Delegación al LAE Mobile para la cadena completa de adaptación.
+    'C-37': async (anomalia) => {
+      const LAE = window.AC_LAE_Mobile;
+      if (!LAE || !window.esMobile?.()) return { ok: false, error: 'LAE no disponible o no mobile' };
+      const sede = _sedeEl(anomalia.contexto?.sede);
+      if (!sede) return { ok: false, error: 'Sede no encontrada' };
+      // El LAE hace su propio snapshot → aplicación → verificación → rollback
+      try {
+        const res = await LAE.adaptar(sede);
+        return {
+          ok: res.desenlace === 'confirmado',
+          snap: [], // el LAE gestiona el snapshot internamente
+          diagnosticoLAE: res.diagnostico,
+          escalon: res.historialCiclo?.at(-1)?.escalon || 'E4',
+          desenlace: res.desenlace,
+          duracion: res.duracion,
+        };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    },
+
+    // ── C-38: E1-mobile — Ajuste de posición de 1 elemento (PA-06) ───────────
+    'C-38': async (anomalia) => {
+      const LAE = window.AC_LAE_Mobile;
+      if (!LAE) return { ok: false, error: 'LAE no disponible' };
+      const sede = _sedeEl(anomalia.contexto?.sede);
+      if (!sede) return { ok: false, error: 'Sede no encontrada' };
+      const report = LAE.medir(sede);
+      if (!report) return { ok: false, error: 'Medición real fallida' };
+      const diag = LAE.diagnosticar(report);
+      const res = await LAE.InterventionLadder.E1(report, diag);
+      return { ...res, snap: res.snap || [] };
+    },
+
+    // ── C-39: E2-mobile — Separación de par en conflicto (PA-07) ─────────────
+    'C-39': async (anomalia) => {
+      const LAE = window.AC_LAE_Mobile;
+      if (!LAE) return { ok: false, error: 'LAE no disponible' };
+      const sede = _sedeEl(anomalia.contexto?.sede);
+      if (!sede) return { ok: false, error: 'Sede no encontrada' };
+      const report = LAE.medir(sede);
+      if (!report) return { ok: false, error: 'Medición real fallida' };
+      const diag = LAE.diagnosticar(report);
+      const res = await LAE.InterventionLadder.E2(report, diag);
+      return { ...res, snap: res.snap || [] };
+    },
+
     // ── C-70: Rehidratar configurar() por firma divergente ─────────────────
     'C-70': async (anomalia) => {
       const sede = _sedeEl(anomalia.contexto?.sede);

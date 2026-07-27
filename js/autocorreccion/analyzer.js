@@ -249,7 +249,51 @@ window.AC_Analyzer = (() => {
       señal: s,
     }),
 
-    // — Rendimiento (§2.4) —
+    // — Mobile (Plan §4.2, PA-01, PA-02, PA-08) —
+
+    'mobile.capacidad.excedida': (s) => _diagnostico({
+      hash: s.hash,
+      categoria: CAT.EDITORIAL,
+      severidad: SEV.P0,
+      causa: `Capacidad geométrica excedida: ${s.N} elementos activos, capacidad real ${s.capacidadReal} (exceso: ${s.exceso})`,
+      impacto: `${s.exceso} tarjeta(s) no tienen espacio geométrico real — producen solape inevitable (§2.2 del plan)`,
+      componenteAfectado: 'Canal mobile — modelo implícito de 14 zonas reemplazado por fórmula real',
+      contexto: { N: s.N, capacidadReal: s.capacidadReal, altUtil: s.altUtil, altRef: s.altRef },
+      evidencia: `Fórmula §4.5: ⌊${s.altUtil}/(${s.altRef}+8)⌋×2 = capacidad ${s.capacidadReal} < N=${s.N}`,
+      posibleOrigen: 'El algoritmo mobile asumía 14 zonas fijas; las alturas reales (186px) ocupan casi 2 filas de la grilla de 102px',
+      correcciones: ['C-37'],
+      señal: s,
+    }),
+
+    'mobile.viewport.cambio': (s) => _diagnostico({
+      hash: s.hash,
+      categoria: CAT.CONSISTENCIA,
+      severidad: SEV.P1,
+      causa: `Viewport cambiado: ${s.delta}px de variación en altUtil (${s.prevAltUtil}→${s.currAltUtil})`,
+      impacto: 'Las posiciones calculadas con el viewport anterior producen elementos fuera de escenario o solapados',
+      componenteAfectado: 'Canal mobile — márgen efectivo y altUtil',
+      contexto: { delta: s.delta, prevAltUtil: s.prevAltUtil, currAltUtil: s.currAltUtil },
+      evidencia: `|Δ altUtil| = ${s.delta}px > umbral ${window.AC_K?.MOBILE?.VIEWPORT_DELTA_PX}px`,
+      posibleOrigen: 'Barra dinámica del navegador aparece/desaparece (~52px); cambio de orientación',
+      correcciones: ['C-37'],
+      señal: s,
+    }),
+
+    'mobile.target.pequeno': (s) => _diagnostico({
+      hash: s.hash,
+      categoria: CAT.ACCESIBILIDAD,
+      severidad: SEV.P1,
+      causa: `Elemento "${s.id}" con target táctil (${s.w}×${s.h}px) por debajo del mínimo de 44px (WCAG 2.5.5)`,
+      impacto: 'Usuario con puntero grueso no puede activar este elemento de forma fiable',
+      componenteAfectado: 'Canal mobile — escala de tarjetas',
+      contexto: { id: s.id, w: s.w, h: s.h },
+      evidencia: `getBoundingClientRect: ${s.w}×${s.h}px < 44px mínimo normativo`,
+      posibleOrigen: 'Factor de escala bajo en la composición mobile; tarjeta comprimida por densidad',
+      correcciones: ['C-37'],
+      señal: s,
+    }),
+
+
 
     'rendimiento.recalcular.frecuente': (s) => _diagnostico({
       hash: s.hash,

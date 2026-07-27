@@ -293,7 +293,105 @@ window.AC_Monitor = (() => {
     }, 'recursos');
   }
 
-  // ── Sonda de consistencia (cada TICK_CONSISTENCIA_MS = 5s) ────────────────
+  // ── Sonda mobile: capacidad y viewport (Plan §3.2, PA-01, PA-02) ───────────
+
+  let _tickMobile = 0;
+
+  function _sondaMobileCapacidad() {
+    if (!window.esMobile?.()) return;
+    const M = window.AC_K?.MOBILE;
+    if (!M) return;
+
+    _sondaSegura(() => {
+      const sede = _sedeActiva();
+      if (!sede) return;
+      const escenario = sede.querySelector('.escenario');
+      if (!escenario) return;
+
+      const rect = escenario.getBoundingClientRect();
+      if (!rect.height) return;
+
+      // Medir alturas reales de los elementos activos (pre-transform)
+      const elementos = Array.from(
+        escenario.querySelectorAll('.elemento:not(.elemento--rotacion-espera)')
+      );
+      if (!elementos.length) return;
+
+      const alturasReales = elementos.map(el => {
+        const interior = el.querySelector('.elemento-interior');
+        return { h: interior ? interior.offsetHeight : el.offsetHeight, tipo: el.dataset.tipo };
+      });
+
+      // Safe-area (estimación sin DOM extra — usa la del RealityProbe si está disponible)
+      const safeBottomEl = document.documentElement.style.getPropertyValue('--safe-area-bottom');
+      const safeBottom = parseFloat(safeBottomEl) || 0;
+      const safeTop    = parseFloat(document.documentElement.style.getPropertyValue('--safe-area-top')) || 0;
+
+      const altUtil = rect.height - (92 + safeTop) - (52 + safeBottom);
+
+      // P75 de las alturas reales
+      const sorted = [...alturasReales].sort((a, b) => a.h - b.h);
+      const idx = Math.min(sorted.length - 1, Math.floor(0.75 * sorted.length));
+      const altRef = sorted[idx]?.h || M.ALTURA_REGISTRO_UA;
+      const filas = Math.floor(altUtil / (altRef + 8));
+      const capPerf = altUtil < M.PERFIL_CRITICO_LIMITE ? M.CAP_CRITICO
+                    : altUtil < M.PERFIL_AMPLIO_LIMITE  ? M.CAP_ESTANDAR
+                    : M.CAP_AMPLIO;
+      const capacidadReal = Math.max(M.MIN_VISIBLE, Math.min(filas * 2, capPerf));
+
+      const N = elementos.length;
+      if (N > capacidadReal) {
+        _emitir('mobile.capacidad.excedida', {
+          N, capacidadReal, exceso: N - capacidadReal,
+          altUtil: Math.round(altUtil), altRef,
+          hash: `cap_excedida_${sede.dataset.sede}`,
+        });
+      }
+
+      // Detección de viewport cambiado (DV-02, DV-04 — Plan §4.2 CM-03)
+      const claveViewport = `_altUtil_${sede.dataset.sede}`;
+      const prevAltUtil = _ultimasEmisiones.get(claveViewport)?.valor;
+      if (prevAltUtil !== undefined) {
+        const delta = Math.abs(altUtil - prevAltUtil);
+        if (delta > M.VIEWPORT_DELTA_PX) {
+          _emitir('mobile.viewport.cambio', {
+            delta: Math.round(delta),
+            prevAltUtil: Math.round(prevAltUtil),
+            currAltUtil: Math.round(altUtil),
+            hash: `viewport_cambio_${sede.dataset.sede}`,
+          });
+        }
+      }
+      // Guardar el altUtil actual como referencia
+      _ultimasEmisiones.set(claveViewport, { ts: Date.now(), valor: altUtil, count: 1 });
+
+    }, 'mobile-capacidad');
+  }
+
+  function _sondaMobileTargets() {
+    if (!window.esMobile?.()) return;
+    const M = window.AC_K?.MOBILE;
+    if (!M) return;
+    // Solo verificar si el dispositivo tiene puntero grueso
+    const punteroGrueso = window.matchMedia?.('(pointer: coarse)').matches;
+    if (!punteroGrueso) return;
+
+    _sondaSegura(() => {
+      const interactivos = document.querySelectorAll('.elemento[tabindex="0"]');
+      interactivos.forEach(el => {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0 && (r.width < M.TARGET_TACTIL_MIN || r.height < M.TARGET_TACTIL_MIN)) {
+          _emitir('mobile.target.pequeno', {
+            id: el.dataset.testimonioId || el.dataset.tipo,
+            w: Math.round(r.width), h: Math.round(r.height),
+            hash: `target_pequeno_${el.dataset.testimonioId || 'el'}`,
+          });
+        }
+      });
+    }, 'mobile-targets');
+  }
+
+
 
   // Timestamp de la última composición (para GRACIA_POST_COMPOSICION_MS)
   let _tsUltimaComposicion = 0;
@@ -412,6 +510,10 @@ window.AC_Monitor = (() => {
     _sondaAccesibilidad();
     _sondaRecursos();
     if (!lectorAbierto) _sondaRendimiento();
+    // Sondas mobile (solo cuando corresponde)
+    _tickMobile++;
+    if (_tickMobile % 2 === 0) _sondaMobileCapacidad(); // cada 2 ticks
+    if (_tickMobile % 5 === 0) _sondaMobileTargets();   // cada 5 ticks
     _evaluarDerivados();
   }
 

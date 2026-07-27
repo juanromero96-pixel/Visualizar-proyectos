@@ -790,3 +790,44 @@ Implementación de los cinco ítems del DTC §14 — los requerimientos bloquean
 - Ciclo del DTI: I1/I4/I5/I6 sin regresión
 
 Build `v6.1-2026-07-23-calibrado`. El subsistema llega a producción con los parámetros fundados en 3.548 corridas del laboratorio, listo para iniciar el Nivel 0 con telemetría limpia.
+
+---
+
+## 29 · Implementación del LAE Mobile — Plan Técnico de Aplicación (build v6.2-lae-mobile)
+
+**Fases 1–4 del Plan Técnico de Aplicación** implementadas completamente.
+
+### Simulaciones ejecutadas
+
+**S-1 (barrido percentil de altura):** P75 de las alturas reales del corpus produce capacidad 4–6–8 según perfil, coherente con los límites empíricos medidos. El valor P75 es el más conservador que evita overflow sin desperdiciar exceso de espacio.
+
+**S-2 (validación fórmula de capacidad):** La fórmula `⌊altUtil/(altRef+8)⌋×2` reproduce exactamente los límites del catálogo de perfiles en todos los 12 perfiles × 3 sedes. Posadas (N=10) y Oberá (N=8) requieren reducción en todos los perfiles excepto Pixel 8 para Eldorado (N=6).
+
+**S-3 (precisión de diagnóstico):** Los 4 discriminantes exactos (CM-01 a CM-04) son binarios y determinísticos — confianza ALTA sin necesidad de simulación estadística. CM-05 (DPR) tiene confianza MEDIA.
+
+### Módulos nuevos y modificados
+
+| Módulo | Cambio | Razón |
+|---|---|---|
+| `constantes.js` | MOBILE object con 28 constantes calibradas; C-37/38/39 con presupuestos | Base de todo el LAE Mobile |
+| `lae-mobile.js` | NUEVO — Reality Probe, Causal Diagnoser, Intervention Ladder, Retry Controller, Reconciliation Unit | Motor central de adaptación |
+| `monitor.js` | Sondas `_sondaMobileCapacidad` y `_sondaMobileTargets` | Detección de CM-01/CM-03 y targets táctiles |
+| `analyzer.js` | Reglas para `mobile.capacidad.excedida`, `mobile.viewport.cambio`, `mobile.target.pequeno` | Clasificación con diagnóstico completo |
+| `executor.js` | C-37 (E4-mobile), C-38 (E1), C-39 (E2) | Actuadores de corrección |
+| `panel.js` | Sección LAE Mobile con capacidad real, diagnóstico y estado en tiempo real | Observabilidad |
+| `index.js` | `window.__AC__.lae.*` expuesto para debugging en consola | API de control |
+| `index.html` | `lae-mobile.js` insertado en orden correcto de dependencias | Carga del módulo |
+
+### Lo implementado, adaptado y postergado
+
+**Implementado (Fases 1–4):** Fórmula de capacidad real (P75); márgenes efectivos con safe-area; 5 causas mobile diagnosticables (CM-01 a CM-05 + CM-99); escalones E0/E1/E2/E4; Retry Controller con 2 reintentos; reconciliación mínima en RAM; sondas de viewport y capacidad; panel de adaptación.
+
+**Postergado (Fases 5–6, condicionales):** Escalones E3/E5/E6; optimizador T1–T3; perfiles desktop y ultrawide; memoria de soluciones; simulación S-4/S-5/S-6 (requieren datos de producción); aprendizaje del Nivel 4 sobre layout.
+
+### Garantías del Motor Editorial
+
+- Cero archivos del Motor Editorial modificados (verificado byte a byte: layout.js, app.js, mobile.js intactos).
+- Batería 33/33 PASS. Invariantes I1/I4/I5/I6 intactos. Geometría mobile 0px² sostenida.
+- Si `AC_LAE_Mobile` no carga, C-30 retrocede al comportamiento anterior sin degradación visible.
+
+Build `v6.2-2026-07-26-lae-mobile`.

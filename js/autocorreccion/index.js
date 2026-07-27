@@ -75,6 +75,19 @@
         evidencia: () => window.AC_EvidenceEngine?.resumen(),
         recalibrar: (clase) => window.AC_CalibrationEngine?.recalibrar(clase || window.AC_ProfileLearner?.claseActual()),
         historialCalibraciones: () => window.AC_CalibrationEngine?.leerHistorial(),
+        // LAE Mobile — Plan Técnico de Aplicación
+        lae: {
+          adaptar:     (sedeSelector) => window.AC_LAE_Mobile?.adaptar(sedeSelector || document.querySelector('.sede')),
+          medir:       (sedeEl) => window.AC_LAE_Mobile?.medir(sedeEl || document.querySelector('.sede')),
+          diagnosticar:(sedeEl) => {
+            const r = window.AC_LAE_Mobile?.medir(sedeEl || document.querySelector('.sede'));
+            return r ? window.AC_LAE_Mobile?.diagnosticar(r) : null;
+          },
+          capacidad:   () => {
+            const sede = document.querySelector('.sede');
+            return window.AC_LAE_Mobile?.medir(sede);
+          },
+        },
       };
 
       console.info(

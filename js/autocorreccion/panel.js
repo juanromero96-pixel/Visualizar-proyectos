@@ -44,6 +44,7 @@ window.AC_Panel = (() => {
         <section id="ac-sec-contadores"><h3>Contadores por corrección</h3><div id="ac-contadores-contenido"></div></section>
         <section id="ac-sec-escalaciones"><h3>Problemas escalados</h3><div id="ac-escalaciones-contenido"></div></section>
         <section id="ac-sec-nivel4"><h3>Nivel 4 — Aprendizaje</h3><div id="ac-nivel4-contenido"></div></section>
+        <section id="ac-sec-mobile"><h3>LAE Mobile — Adaptación</h3><div id="ac-mobile-contenido"></div></section>
         ${MODO !== 'lectura' ? `
         <section id="ac-sec-controles">
           <h3>Control operativo</h3>
@@ -196,6 +197,29 @@ window.AC_Panel = (() => {
           });
         });
       }
+    }
+
+    // LAE Mobile
+    const mobileEl = _panelEl.querySelector('#ac-mobile-contenido');
+    if (mobileEl && window.AC_LAE_Mobile && window.esMobile?.()) {
+      const sede = document.querySelector('.sede');
+      const report = window.AC_LAE_Mobile.medir(sede);
+      if (report) {
+        const perfil = window.AC_LAE_Mobile.perfil(report.altUtil);
+        const diag = window.AC_LAE_Mobile.diagnosticar(report);
+        const colorCap = report.N > report.capacidadReal ? '#e03c3c' : '#4caf50';
+        mobileEl.innerHTML = `
+          <p>Perfil: <strong>${perfil}</strong> — altUtil: <strong>${Math.round(report.altUtil)}px</strong></p>
+          <p>Capacidad real: <strong style="color:${colorCap}">${report.capacidadReal}</strong> · Activos: <strong>${report.N}</strong> · altRef: ${report.alturaRef}px</p>
+          <p>Diagnóstico: <strong>${diag.causa}</strong> (${diag.confianza}) → ${diag.escalonSugerido}</p>
+          <p>Solapes layout: <strong>${report.solajesReales.length}</strong> · Fuera viewport: <strong>${report.fueraViewport.length}</strong></p>
+          <p>DPR: ${report.DPR} · Safe-area bot: ${report.safeArea?.bottom || 0}px</p>
+          ${report.N > report.capacidadReal ? `<p style="color:#e09a3c">⚠️ Reducción necesaria: ${report.N - report.capacidadReal} elemento(s)</p>` : ''}`;
+      } else {
+        mobileEl.innerHTML = '<p>No disponible (no mobile o sin escena).</p>';
+      }
+    } else if (mobileEl && !window.esMobile?.()) {
+      mobileEl.innerHTML = '<p>Solo activo en mobile.</p>';
     }
 
     // Reprogramar el próximo frame si el panel sigue abierto
