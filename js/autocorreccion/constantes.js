@@ -151,10 +151,10 @@ window.AC_K = Object.freeze({
     MIN_VISIBLE:   3,             // mínimo editorial: los 3 narradores UA de la sede
     PERCENTIL_ALTURA_CAP: 75,     // S-1: mejor balance entre uso y prevención de overflow
     // Alturas de referencia (offsetHeight real medido en dispositivo)
-    ALTURA_TESTIMONIO: 102,       // [B2 N=30 σ=0.8] medido real: 101-104. Estimado previo 140 (-27%)
-    ALTURA_REGISTRO_UA: 187,      // [B2 N=26 σ=0.7] medido real: 185-187. Estimado previo 186 (+1%, confirmado)
-    ALTURA_VIDEO:        96,      // [B2 N=2 σ=6.5] medido real: 83-96. Estimado previo 200 (-52%). Confianza MEDIA por N bajo
-    ALTURA_CONCEPTUAL:  128,      // [B2 N=2] medido real: 119-137 (en espera). Estimado previo 160 (-20%)
+    ALTURA_TESTIMONIO: 104,       // [C3 N=13645 σ=11.3 CV=10.6%] P75 real. Anterior 102 (+2%)
+    ALTURA_REGISTRO_UA: 187,      // [C3 N=8176 σ=6.2 CV=3.3%] P75 real = 187. CONFIRMADO sin cambio
+    ALTURA_VIDEO:       180,      // [C3 N=568 σ=51.8 CV=35.2%] P50=P75=180. Anterior 96 con N=2 (+87%)
+    ALTURA_CONCEPTUAL:  119,      // [C3 N=1225 σ=4.4 CV=3.7%] P75 real = 119. Anterior 128 (-7%)
     // Alturas DESKTOP medidas (canal Monte Carlo — solo referencia, no usadas por la fórmula de 2 columnas)
     ALTURA_DESKTOP_REGISTRO_UA: 308,  // [B2 N=15 σ=0] extremadamente estable
     ALTURA_DESKTOP_TESTIMONIO:  175,  // [B2 N=29] rango 175-233
@@ -167,6 +167,34 @@ window.AC_K = Object.freeze({
     DPR_DRIFT_SOLAPE_MAX:  500,   // CM-05: solape sub-pixel <500px²
     DPR_DRIFT_PARES_MIN:   2,     // CM-05: mínimo de pares afectados simultáneos
     TARGET_TACTIL_MIN:     44,    // WCAG 2.5.5 (normativo)
+    // ── CAPACIDAD POR ÁREA (R-01, ciclo 3) ────────────────────────────────
+    // EVIDENCIA: el área que ocupa cada elemento varía entre 6,8% y 14,0% del
+    // lienzo (factor 2,05 sobre 12 observaciones de 4 dispositivos). Por eso
+    // ningún valor fijo de capacidad EN CANTIDAD puede acertar: con cap=4 la
+    // ocupación resultante recorre de 27,2% a 56,0%.
+    // La capacidad pasa a expresarse en SUPERFICIE OCUPADA.
+    //
+    // Banda medida con separación perfecta (12 observaciones):
+    //   score >= 85  →  ocupación 44,3% - 56,0%   (N=6, solape 0 px²)
+    //   score <  85  →  subutilizados 44,5-47,3% o sobrecargados 72,9-84,0%
+    //   el solape aparece a partir de 74,4% de ocupación
+    OCUPACION_OBJETIVO: 0.53,     // centro de la banda de calidad medida
+    OCUPACION_MAX:      0.56,     // límite superior de la banda (score>=85)
+    OCUPACION_TECHO:    0.70,     // techo duro: el solape aparece a 74,4%
+    CAPACIDAD_POR_AREA: true,     // interruptor de reversión a capacidad por conteo
+
+    // ── SELECCIÓN POR DISPERSIÓN DE ANCLAS (R-02, ciclo 3) ────────────────
+    // EVIDENCIA: los primeros elementos del orden narrativo tienen anclas
+    // editoriales sesgadas hacia arriba entre 16 y 22 puntos porcentuales
+    // respecto de la media de su sede (medido en data/*.json campo `y`):
+    //   Posadas  y medio 39, primeros 4: 22  → -17 pp
+    //   Oberá    y medio 45, primeros 4: 23  → -22 pp
+    //   Eldorado y medio 51, primeros 4: 36  → -16 pp
+    // Conservar los primeros conserva ese sesgo: balV negativo en 11 de 12
+    // observaciones, media -14,3%, hasta -31,7%.
+    SELECCION_POR_DISPERSION: true,  // interruptor de reversión
+    DISPERSION_PESO_ORDEN: 0.30,     // peso del orden narrativo en el desempate
+
     // Escalones de intervención
     MAX_DESPL_E1: 32,             // [S-4 ALTA] margen zona(20)+tolerancia(5)+buffer(7); bajo umbral perceptual 25%=41px
     MAX_DESPL_E2: 48,             // [S-4 ALTA] 1.5×E1; cada elemento se mueve 16px → 5× el drift DPR máx

@@ -51,7 +51,8 @@ window.AC_LAE_Mobile = (() => {
       return elementos.map((el) => {
         const interior = el.querySelector('.elemento-interior');
         const h = interior ? interior.offsetHeight : el.offsetHeight;
-        return { id: el.dataset.testimonioId || el.dataset.tipo, h, tipo: el.dataset.tipo };
+        const w = interior ? interior.offsetWidth  : el.offsetWidth;
+        return { id: el.dataset.testimonioId || el.dataset.tipo, h, w, tipo: el.dataset.tipo, el };
       });
     },
 
@@ -141,7 +142,7 @@ window.AC_LAE_Mobile = (() => {
       const rectChip = chip ? chip.getBoundingClientRect() : null;
 
       // Capacidad real (fórmula §4.5 del plan)
-      const { cap, altRef } = _calcularCapacidad(alturasReales, altUtil);
+      const { cap, altRef } = _calcularCapacidad(alturasReales, altUtil, ancho);
 
       return {
         sede:        sede.dataset.sede,
@@ -170,28 +171,69 @@ window.AC_LAE_Mobile = (() => {
   // ══════════════════════════════════════════════════════════════════════════
   // HELPERS: capacidad real (§4.5 del plan)
   // ══════════════════════════════════════════════════════════════════════════
-  function _calcularCapacidad(alturasReales, altUtil) {
-    // [B2-3] EVIDENCIA: la fórmula de 2 columnas es EXCLUSIVA del canal mobile.
-    // En desktop el motor usa Monte Carlo (ubicarPorBusqueda), no una grilla.
-    // Medición real (9 sesiones): en desktop 1366x607, la fórmula daba cap=3
-    // mientras el motor mostraba 8 elementos SIN solape en 7/9 casos (78%).
-    // Aplicarla en desktop produciría reducciones injustificadas.
+  function _calcularCapacidad(alturasReales, altUtil, anchoLienzo) {
+    // [B2-3] La fórmula es EXCLUSIVA del canal mobile. En desktop el motor usa
+    // Monte Carlo (ubicarPorBusqueda), no una grilla. Medición real: en desktop
+    // 1366x607 la fórmula daba cap=3 mientras el motor mostraba 8 sin solape
+    // en 7/9 casos. Aplicarla fuera de mobile produce reducciones injustificadas.
     if (!window.esMobile?.()) return { cap: null, altRef: null, noAplica: 'canal-desktop' };
-    if (!alturasReales.length || altUtil <= 0) return { cap: M.CAP_ESTANDAR, altRef: M.ALTURA_REGISTRO_UA };
-    // P75 de las alturas medidas
-    const sorted = [...alturasReales].sort((a, b) => a.h - b.h);
-    const idx = Math.min(sorted.length - 1, Math.floor(0.75 * sorted.length));
-    const altRef = sorted[idx].h || M.ALTURA_REGISTRO_UA;
-    // Fórmula: filas = ⌊altUtil / (altRef + SEP)⌋, cols = 2
-    const filas = Math.floor(altUtil / (altRef + 8));
-    let cap = filas * 2;
-    // Límite por perfil mobile
+    if (!alturasReales.length || altUtil <= 0) {
+      return { cap: M.CAP_ESTANDAR, altRef: M.ALTURA_REGISTRO_UA, metodo: 'fallback' };
+    }
+
+    // Techo por perfil: límite superior duro que la fórmula nunca puede superar
     const capPerfil = altUtil < M.PERFIL_CRITICO_LIMITE ? M.CAP_CRITICO
                     : altUtil < M.PERFIL_AMPLIO_LIMITE  ? M.CAP_ESTANDAR
                     : M.CAP_AMPLIO;
-    cap = Math.min(cap, capPerfil);
-    cap = Math.max(cap, M.MIN_VISIBLE); // mínimo editorial
-    return { cap, altRef };
+
+    const sorted = [...alturasReales].sort((a, b) => a.h - b.h);
+    const idx = Math.min(sorted.length - 1, Math.floor(0.75 * sorted.length));
+    const altRef = sorted[idx].h || M.ALTURA_REGISTRO_UA;
+
+    // ── R-01 · CAPACIDAD POR ÁREA ────────────────────────────────────────
+    // El área por elemento varía en factor 2,05 entre sedes y dispositivos
+    // (6,8% a 14,0% del lienzo, 12 observaciones). Un conteo fijo no puede
+    // cubrir ese rango: con cap=4 la ocupación va de 27,2% a 56,0%.
+    // Se acumulan áreas reales hasta alcanzar la ocupación objetivo.
+    if (M.CAPACIDAD_POR_AREA && anchoLienzo > 0) {
+      const areaLienzo = anchoLienzo * altUtil;
+      // Orden ascendente por área: maximiza la cantidad de elementos que
+      // caben dentro del presupuesto, sin sesgar hacia los grandes.
+      const porArea = [...alturasReales]
+        .map((x) => ({ ...x, area: (x.w || anchoLienzo * 0.44) * x.h }))
+        .sort((a, b) => a.area - b.area);
+
+      // Criterio de parada por PROXIMIDAD AL OBJETIVO, no por superarlo.
+      // Cortar al cruzar OCUPACION_MAX dejaba la escena subutilizada: la
+      // evidencia muestra que 384x687/posadas con 4 elementos alcanza 56,0%
+      // y score 95, mientras que con 3 quedaría en 44,4%. Se incluye el
+      // elemento cuando su inclusión ACERCA la ocupación al objetivo.
+      let acum = 0, n = 0;
+      for (const el of porArea) {
+        const proyectada = (acum + el.area) / areaLienzo;
+        // Techo duro: por encima de este valor aparece el solape (medido 74,4%)
+        if (proyectada > M.OCUPACION_TECHO) break;
+        if (n >= M.MIN_VISIBLE) {
+          const actual = acum / areaLienzo;
+          const distSin = Math.abs(actual - M.OCUPACION_OBJETIVO);
+          const distCon = Math.abs(proyectada - M.OCUPACION_OBJETIVO);
+          if (distCon >= distSin) break;   // incluirlo alejaría del objetivo
+        }
+        acum += el.area; n++;
+      }
+      const capArea = Math.max(M.MIN_VISIBLE, Math.min(n, capPerfil));
+      return {
+        cap: capArea, altRef, metodo: 'area',
+        ocupacionProyectada: +(acum / areaLienzo).toFixed(4),
+        capPerfil,
+      };
+    }
+
+    // ── Fallback: capacidad por conteo (comportamiento anterior) ─────────
+    const filas = Math.floor(altUtil / (altRef + 8));
+    let cap = Math.min(filas * 2, capPerfil);
+    cap = Math.max(cap, M.MIN_VISIBLE);
+    return { cap, altRef, metodo: 'conteo', capPerfil };
   }
 
   function _perfil(altUtil) {
@@ -431,20 +473,20 @@ window.AC_LAE_Mobile = (() => {
       const safeArea = RealityProbe._safeArea();
       const altUtil = rectEsc.height - (92 + safeArea.top) - (52 + safeArea.bottom);
       const { cap } = _calcularCapacidad(
-        alturasReales.map((x, i) => ({ h: x.h, tipo: elementos[i].dataset.tipo })),
-        altUtil
+        alturasReales.map((x, i) => ({
+          h: x.h,
+          w: x.el?.querySelector('.elemento-interior')?.offsetWidth || 0,
+          tipo: elementos[i].dataset.tipo,
+        })),
+        altUtil, rectEsc.width
       );
 
       // 3. Reducir conjunto visible si N > cap
       let elementosRetirados = [];
       if (elementos.length > cap) {
         const res = await _rAF(() => {
-          // Identificar candidatos a retirar: en orden inverso narrativo, excluyendo permanentes
-          const candidatos = [...elementos]
-            .reverse()
-            .filter(el => el.dataset.permanente !== 'true');
-          const nRetirar = elementos.length - cap;
-          const retirar = candidatos.slice(0, nRetirar);
+          const conservar = _seleccionarConservados(elementos, cap);
+          const retirar = elementos.filter((el) => !conservar.has(el));
           retirar.forEach(el => {
             el.classList.add('elemento--rotacion-espera', 'elemento--oculto-capacidad');
           });
@@ -469,6 +511,94 @@ window.AC_LAE_Mobile = (() => {
       };
     },
   };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // R-02 · SELECCIÓN POR DISPERSIÓN DE ANCLAS
+  //
+  // EVIDENCIA (corpus data/*.json campo `y` + 12 observaciones de dispositivo):
+  //   Los primeros elementos del orden narrativo tienen anclas editoriales
+  //   sesgadas hacia arriba respecto de la media de su sede:
+  //       Posadas   y medio 39, primeros 4: 22  →  -17 pp
+  //       Oberá     y medio 45, primeros 4: 23  →  -22 pp
+  //       Eldorado  y medio 51, primeros 4: 36  →  -16 pp
+  //   El criterio anterior retiraba los ÚLTIMOS del orden narrativo, con lo que
+  //   conservaba ese sesgo. Resultado medido: balV negativo en 11 de 12
+  //   observaciones, media -14,3%, hasta -31,7%, con celdas muertas en la banda
+  //   inferior del heatmap (capturas 3 y 4 del ciclo 3).
+  //
+  // CRITERIO NUEVO: selección voraz maximin sobre las anclas editoriales.
+  // Determinista, sin aleatoriedad. Conserva siempre los permanentes.
+  // NO altera el orden narrativo ni la cobertura del ciclo (invariante I4):
+  // solo decide qué subconjunto es visible simultáneamente.
+  // ══════════════════════════════════════════════════════════════════════════
+  function _seleccionarConservados(elementos, cap) {
+    const conservar = new Set();
+
+    // 1 · Los permanentes nunca se retiran (invariante I1)
+    elementos.forEach((el) => {
+      if (el.dataset.permanente === 'true') conservar.add(el);
+    });
+    if (conservar.size >= cap) return conservar;
+
+    // Interruptor de reversión al criterio anterior
+    if (!M.SELECCION_POR_DISPERSION) {
+      elementos
+        .filter((el) => !conservar.has(el))
+        .sort((a, b) => Number(a.dataset.orden || 0) - Number(b.dataset.orden || 0))
+        .slice(0, cap - conservar.size)
+        .forEach((el) => conservar.add(el));
+      return conservar;
+    }
+
+    const ancla = (el) => ({
+      x: parseFloat(el.dataset.anclaX) || 50,
+      y: parseFloat(el.dataset.anclaY) || 50,
+    });
+    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+    const candidatos = elementos
+      .filter((el) => !conservar.has(el))
+      .map((el) => ({ el, a: ancla(el), orden: Number(el.dataset.orden || 0) }));
+
+    // Orden total de desempate: garantiza determinismo
+    candidatos.sort((p, q) =>
+      p.orden - q.orden ||
+      String(p.el.dataset.testimonioId || '').localeCompare(
+        String(q.el.dataset.testimonioId || '')));
+
+    const elegidas = [];
+    conservar.forEach((el) => elegidas.push(ancla(el)));
+
+    // 2 · Selección voraz: en cada paso, el candidato cuya ancla maximiza la
+    //     distancia mínima a las anclas ya elegidas (criterio maximin), con el
+    //     orden narrativo como término secundario ponderado.
+    const N = candidatos.length;
+    while (conservar.size < cap && candidatos.length) {
+      let mejor = 0, mejorPuntaje = -Infinity;
+      for (let i = 0; i < candidatos.length; i++) {
+        const c = candidatos[i];
+        // Distancia mínima a lo ya elegido, normalizada a la diagonal (141,4)
+        let dMin = 1;
+        if (elegidas.length) {
+          dMin = Infinity;
+          for (const e of elegidas) {
+            const d = dist(c.a, e);
+            if (d < dMin) dMin = d;
+          }
+          dMin = Math.min(1, dMin / 141.4);
+        }
+        // Preferencia por orden narrativo temprano
+        const pOrden = N > 1 ? 1 - (i / (N - 1)) : 1;
+        const puntaje = (1 - M.DISPERSION_PESO_ORDEN) * dMin
+                      + M.DISPERSION_PESO_ORDEN * pOrden;
+        if (puntaje > mejorPuntaje) { mejorPuntaje = puntaje; mejor = i; }
+      }
+      const elegido = candidatos.splice(mejor, 1)[0];
+      conservar.add(elegido.el);
+      elegidas.push(elegido.a);
+    }
+    return conservar;
+  }
 
   // ══════════════════════════════════════════════════════════════════════════
   // ④ VERIFIER — mide el resultado real post-aplicación (Plan §8.2)

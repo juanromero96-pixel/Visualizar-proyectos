@@ -369,15 +369,43 @@
     }).sort((a, b) => a - b);
 
     const idx = Math.min(alturas.length - 1, Math.floor(0.75 * alturas.length));
-    const altRef = alturas[idx] || 186;
-    const filas = Math.floor(altUtil / (altRef + 8));
+    const altRef = alturas[idx] || 187;
     const M = window.AC_K?.MOBILE;
-    let cap = filas * 2;
-    if (M) {
-      const capPerf = altUtil < M.PERFIL_CRITICO_LIMITE ? M.CAP_CRITICO
-                    : altUtil < M.PERFIL_AMPLIO_LIMITE  ? M.CAP_ESTANDAR
-                    : M.CAP_AMPLIO;
-      cap = Math.max(M.MIN_VISIBLE, Math.min(cap, capPerf));
+    if (!M) {
+      const filas = Math.floor(altUtil / (altRef + 8));
+      return { cap: filas * 2, altRef, altUtil: Math.round(altUtil), margenTop, margenBot };
+    }
+    const capPerf = altUtil < M.PERFIL_CRITICO_LIMITE ? M.CAP_CRITICO
+                  : altUtil < M.PERFIL_AMPLIO_LIMITE  ? M.CAP_ESTANDAR
+                  : M.CAP_AMPLIO;
+
+    // R-01 · capacidad por área: idéntica fórmula que el LAE, para que el
+    // Laboratorio mida exactamente lo que el motor decide.
+    let cap;
+    if (M.CAPACIDAD_POR_AREA && rectEsc.width > 0) {
+      const areaLienzo = rectEsc.width * altUtil;
+      const areas = activos.map((el) => {
+        const int = el.querySelector('.elemento-interior');
+        const h = int ? int.offsetHeight : el.offsetHeight;
+        const w = int ? int.offsetWidth  : el.offsetWidth;
+        return (w || rectEsc.width * 0.44) * h;
+      }).sort((a, b) => a - b);
+      // Mismo criterio de proximidad al objetivo que el LAE (ver lae-mobile.js)
+      let acum = 0, n = 0;
+      for (const a of areas) {
+        const proy = (acum + a) / areaLienzo;
+        if (proy > M.OCUPACION_TECHO) break;
+        if (n >= M.MIN_VISIBLE) {
+          const distSin = Math.abs(acum / areaLienzo - M.OCUPACION_OBJETIVO);
+          const distCon = Math.abs(proy - M.OCUPACION_OBJETIVO);
+          if (distCon >= distSin) break;
+        }
+        acum += a; n++;
+      }
+      cap = Math.max(M.MIN_VISIBLE, Math.min(n, capPerf));
+    } else {
+      const filas = Math.floor(altUtil / (altRef + 8));
+      cap = Math.max(M.MIN_VISIBLE, Math.min(filas * 2, capPerf));
     }
     return { cap, altRef, altUtil: Math.round(altUtil), margenTop, margenBot };
   }

@@ -39,9 +39,14 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
     OCUPACION_TOLERANCIA: 0.10,   // fuera del rango, penalización lineal hasta ±10 pts
 
     // M-C2 · Espacio muerto máximo.
-    // Origen: Eldorado con 42 % resultó claramente subutilizado;
-    // Oberá con 25 % resultó adecuado. El umbral se sitúa entre ambos.
-    MUERTO_MAX: 0.32,
+    // [CICLO 3] Con el umbral anterior (0,32) la métrica NO discriminaba:
+    // se cumplía en 11 de 12 observaciones, incluidas las de score 75 y 81.
+    // Media de los aprobados 14,6% frente a 15,3% de los rechazados: las
+    // distribuciones se superponían casi por completo.
+    // El umbral discriminante calculado sobre las 12 observaciones es 15%;
+    // se adopta 0,20 para dejar margen sin perder poder de discriminación.
+    // NOTA: el poder discriminante de esta métrica sigue siendo bajo.
+    MUERTO_MAX: 0.20,
     MUERTO_CELDA_UMBRAL: 0.05,    // celda con <5 % de ocupación cuenta como muerta
     GRILLA_COLS: 4,
     GRILLA_ROWS: 6,
