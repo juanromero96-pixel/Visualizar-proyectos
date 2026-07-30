@@ -6,6 +6,39 @@
  * para sedes, testimonios y multimedia.
  */
 const Editor = (() => {
+  'use strict';
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // C-02 / C-13 · Sanitización de entradas del panel
+  // Correcciones de los hallazgos H-02 (cadena de inyección) y derivados.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  const MAX_TEXTO = 8000;
+
+  /**
+   * Normaliza el nombre de un archivo para usarlo en una ruta de activo.
+   * Conserva letras, dígitos, punto, guion y guion bajo; el resto se
+   * reemplaza por guion. Impide traversal y cualquier carácter con
+   * significado en HTML.
+   */
+  function nombreArchivoSeguro(nombre) {
+    const base = String(nombre || 'archivo')
+      .split(/[\\/]/).pop()          // descarta cualquier componente de ruta
+      .replace(/\.\.+/g, '.')         // colapsa secuencias de puntos
+      .replace(/[^A-Za-z0-9._-]/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, 120);
+    return base || 'archivo';
+  }
+
+  /** Recorta la longitud y elimina caracteres de control. */
+  function textoSeguro(valor) {
+    return String(valor ?? '')
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+      .slice(0, MAX_TEXTO);
+  }
+
   function crearFormulario(item, esquema, alCambiar) {
     const formulario = document.createElement('form');
     formulario.className = 'formulario-item';
@@ -50,7 +83,7 @@ const Editor = (() => {
         control.rows = campo.filas || 3;
         control.value = item[campo.clave] ?? '';
         control.addEventListener('input', () => {
-          item[campo.clave] = control.value;
+          item[campo.clave] = textoSeguro(control.value);
           alCambiar(item);
         });
         break;
@@ -67,7 +100,7 @@ const Editor = (() => {
           control.appendChild(elOpcion);
         });
         control.addEventListener('change', () => {
-          item[campo.clave] = control.value;
+          item[campo.clave] = textoSeguro(control.value);
           alCambiar(item);
         });
         break;
@@ -109,7 +142,11 @@ const Editor = (() => {
           // dentro de /assets. No se guarda ningún blob: URL en el JSON
           // porque deja de ser válido apenas se cierra la pestaña.
           const claveDestino = campo.objetivo || campo.clave;
-          item[claveDestino] = `${campo.rutaSugerida || 'assets/'}${archivo.name}`;
+          // C-02 · El nombre del archivo se usaba sin sanitizar para construir
+          // una ruta que luego llegaba a un atributo src. Un nombre como
+          //   x" onerror="fetch('//evil')" .jpg
+          // producía inyección. Se normaliza a un conjunto seguro.
+          item[claveDestino] = `${campo.rutaSugerida || 'assets/'}${nombreArchivoSeguro(archivo.name)}`;
           alCambiar(item, { regenerar: true });
         });
         break;
@@ -119,7 +156,7 @@ const Editor = (() => {
         control.type = 'text';
         control.value = item[campo.clave] ?? '';
         control.addEventListener('input', () => {
-          item[campo.clave] = control.value;
+          item[campo.clave] = textoSeguro(control.value);
           alCambiar(item);
         });
     }

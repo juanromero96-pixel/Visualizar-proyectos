@@ -1,0 +1,11 @@
+# Compendio Digital UNaM — Política de divulgación de vulnerabilidades
+# RFC 9116
+
+Contact: mailto:extension@unam.edu.ar
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: es, en
+Canonical: https://visualizar-proyectos.vercel.app/.well-known/security.txt
+
+# Si detectás una vulnerabilidad, te pedimos que la comuniques por el canal
+# indicado antes de divulgarla públicamente. Agradecemos el reporte
+# responsable y nos comprometemos a responder a la brevedad.

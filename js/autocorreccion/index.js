@@ -61,7 +61,20 @@
       }
 
       // Exponer una API de control minimal para debugging en consola
-      window.__AC__ = {
+      // C-10 · La API de diagnóstico solo se expone con la bandera activa.
+      // Antes quedaba en window de forma permanente, revelando la
+      // arquitectura interna del subsistema a cualquier visitante.
+      // Los objetos del Motor Editorial (Distribuidor, Rotacion…) se
+      // conservan: son el canal de comunicación entre módulos.
+      const _diagActivo = (() => {
+        try {
+          return /[?&](diag|calibrar)=1/.test(location.search)
+              || location.hash === '#calibrar'
+              || localStorage.getItem('diag') === '1';
+        } catch (e) { return false; }
+      })();
+
+      if (_diagActivo) window.__AC__ = {
         nivel: () => window.AC_K.NIVEL_AUTONOMIA,
         registro: () => window.AC_Logger.obtenerRegistro(),
         escalaciones: () => window.AC_Logger.obtenerEscalaciones(),

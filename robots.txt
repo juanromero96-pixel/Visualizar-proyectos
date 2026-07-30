@@ -1,0 +1,14 @@
+# Compendio Digital UNaM — Semana Regional de la Extensión
+# El panel de administración y el laboratorio de calibración no son
+# contenido público. robots.txt es una convención, no un control de
+# acceso: la protección real está en la configuración del servidor.
+
+User-agent: *
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /login.html
+Disallow: /calibrar
+Disallow: /tools/
+Allow: /
+
+Sitemap: https://visualizar-proyectos.vercel.app/sitemap.xml

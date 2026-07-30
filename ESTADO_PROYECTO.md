@@ -831,3 +831,49 @@ Build `v6.1-2026-07-23-calibrado`. El subsistema llega a producción con los par
 - Si `AC_LAE_Mobile` no carga, C-30 retrocede al comportamiento anterior sin degradación visible.
 
 Build `v6.2-2026-07-26-lae-mobile`.
+
+---
+
+## 30 · Reentrenamiento del Motor Editorial (build v9.0-2026-07-28-reentrenado)
+
+Recalibración basada en 23.614 mediciones de altura y 12 observaciones compositivas de 4 dispositivos físicos.
+
+### Cambio estructural: la capacidad cambia de unidad
+
+El área que ocupa cada elemento varía entre 6,8 % y 14,0 % del lienzo (factor 2,05). Con la capacidad expresada en cantidad de elementos, un mismo número producía ocupaciones de 27,2 % a 56,0 %. La capacidad pasa a expresarse en **superficie ocupada**, con criterio de parada por proximidad al objetivo (0,53) y techo duro en 0,70 —el valor donde la evidencia sitúa la aparición del solape (74,4 %).
+
+El techo por perfil (4/6/8) se conserva como límite superior duro: la fórmula por área solo puede reducir respecto de él, nunca superarlo.
+
+### Cambio de criterio: selección por dispersión de anclas
+
+Los primeros elementos del orden narrativo tienen anclas editoriales sesgadas hacia arriba entre 16 y 24 puntos porcentuales (medido en `data/*.json`, campo `y`). El criterio anterior retiraba los últimos del orden, conservando ese sesgo: balance vertical negativo en 11 de 12 observaciones, media −14,3 %.
+
+El criterio nuevo es una selección voraz maximin sobre las anclas, con el orden narrativo como término secundario ponderado (0,30). Conserva siempre los permanentes. Reducción del sesgo medido: **57 %** (20,7 → 8,8 pp).
+
+### Alturas recalibradas
+
+| Constante | Antes | Después | N | Evidencia |
+|---|---|---|---|---|
+| `ALTURA_REGISTRO_UA` | 187 | 187 | 8.176 | P75, σ=6,2 — confirmada |
+| `ALTURA_TESTIMONIO` | 102 | 104 | 13.645 | P75, σ=11,3 |
+| `ALTURA_CONCEPTUAL` | 128 | 119 | 1.225 | P75, σ=4,4 |
+| `ALTURA_VIDEO` | 96 | 180 | 568 | P75, σ=51,8 — antes N=2 |
+
+### Defecto corregido durante la validación
+
+La primera versión de la fórmula cortaba al superar `OCUPACION_MAX`, lo que dejaba escenas subutilizadas: con registros de 187 px en `altUtil` 554 daba 3 elementos al 42,8 %, cuando la evidencia muestra que 4 alcanzan 56,0 % con score 95. Corregido con criterio de proximidad al objetivo.
+
+### Resultado verificado por simulación sobre las áreas reales
+
+- Casos sobre el techo de 70 %: 3 → **0**
+- Solape eliminado: **27.767 px²**
+- Casos en banda: 9 de 12, **sin degradación**
+- Sesgo de ancla: −57 %
+
+### Garantías
+
+Motor Editorial, corpus, CSS, HTML e identidad visual verificados byte a byte contra el build anterior. Las únicas diferencias en `app.js` e `index.html` son el string de versión. Cuatro archivos modificados, todos de parámetros y algoritmos de layout.
+
+Interruptores de reversión: `CAPACIDAD_POR_AREA: false` y `SELECCION_POR_DISPERSION: false`.
+
+Batería 33/33. Invariantes I1/I4/I5/I6 intactos.

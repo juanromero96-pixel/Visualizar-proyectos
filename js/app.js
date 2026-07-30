@@ -41,7 +41,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v9.0-2026-07-28-reentrenado';
+  window.__BUILD__ = 'v10.0-2026-07-30-despliegue';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -478,7 +478,7 @@ function crearElemento(item) {
     });
   } else if (item._tipo === 'foto') {
     interior.innerHTML = `
-      <img src="${item.src}" alt="${escaparHTML(item.alt || '')}" loading="lazy">
+      <img src="${rutaSegura(item.src)}" alt="${escaparHTML(item.alt || '')}" loading="lazy">
       ${item.caption ? `<p class="elemento-caption">${escaparHTML(item.caption)}</p>` : ''}
     `;
     interior.querySelector('img').addEventListener('error', () => el.classList.add('elemento--sin-imagen'));
@@ -650,7 +650,7 @@ function crearTarjetaRegistroUA(item, interior) {
 
   const portadaHTML = item.imagenPortada ? `
     <div class="registro-ua-portada" aria-hidden="true">
-      <img src="${escaparHTML(item.imagenPortada)}"
+      <img src="${rutaSegura(item.imagenPortada)}"
            alt="${escaparHTML(item.unidadAcademica || '')} — sede"
            loading="lazy">
     </div>` : '';
@@ -1049,6 +1049,24 @@ function actualizarRuta(indiceActual) {
   window.actualizarNavMobile?.(indiceActual);
 }
 
+/**
+ * C-02 · Valida una ruta de activo contra lista blanca.
+ * Corrige la única interpolación sin escapar que la auditoría de seguridad
+ * encontró (hallazgo H-07): `<img src="${item.src}">` permitía cerrar el
+ * atributo e inyectar un manejador de eventos. La validación es de lista
+ * blanca —solo rutas bajo assets/ con extensión de imagen conocida— porque
+ * escapar no basta: una ruta como `javascript:` sobreviviría al escape.
+ * Devuelve cadena vacía si la ruta no es admisible, lo que activa el
+ * fallback de monograma que el motor ya implementa.
+ */
+function rutaSegura(ruta) {
+  const s = String(ruta || '');
+  if (!s) return '';
+  if (s.includes('..')) return '';                       // traversal
+  if (!/^assets\/[A-Za-z0-9._\/-]+\.(jpg|jpeg|png|webp|svg|avif)$/i.test(s)) return '';
+  return escaparHTML(s);
+}
+
 function escaparHTML(texto = '') {
   return String(texto).replace(/[&<>"']/g, (caracter) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -1144,7 +1162,32 @@ const Rotacion = (() => {
       const hProm = n ? sumH / n : 190;
       return Math.max(4, Math.min(8, Math.floor((wEsc * altUtil * 0.65) / (wProm * hProm))));
     }
-    return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 120000)));
+    // ── DESKTOP · [R4-01 ciclo 4] Divisor recalibrado 120000 → 90000 ──────
+    // EXCEPCIÓN AUTORIZADA sobre el Motor Editorial: el encargo autoriza
+    // expresamente modificar «parámetros del Motor Editorial, constantes,
+    // umbrales, modelos de decisión del layout». El divisor es la constante
+    // del modelo de decisión de capacidad desktop. El cambio se acota a
+    // esta línea; ninguna otra parte de app.js se modifica.
+    //
+    // EVIDENCIA (primera medición del canal desktop, 1455×865, 3 sedes):
+    //   ocupación 40,4 % / 29,3 % / 30,4 %   media 33,4 %
+    //   objetivo 50-56 %   →   déficit de 19,6 puntos porcentuales
+    //   espacio muerto hasta 33,3 %   ·   cero solape en las tres
+    //   score 78 / 74 / 68   contra 92-98 de la banda mobile amplia
+    //
+    // El divisor 120000 daba 1.258.575/120000 = 10 elementos, que coincide
+    // exactamente con lo observado. Con 90000 da 14, y la proyección sobre
+    // las áreas medidas lleva Posadas a 56,6 % (dentro de banda).
+    //
+    // LÍMITE DECLARADO: Oberá y Eldorado no pueden pasar de 35-36 % porque su
+    // corpus tiene 12 elementos. Cerrar esa brecha exigiría un factor de
+    // escala mayor, que el criterio de aceptación del Monte Carlo limita.
+    //
+    // RIESGO: más elementos reducen el factor de escala alcanzable y podrían
+    // introducir solape donde hoy no hay. El techo de 22 sigue actuando en
+    // pantallas grandes. Verificación en dispositivo obligatoria: si aparece
+    // solape, revertir a 120000. Ver DTR §6/R4-01 y §12.
+    return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 90000)));
   }
 
   function tipoPrioridad(el) {

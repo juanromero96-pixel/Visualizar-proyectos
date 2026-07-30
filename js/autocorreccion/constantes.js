@@ -70,6 +70,19 @@ window.AC_K = Object.freeze({
     'C-60': { porSedeSesion: 3, porMinuto: 2, porSesion: 6 },
     'C-70': { porSedeSesion: 2, porMinuto: 2, porSesion: 10 },
     'C-71': { porSedeSesion: 3, porMinuto: 2, porSesion: 10 },
+    // [R4-03 ciclo 4] Presupuesto propio para los actuadores del LAE Mobile.
+    // EVIDENCIA (traza temporal 375x641, 301 frames):
+    //   posadas   8 → 8   cambios: 0   ← nunca intervino
+    //   obera    14 → 7   cambios: 1   ← parcial (capacidad era 4)
+    //   eldorado 12 → 4   cambios: 2   ← completó
+    // Eldorado necesitó DOS intervenciones para alcanzar su capacidad. Con tres
+    // sedes y hasta dos cada una, el presupuesto por defecto (2/min) no cubre
+    // el recorrido inicial. La regla de acople se mantiene: OSC_UMBRAL (3) <= 4.
+    // LÍMITE DE LA EVIDENCIA: los datos muestran el efecto (reducción parcial),
+    // no demuestran que el presupuesto sea la única causa. Ver DTR §6/R4-03.
+    'C-37': { porSedeSesion: 6, porMinuto: 4, porSesion: 18 },
+    'C-38': { porSedeSesion: 8, porMinuto: 4, porSesion: 20 },
+    'C-39': { porSedeSesion: 8, porMinuto: 4, porSesion: 20 },
     '_default': { porSedeSesion: 3, porMinuto: 2, porSesion: 10 },
   }),
 
@@ -147,7 +160,10 @@ window.AC_K = Object.freeze({
     PERFIL_AMPLIO_LIMITE:  760,   // altUtil ≥ 760 → mobile-amplio  (Pixel 8: 771)
     CAP_CRITICO:   4,             // iPhone SE: ⌊523/(186+8)⌋×2 = 4
     CAP_ESTANDAR:  6,             // Galaxy A34-S24, Moto, Redmi, iPhones: = 6
-    CAP_AMPLIO:    8,             // Pixel 8 y similares
+    CAP_AMPLIO:    8,             // [R4-04 CONFIRMADO ciclo 4] Pixel 9 436x919
+                                  // altUtil=775: 3/3 sedes con score 92-98,
+                                  // cero solape, balV -0,5% a -2,9%.
+                                  // Primera validación empírica de esta banda.
     MIN_VISIBLE:   3,             // mínimo editorial: los 3 narradores UA de la sede
     PERCENTIL_ALTURA_CAP: 75,     // S-1: mejor balance entre uso y prevención de overflow
     // Alturas de referencia (offsetHeight real medido en dispositivo)
@@ -181,6 +197,13 @@ window.AC_K = Object.freeze({
     OCUPACION_OBJETIVO: 0.53,     // centro de la banda de calidad medida
     OCUPACION_MAX:      0.56,     // límite superior de la banda (score>=85)
     OCUPACION_TECHO:    0.70,     // techo duro: el solape aparece a 74,4%
+    // [R4-02 ciclo 4] Objetivo específico del canal desktop.
+    // EVIDENCIA: en desktop (1455x865, 3 observaciones) la ocupación media es
+    // 33,4% contra el objetivo mobile de 53%. Pero Oberá y Eldorado NO pueden
+    // alcanzarlo: con su corpus completo (12 elementos) el techo geométrico es
+    // 35-36%. Fijar 0,50 reconoce ese límite del corpus sin renunciar a la
+    // banda de calidad. Solo afecta la EVALUACIÓN del score, no la composición.
+    OCUPACION_OBJETIVO_DESKTOP: 0.50,
     CAPACIDAD_POR_AREA: true,     // interruptor de reversión a capacidad por conteo
 
     // ── SELECCIÓN POR DISPERSIÓN DE ANCLAS (R-02, ciclo 3) ────────────────

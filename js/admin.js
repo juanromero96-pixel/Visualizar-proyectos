@@ -8,10 +8,39 @@
  * Persistencia: localStorage al instante, igual que en v1. Ver README.
  */
 const CLAVE_SESION = 'unam_semana_regional_admin_autenticado';
+const VIGENCIA_SESION_MS = 30 * 60 * 1000;   // C-01: expiración por inactividad
 
-if (sessionStorage.getItem(CLAVE_SESION) !== 'true') {
+/**
+ * C-01 · Verificación de sesión con expiración.
+ * ADVERTENCIA: esta comprobación es del lado del cliente y por tanto
+ * falsificable desde la consola. Impide el acceso casual, no un ataque
+ * dirigido. La protección real es la del servidor (Nginx auth_basic +
+ * restricción por red). Ver DTA de Correcciones de Seguridad §5.1 y §7.
+ */
+function sesionVigente() {
+  try {
+    const bruto = sessionStorage.getItem(CLAVE_SESION);
+    if (!bruto) return false;
+    const s = JSON.parse(bruto);
+    return s && s.valido === true && typeof s.ts === 'number' &&
+           (Date.now() - s.ts) < VIGENCIA_SESION_MS;
+  } catch (e) { return false; }
+}
+
+if (!sesionVigente()) {
+  sessionStorage.removeItem(CLAVE_SESION);
   window.location.href = 'login.html';
 }
+
+// Renovar la marca de tiempo con cada interacción, para que la expiración
+// mida inactividad y no tiempo total de sesión.
+['click', 'keydown'].forEach((ev) => {
+  document.addEventListener(ev, () => {
+    if (sesionVigente()) {
+      sessionStorage.setItem(CLAVE_SESION, JSON.stringify({ valido: true, ts: Date.now() }));
+    }
+  }, { passive: true });
+});
 
 const OPCIONES_ANIMACION = [
   { valor: 'fade', etiqueta: 'Aparición suave (fade)' },
@@ -506,7 +535,7 @@ document.querySelectorAll('[data-importar]').forEach((input) => {
     const archivo = input.files[0];
     if (!archivo) return;
     try {
-      estado[nombre] = await Almacen.importar(archivo);
+      estado[nombre] = await Almacen.importar(archivo, nombre);
       Almacen.guardar(nombre, estado[nombre]);
       renderizarTodo();
       mostrarEstado(`"${nombre}" importado correctamente`);

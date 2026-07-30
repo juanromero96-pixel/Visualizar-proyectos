@@ -557,6 +557,9 @@
       #calibrar-panel button.cal-export3{background:#6e7681;border-color:#8b949e}
       #calibrar-panel button.cal-rec{background:#a40e26;border-color:#da3633}
       #calibrar-panel button.cal-csv{background:#30363d;border-color:#484f58;font-size:11px}
+      #calibrar-panel .cal-aviso{font-size:10.5px;line-height:1.4;color:#d29922;
+        background:rgba(210,153,34,.09);border:1px solid rgba(210,153,34,.28);
+        border-radius:6px;padding:7px 9px;margin:8px 0 0}
       #calibrar-panel #cal-canvas{width:100%;height:auto;display:block;margin-top:8px;
         background:#0d1117;border:1px solid #21262d;border-radius:6px}
       #calibrar-panel .cal-metricas em{color:#6e7681;font-style:normal;font-size:10px}
@@ -608,6 +611,9 @@
         <button id="cal-limpiar">✕ Reiniciar sesión</button>
       </div>
       <input type="file" id="cal-file" accept=".json" multiple hidden />
+      <p class="cal-aviso">⚠ Las exportaciones incluyen datos identificatorios
+        del dispositivo (modelo, navegador, resolución, hardware). Tratalas como
+        información técnica interna.</p>
       <div class="cal-metricas" id="cal-resumen"></div>
       <div class="cal-metricas" id="cal-compositivo"></div>
       <canvas id="cal-canvas" width="280" height="150"></canvas>

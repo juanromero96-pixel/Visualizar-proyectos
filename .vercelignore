@@ -1,15 +1,29 @@
-# El sitio público (lo que Vercel debe servir) es: index.html, css/, js/,
-# data/, assets/, pdf-fuente/. Todo lo demás es uso interno y no debe
-# desplegarse a un host público:
+# ── Exclusiones del artefacto de publicación ──────────────────────────────
+# C-04 y C-12 del Documento Técnico de Aplicación de Correcciones de Seguridad.
+#
+# DECISIÓN DE OPERACIÓN: las tres primeras líneas excluyen el panel de
+# administración del sitio público. Es la opción de menor riesgo.
+#
+# Si el panel debe permanecer accesible para editar contenido, comentar esas
+# líneas Y aplicar el bloqueo de Nginx del DTA §7 (auth_basic + red).
+# Sin una de las dos medidas, el hallazgo crítico H-01 queda sin mitigar.
 
-# Panel administrativo (Flask + Python): no es un sitio estático, no corre
-# en Vercel, y expondría código fuente legible si se desplegara igual.
-admin/
+admin.html
+login.html
+js/admin.js
+js/login.js
+js/editor.js
+js/escenario.js
+css/admin.css
 
-# Pipeline de extracción, borradores sin revisar y validador interno: nunca
-# deben quedar accesibles públicamente (texto crudo de extracción, y en el
-# caso de admin/, nombres del personal que revisa, ver admin/almacen.py).
-herramientas-internas/
-
-# Documentación de desarrollo, no necesaria en el sitio desplegado.
+# ── Documentación interna (C-12) ──────────────────────────────────────────
+ESTADO_PROYECTO.md
 README.md
+
+# ── Herramientas de desarrollo ────────────────────────────────────────────
+tools/
+
+# ── Artefactos del entorno ────────────────────────────────────────────────
+node_modules/
+.git/
+*.log
