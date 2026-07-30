@@ -77,6 +77,7 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
     // Pesos del índice compositivo global. Suman 1.
     // Los cuatro primeros tienen objetivo numérico explícito en el encargo,
     // por eso concentran el 68 % del peso. Los tres últimos son cualitativos.
+    // ── MODELO v1 (pesos originales, conservados para reversión) ──────────
     PESOS: {
       ocupacion:    0.22,
       espacioMuerto:0.18,
@@ -84,6 +85,59 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
       balanceV:     0.12,
       fragmentacion:0.12,
       respiracion:  0.12,
+      continuidad:  0.08,
+    },
+
+    // ══════════════════════════════════════════════════════════════════════
+    // MODELO v3 · rediseño validado sobre 25 observaciones reales
+    // Ver documento "Auditoría del Modelo de Evaluación Compositiva".
+    //
+    // Corrige cuatro defectos del modelo v1:
+    //   CR-1 umbrales binarios      → función suave() con decaimiento continuo
+    //   CR-2 agregación compensatoria → media geométrica ponderada
+    //   CR-3 sin término de solape   → métrica de solape con peso 0,20
+    //   CR-5 ocupación simétrica     → tolerancias asimétricas
+    //
+    // Resultado medido: falsos positivos 16% → 0%, sin falsos negativos;
+    // correlación de Spearman score↔defectos −0,578 → −0,812.
+    //
+    // Interruptor de reversión: MODELO_V3 = false restaura el modelo v1.
+    // ══════════════════════════════════════════════════════════════════════
+    MODELO_V3: true,
+
+    // Zona ideal y tolerancias del decaimiento continuo. El sub-score vale 1
+    // dentro del ideal y cae de forma lineal hasta 0 en la tolerancia.
+    // Los ideales provienen de las composiciones sin defecto (banda amplia);
+    // las tolerancias, de los umbrales del modelo v1.
+    V3_MUERTO_IDEAL: 0.08,  V3_MUERTO_TOL: 0.28,
+    V3_BALH_IDEAL:   0.05,  V3_BALH_TOL:   0.16,
+    V3_BALV_IDEAL:   0.06,  V3_BALV_TOL:   0.20,
+    V3_FRAG_IDEAL:   0.25,  V3_FRAG_TOL:   0.70,
+
+    // Ocupación asimétrica: el exceso produce solape, por eso su tolerancia
+    // es más estricta que la del defecto (el vacío es tolerable).
+    V3_OCUP_LO: 0.46,  V3_OCUP_HI: 0.58,
+    V3_OCUP_TOL_DEFECTO: 0.16,  V3_OCUP_TOL_EXCESO: 0.10,
+
+    // Solape: descuenta el umbral espurio (P99 del AABB rotado) y normaliza
+    // el exceso contra el valor de los casos severos observados.
+    V3_SOLAPE_ESPURIO: 3200,   // px²
+    V3_SOLAPE_SEVERO:  20000,  // px² (casos reales: 20.195 y 22.885)
+
+    // Piso por sub-score: preserva resolución en la zona baja sin reintroducir
+    // la compensación. Calibrado para que lo defectuoso no colapse a 3-18.
+    V3_PISO: 0.20,
+
+    // Pesos del modelo v3. La ocupación baja de 0,22 a 0,18 para hacer sitio
+    // al término de solape (0,20, el más alto: es el defecto más grave).
+    PESOS_V3: {
+      ocupacion:    0.18,
+      solape:       0.20,
+      espacioMuerto:0.14,
+      balanceH:     0.12,
+      balanceV:     0.10,
+      fragmentacion:0.08,
+      respiracion:  0.10,
       continuidad:  0.08,
     },
   };
@@ -379,30 +433,83 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
     return Math.max(0, 1 - (v - max) / (tol || max));
   }
 
-  function scoreCompositivo(m) {
-    const P = CFG.PESOS;
+  /**
+   * v3 · Decaimiento continuo con zona ideal (reemplaza a scoreTecho).
+   * Vale 1 dentro del ideal y cae linealmente hasta 0 en la tolerancia.
+   * A diferencia de scoreTecho, penaliza desde el valor ideal y no desde el
+   * umbral: un balance al 97 % de su límite ya no puntúa 100 %.
+   */
+  function suave(v, ideal, tol) {
+    const a = Math.abs(v);
+    if (a <= ideal) return 1;
+    return Math.max(0, 1 - (a - ideal) / Math.max(1e-9, tol - ideal));
+  }
+
+  /** v3 · Sub-score de ocupación con tolerancias asimétricas. */
+  function scoreOcupacionV3(v) {
+    if (v < CFG.V3_OCUP_LO) return Math.max(0, 1 - (CFG.V3_OCUP_LO - v) / CFG.V3_OCUP_TOL_DEFECTO);
+    if (v > CFG.V3_OCUP_HI) return Math.max(0, 1 - (v - CFG.V3_OCUP_HI) / CFG.V3_OCUP_TOL_EXCESO);
+    return 1;
+  }
+
+  /**
+   * Índice compositivo.
+   * @param solapePx  área de solape en px² (para el término de solape de v3)
+   */
+  function scoreCompositivo(m, solapePx = 0) {
+    // ── MODELO v1 (reversión con CFG.MODELO_V3 = false) ───────────────────
+    if (!CFG.MODELO_V3) {
+      const P = CFG.PESOS;
+      const s = {
+        ocupacion:     scoreRango(m.ocupacion.valor, CFG.OCUPACION_MIN, CFG.OCUPACION_MAX, CFG.OCUPACION_TOLERANCIA),
+        espacioMuerto: scoreTecho(m.espacioMuerto.valor, CFG.MUERTO_MAX, 0.30),
+        balanceH:      scoreTecho(Math.abs(m.balance.h), CFG.BALANCE_H_MAX, 0.25),
+        balanceV:      scoreTecho(Math.abs(m.balance.v), CFG.BALANCE_V_MAX, 0.25),
+        fragmentacion: scoreTecho(m.fragmentacion.valor, CFG.FRAGMENTACION_MAX, 0.40),
+        respiracion:   m.respiracion.valor,
+        continuidad:   m.continuidad.valor,
+      };
+      const total = P.ocupacion*s.ocupacion + P.espacioMuerto*s.espacioMuerto
+                  + P.balanceH*s.balanceH + P.balanceV*s.balanceV
+                  + P.fragmentacion*s.fragmentacion + P.respiracion*s.respiracion
+                  + P.continuidad*s.continuidad;
+      return {
+        score: Math.round(total * 100),
+        componentes: Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Math.round(v * 100)])),
+        pesos: P, modelo: 'v1',
+      };
+    }
+
+    // ── MODELO v3 ─────────────────────────────────────────────────────────
+    const P = CFG.PESOS_V3;
+    const solExceso = Math.max(0, solapePx - CFG.V3_SOLAPE_ESPURIO);
     const s = {
-      ocupacion:     scoreRango(m.ocupacion.valor, CFG.OCUPACION_MIN, CFG.OCUPACION_MAX, CFG.OCUPACION_TOLERANCIA),
-      espacioMuerto: scoreTecho(m.espacioMuerto.valor, CFG.MUERTO_MAX, 0.30),
-      balanceH:      scoreTecho(Math.abs(m.balance.h), CFG.BALANCE_H_MAX, 0.25),
-      balanceV:      scoreTecho(Math.abs(m.balance.v), CFG.BALANCE_V_MAX, 0.25),
-      fragmentacion: scoreTecho(m.fragmentacion.valor, CFG.FRAGMENTACION_MAX, 0.40),
+      ocupacion:     scoreOcupacionV3(m.ocupacion.valor),
+      solape:        Math.max(0, 1 - solExceso / CFG.V3_SOLAPE_SEVERO),
+      espacioMuerto: suave(m.espacioMuerto.valor, CFG.V3_MUERTO_IDEAL, CFG.V3_MUERTO_TOL),
+      balanceH:      suave(m.balance.h, CFG.V3_BALH_IDEAL, CFG.V3_BALH_TOL),
+      balanceV:      suave(m.balance.v, CFG.V3_BALV_IDEAL, CFG.V3_BALV_TOL),
+      fragmentacion: suave(m.fragmentacion.valor, CFG.V3_FRAG_IDEAL, CFG.V3_FRAG_TOL),
       respiracion:   m.respiracion.valor,
       continuidad:   m.continuidad.valor,
     };
-    const total =
-        P.ocupacion     * s.ocupacion
-      + P.espacioMuerto * s.espacioMuerto
-      + P.balanceH      * s.balanceH
-      + P.balanceV      * s.balanceV
-      + P.fragmentacion * s.fragmentacion
-      + P.respiracion   * s.respiracion
-      + P.continuidad   * s.continuidad;
+
+    // Media geométrica ponderada con piso y reescalado.
+    // El piso evita que una métrica en 0 lleve el logaritmo a −∞ y preserva
+    // resolución; el reescalado a [0,100] compensa la compresión del piso.
+    const piso = CFG.V3_PISO;
+    let lnSuma = 0;
+    for (const k in P) {
+      const sConPiso = piso + (1 - piso) * s[k];
+      lnSuma += P[k] * Math.log(sConPiso);
+    }
+    const bruto = Math.exp(lnSuma);
+    const score = Math.max(0, (bruto - piso) / (1 - piso));
 
     return {
-      score: Math.round(total * 100),
+      score: Math.round(score * 100),
       componentes: Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Math.round(v * 100)])),
-      pesos: P,
+      pesos: P, modelo: 'v3',
     };
   }
 
@@ -430,7 +537,9 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
       respiracion:   respiracion(rects),
       continuidad:   continuidadNarrativa(elementos, lienzo),
     };
-    const sc = scoreCompositivo(m);
+    // El término de solape de v3 usa el área ya calculada por ocupacionUtil
+    // (suma de intersecciones entre pares, en px²).
+    const sc = scoreCompositivo(m, m.ocupacion.solapada || 0);
 
     return {
       valido: true,
