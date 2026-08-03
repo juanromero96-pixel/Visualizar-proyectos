@@ -413,6 +413,10 @@
             paresSolape, areaSolape: Math.round(areaSolape),
             oclusiones,
             capacidadReal: _capacidadDe(s),
+            // [P-7, Auditoría Integral del Motor Editorial] Factor de escala
+            // que el Monte Carlo escribió en el escenario (solo existe en
+            // desktop; en mobile el dataset no lo tiene y esto da null).
+            factorEscala: esc ? (parseFloat(esc.dataset.factorEscala) || null) : null,
             alturas: activos.map((e) => {
               const int = e.querySelector('.elemento-interior');
               return int ? int.offsetHeight : e.offsetHeight;
@@ -507,6 +511,21 @@
                                             duracion: ev.duracion }));
           window.AC_Bus.suscribir('ciclo.cerrado', (ev) =>
             this.evento('sistema.cicloCerrado', { exito: ev.exito, hash: ev.diagnosticHash }));
+          // [P-7, Auditoría Integral del Motor Editorial, §8.2 C-2]
+          // 'intervencion.ejecutada' (ya suscripto arriba) solo dice qué se
+          // ejecutó. Faltaba la decisión PREVIA del Planner: qué corrección
+          // eligió, con qué presupuesto restante, y si la escaló en vez de
+          // actuar. Sin esto no se podía distinguir "no intervino porque no
+          // detectó problema" de "no intervino porque se quedó sin
+          // presupuesto" — la ambigüedad que R4-03 dejó como hipótesis no
+          // demostrada en el ciclo de recalibración anterior.
+          window.AC_Bus.suscribir('intervencion.decidida', (ev) =>
+            this.evento('planner.decision', { correccion: ev['corrección'], sede: ev.sede,
+                                               budgetRestante: ev.budgetRestante,
+                                               simulado: ev.simulado, hash: ev.diagnosticHash }));
+          window.AC_Bus.suscribir('escalacion.emitida', (ev) =>
+            this.evento('planner.escalacion', { categoria: ev.categoria, severidad: ev.severidad,
+                                                 motivo: ev.motivo, hash: ev.diagnosticHash }));
         } catch (e) {}
       }
 
@@ -619,10 +638,42 @@
           if (serieSol.slice(i).every((v) => v === 0)) { idxSinSolape = i; break; }
         }
 
+        // [P-5, Auditoría Integral del Motor Editorial, §9.2]
+        // La auditoría encontró una serie con score FINAL 87 que solo pasó
+        // el 24% del tiempo sobre el umbral de 85 — el score final por sí
+        // solo sobreestima la experiencia cuando la convergencia es tardía.
+        // Se agrega un "score de sesión": percentil 25 de toda la serie
+        // temporal (no solo el último frame), más la fracción de tiempo
+        // que la sede pasó con score >= 85. Instrumentación pura: no decide
+        // nada, solo expone lo que ya se medía por frame de forma agregada.
+        const serieScore = F.map((f) => f.sedes.find((s) => s.id===id)?.composicion?.score)
+          .filter((x) => x != null);
+
+        // Un percentil 25 se estima como el valor a partir del cual el 75%
+        // de la muestra queda por encima; con la serie ORDENADA, es el
+        // elemento en la posición ⌊0,25×(N-1)⌋ — método del percentil más
+        // cercano, sin interpolación, suficiente para esta instrumentación.
+        function percentil25(serie) {
+          if (!serie.length) return null;
+          const s2 = [...serie].sort((a, b) => a - b);
+          return s2[Math.floor(0.25 * (s2.length - 1))];
+        }
+
+        const scoreSesion = serieScore.length ? {
+          final: serieScore[serieScore.length - 1],
+          p25: percentil25(serieScore),
+          media: +(serieScore.reduce((a, b) => a + b, 0) / serieScore.length).toFixed(1),
+          min: Math.min(...serieScore),
+          max: Math.max(...serieScore),
+          fraccionTiempoSobreUmbral:
+            +(serieScore.filter((v) => v >= 85).length / serieScore.length).toFixed(3),
+        } : null;
+
         porSede[id] = {
           alturaEscenario: Estabilidad.analizar(serieH),
           elementosVisibles: Estabilidad.analizar(serieVis, 0),
           alturaElementoMediana: Estabilidad.analizar(serieAltMediana),
+          scoreSesion,
           solape: {
             framesConSolape: serieSol.filter((v) => v > 0).length,
             paresMax: Math.max(0, ...serieSol),

@@ -110,6 +110,11 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
     // Los ideales provienen de las composiciones sin defecto (banda amplia);
     // las tolerancias, de los umbrales del modelo v1.
     V3_MUERTO_IDEAL: 0.08,  V3_MUERTO_TOL: 0.28,
+    // [P-4, Auditoría Integral del Motor Editorial] Penalización adicional
+    // por concentración topológica del espacio muerto (ver espacioMuerto()
+    // más abajo). 0,30 es una heurística declarada, no calibrada
+    // estadísticamente — expuesta aquí para ajustarla cuando haya evidencia.
+    V3_MUERTO_PESO_TOPOLOGIA: 0.30,
     V3_BALH_IDEAL:   0.05,  V3_BALH_TOL:   0.16,
     V3_BALV_IDEAL:   0.06,  V3_BALV_TOL:   0.20,
     V3_FRAG_IDEAL:   0.25,  V3_FRAG_TOL:   0.70,
@@ -200,14 +205,16 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
   // Fracción de celdas de la grilla con ocupación por debajo del umbral.
   // ══════════════════════════════════════════════════════════════════════════
   function espacioMuerto(rects, lienzo) {
-    if (!lienzo) return { valor: 1, celdasMuertas: 0, total: 0, mapa: [] };
+    if (!lienzo) return { valor: 1, celdasMuertas: 0, total: 0, mapa: [], concentracion: 0, bloqueMaximo: 0 };
     const { GRILLA_COLS: C, GRILLA_ROWS: R, MUERTO_CELDA_UMBRAL: U } = CFG;
     const cw = lienzo.width / C, ch = lienzo.height / R;
     const mapa = [];
+    const muerta = []; // grilla booleana, para el análisis de topología
     let muertas = 0;
 
     for (let r = 0; r < R; r++) {
       const fila = [];
+      const filaBool = [];
       for (let c = 0; c < C; c++) {
         const celda = {
           left: lienzo.left + c * cw, top: lienzo.top + r * ch,
@@ -218,13 +225,53 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
         let ocup = 0;
         rects.forEach((x) => { ocup += interseccion(x, celda); });
         const pct = areaCelda > 0 ? Math.min(1, ocup / areaCelda) : 0;
-        if (pct < U) muertas++;
+        const esMuerta = pct < U;
+        if (esMuerta) muertas++;
         fila.push(+pct.toFixed(3));
+        filaBool.push(esMuerta);
       }
       mapa.push(fila);
+      muerta.push(filaBool);
     }
     const total = C * R;
-    return { valor: +(muertas / total).toFixed(4), celdasMuertas: muertas, total, mapa };
+
+    // [P-4, Auditoría Integral del Motor Editorial, §6.4]
+    // "Cuatro celdas dispersas son respiración; cuatro contiguas son un
+    // agujero visible." El conteo de celdas muertas no distinguía ambos
+    // casos. Se calcula el mayor componente conexo (4-adyacencia: arriba,
+    // abajo, izquierda, derecha) de celdas muertas por flood-fill, y la
+    // fracción de las celdas muertas que quedan concentradas en ese único
+    // bloque — 1,0 si todas forman un solo bloque contiguo, cercano a 0 si
+    // están dispersas en singletons.
+    let bloqueMaximo = 0;
+    if (muertas > 0) {
+      const visitada = Array.from({ length: R }, () => Array(C).fill(false));
+      for (let r = 0; r < R; r++) {
+        for (let c = 0; c < C; c++) {
+          if (!muerta[r][c] || visitada[r][c]) continue;
+          // BFS del componente conexo que arranca en (r,c)
+          let tam = 0;
+          const pila = [[r, c]];
+          visitada[r][c] = true;
+          while (pila.length) {
+            const [fr, fc] = pila.pop();
+            tam++;
+            const vecinos = [[fr - 1, fc], [fr + 1, fc], [fr, fc - 1], [fr, fc + 1]];
+            for (const [nr, nc] of vecinos) {
+              if (nr < 0 || nr >= R || nc < 0 || nc >= C) continue;
+              if (!muerta[nr][nc] || visitada[nr][nc]) continue;
+              visitada[nr][nc] = true;
+              pila.push([nr, nc]);
+            }
+          }
+          if (tam > bloqueMaximo) bloqueMaximo = tam;
+        }
+      }
+    }
+    const concentracion = muertas > 0 ? +(bloqueMaximo / muertas).toFixed(4) : 0;
+
+    return { valor: +(muertas / total).toFixed(4), celdasMuertas: muertas, total, mapa,
+             bloqueMaximo, concentracion };
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -486,7 +533,16 @@ window.__CALIBRAR_COMPOSICION__ = (() => {
     const s = {
       ocupacion:     scoreOcupacionV3(m.ocupacion.valor),
       solape:        Math.max(0, 1 - solExceso / CFG.V3_SOLAPE_SEVERO),
-      espacioMuerto: suave(m.espacioMuerto.valor, CFG.V3_MUERTO_IDEAL, CFG.V3_MUERTO_TOL),
+      // [P-4, Auditoría Integral del Motor Editorial] El sub-score base por
+      // cantidad de celdas muertas (suave) se modula por su concentración:
+      // un mismo porcentaje de espacio muerto concentrado en un solo bloque
+      // contiguo penaliza más que el mismo porcentaje disperso. PESO_TOPOLOGIA
+      // es una heurística declarada (no ajustada estadísticamente: no hay
+      // evidencia suficiente para calibrar su valor óptimo, igual que el
+      // umbral perceptual de M-C6) — queda expuesta en CFG para calibración
+      // futura cuando existan más mediciones con heatmaps reales.
+      espacioMuerto: suave(m.espacioMuerto.valor, CFG.V3_MUERTO_IDEAL, CFG.V3_MUERTO_TOL)
+        * (1 - CFG.V3_MUERTO_PESO_TOPOLOGIA * (m.espacioMuerto.concentracion || 0)),
       balanceH:      suave(m.balance.h, CFG.V3_BALH_IDEAL, CFG.V3_BALH_TOL),
       balanceV:      suave(m.balance.v, CFG.V3_BALV_IDEAL, CFG.V3_BALV_TOL),
       fragmentacion: suave(m.fragmentacion.valor, CFG.V3_FRAG_IDEAL, CFG.V3_FRAG_TOL),

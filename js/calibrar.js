@@ -327,7 +327,13 @@
     }) || sedes[0] || null;
   }
   function _lectorAbierto() {
-    const lector = document.querySelector('.lector, .lector-sheet, [data-lector-abierto="true"]');
+    // [F-01, Auditoría Funcional QA] El Lector se reescribió como `.lem`
+    // (js/lector.js:60); este selector seguía apuntando a las clases del
+    // canal modal anterior y nunca coincidía, de modo que el Laboratorio
+    // registraba el Lector como cerrado incluso estando abierto. Unificado
+    // con el selector ya correcto de calibrar-temporal.js:297.
+    const lector = document.querySelector(
+      '#lector, .lector, .lector-sheet, [data-lector], .lem, .lem--escritorio');
     return !!(lector && (lector.classList.contains('abierto') ||
       lector.getAttribute('aria-hidden') === 'false' ||
       getComputedStyle(lector).display !== 'none'));

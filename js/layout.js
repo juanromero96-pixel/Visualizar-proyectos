@@ -31,6 +31,22 @@ const Distribuidor = (() => {
   const EPSILON = 0.5;
   const CANDIDATOS_CERCANOS = 5;
 
+  // [P-1, Auditoría Integral del Motor Editorial, §7.1 y §13]
+  // Cuántas colocaciones candidatas adicionales se generan y evalúan por
+  // score compositivo antes de aceptar una, en el canal desktop. El
+  // comentario de más arriba (líneas 9-21) ya señalaba en un ciclo previo
+  // que tocar el criterio de aceptación del Monte Carlo —no la resolución
+  // de su grilla— era "una decisión deliberada aparte" que requería su
+  // propia evidencia. Esa evidencia es la de la auditoría: el motor acepta
+  // la primera colocación sin solape, sin evaluar si está balanceada o deja
+  // huecos, lo que explica que desktop diera cero solape en las tres sedes
+  // con score compositivo de 68 a 78 (§7.1 de la auditoría).
+  // N=5 sigue la recomendación de la propia auditoría (§13, P-1: "limitar a
+  // 5-10 candidatos y medir el tiempo con /calibrar antes de fijar el
+  // valor"). No se midió tiempo real en dispositivo con este valor: queda
+  // declarado como riesgo residual en el informe de implementación.
+  const CANDIDATOS_COMPOSITIVOS = 5;
+
   function distribuir(seccion) {
     const escenario = seccion.querySelector('.escenario');
     if (!escenario) return;
@@ -386,6 +402,15 @@ const Distribuidor = (() => {
     // ya retornó). Evita el cálculo de ~2.200 candidatos × n en mobile.
     const factor = ubicarPorBusqueda(nodos, ancho, alto, zonas);
 
+    // [P-7, Auditoría Integral del Motor Editorial, §8.2 C-1]
+    // "El Laboratorio no registra el factor de escala alcanzado por el
+    // Monte Carlo — impide dirimir si el riesgo de más elementos reduciendo
+    // el factor alcanzable se materializó." Se expone como dato pasivo en
+    // el propio escenario, igual que --x/--y/--escala ya son datos que el
+    // motor escribe para sí mismo: el Laboratorio solo lo LEE, nunca lo usa
+    // para decidir nada. El Motor no depende de que nadie lo lea.
+    escenario.dataset.factorEscala = factor.toFixed(3);
+
     const clampEscritorio = (n) => limitarAlEscenario(n, ancho, alto);
     nodos.forEach(clampEscritorio);
     empujarFueraDeZonas(nodos, zonas, clampEscritorio);
@@ -425,6 +450,66 @@ const Distribuidor = (() => {
     });
   }
 
+  /**
+   * [P-1, Auditoría Integral del Motor Editorial]
+   * Genera hasta CANDIDATOS_COMPOSITIVOS colocaciones alternativas al mismo
+   * factor (intentarConFactor tiene aleatoriedad propia: entre los
+   * CANDIDATOS_CERCANOS más próximos al ancla editorial de cada nodo, elige
+   * uno al azar — por eso repetir la llamada con los mismos datos puede dar
+   * resultados distintos) y conserva la de mejor score compositivo.
+   *
+   * Usa EXACTAMENTE la misma función que /calibrar usa para evaluar la
+   * calidad (window.__CALIBRAR_COMPOSICION__.evaluar), sin tocar el DOM: se
+   * arma un array de geometría en memoria a partir de las coordenadas ya
+   * calculadas de cada candidato, no de getBoundingClientRect. Esto es lo
+   * que la auditoría pide explícitamente en su §"Revisión matemática del
+   * motor": que el criterio que decide y el criterio que mide sean el
+   * mismo, no dos formulaciones distintas que puedan discrepar.
+   *
+   * GARANTÍA DE NO REGRESIÓN: solo se consideran candidatos con
+   * todosEntraron === true (cero solape, la condición mínima ya vigente).
+   * Si el módulo de composición no está cargado, o si el candidato base no
+   * tenía todosEntraron, se devuelve el resultado original sin cambios —
+   * el comportamiento previo a esta auditoría queda intacto como piso.
+   */
+  function elegirMejorPorScoreCompositivo(resultadoBase, nodos, ancho, alto, zonas, candidatosBase, factor) {
+    const evaluador = window.__CALIBRAR_COMPOSICION__;
+    if (!evaluador || typeof evaluador.evaluar !== 'function') return resultadoBase;
+    if (!resultadoBase.todosEntraron) return resultadoBase;
+
+    const lienzo = { left: 0, top: 0, right: ancho, bottom: alto, width: ancho, height: alto };
+
+    function puntuar(resultado) {
+      const elementos = resultado.colocados.map((c) => ({
+        id: c.nodo.el.dataset.testimonioId || c.nodo.el.dataset.tipo || null,
+        tipo: c.nodo.el.dataset.tipo || null,
+        permanente: c.nodo.el.dataset.permanente === 'true',
+        rect: {
+          left: c.x - c.w / 2, top: c.y - c.h / 2,
+          right: c.x + c.w / 2, bottom: c.y + c.h / 2,
+          width: c.w, height: c.h,
+        },
+      }));
+      try {
+        const ev = evaluador.evaluar(elementos, lienzo);
+        return ev && ev.valido ? ev.scoreCompositivo : -1;
+      } catch (err) {
+        return -1; // si la evaluación falla por cualquier motivo, no bloquea la colocación
+      }
+    }
+
+    let mejor = resultadoBase;
+    let mejorScore = puntuar(resultadoBase);
+
+    for (let i = 0; i < CANDIDATOS_COMPOSITIVOS - 1; i++) {
+      const candidato = intentarConFactor(nodos, ancho, alto, zonas, candidatosBase, factor);
+      if (!candidato.todosEntraron) continue; // nunca se cambia a una colocación con solape
+      const score = puntuar(candidato);
+      if (score > mejorScore) { mejor = candidato; mejorScore = score; }
+    }
+    return mejor;
+  }
+
   function ubicarPorBusqueda(nodos, ancho, alto, zonas) {
     const candidatosBase = [];
     for (let y = MARGEN_ESCENARIO; y <= alto - MARGEN_ESCENARIO; y += PASO_BUSQUEDA)
@@ -451,6 +536,14 @@ const Distribuidor = (() => {
         resultado = intentarConFactor(nodos, ancho, alto, zonas, candidatosBase, factor);
       }
     }
+
+    // [P-1, Auditoría Integral del Motor Editorial] El factor ya está
+    // decidido arriba (resuelve la condición mínima: cero solape, con el
+    // mayor o menor tamaño que esa condición permite). Ahora, al mismo
+    // factor, se generan alternativas y se conserva la de mejor score
+    // compositivo — sin arriesgar la condición mínima, que sigue siendo
+    // obligatoria para cualquier candidato considerado.
+    resultado = elegirMejorPorScoreCompositivo(resultado, nodos, ancho, alto, zonas, candidatosBase, factor);
 
     resultado.colocados.forEach((c) => {
       c.nodo.x = c.x;

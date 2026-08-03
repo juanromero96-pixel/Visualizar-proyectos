@@ -41,7 +41,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v10.0-2026-07-30-despliegue';
+  window.__BUILD__ = 'v12.0-2026-08-03-motor-editorial';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -119,13 +119,28 @@ window.__DIAG__ = DIAG;
   // las tarjetas, las medidas usadas para distribuir no coinciden con el
   // tamaño real una vez que Roboto termina de cargar — se recalcula una
   // vez más cuando eso pasa, además de en cada cambio de tamaño de ventana.
+  // [F-02, Auditoría Funcional QA] El reveal de la sede inicial (más abajo,
+  // `Secuenciador.entrar(secciones[0])`) es síncrono. En mobile, antes de
+  // este cambio, ningún cálculo de layout corría de forma síncrona — el
+  // primero llegaba recién en el callback de fonts.ready, que por ser una
+  // promesa se resuelve DESPUÉS del código síncrono. La ventana entre revelar
+  // y posicionar se midió en 13 sesiones reales (3,0–14,7 ms, siempre por
+  // debajo de un frame con las fuentes en caché), pero con caché de fuentes
+  // fría podría alargarse lo suficiente para pintarse. Esta bandera evita
+  // revelar dos veces y permite mover el reveal al primer layout real.
+  let _sede0Revelada = false;
+
   if (document.fonts?.ready) document.fonts.ready.then(() => {
     if (window.esMobile?.()) {
       // ── MOBILE — Rotacion ANTES de recalcular ANTES de Secuenciador ────────
       // 1. Rotacion.iniciar → configurar inmediato → poolEspera con --rotacion-espera
       // 2. recalcular → layout.js ve solo los 6 finales (filter :not(.rotacion-espera))
-      // 3. (después, en el flujo síncrono) Secuenciador.entrar → revela 6 posicionados
-      if (secciones[0]) { Rotacion.iniciar(secciones[0]); recalcular(secciones[0]); }
+      // 3. Secuenciador.entrar → revela 6 posicionados (recién ahora, no antes)
+      if (secciones[0]) {
+        Rotacion.iniciar(secciones[0]);
+        recalcular(secciones[0]);
+        if (!_sede0Revelada) { Secuenciador.entrar(secciones[0]); _sede0Revelada = true; }
+      }
     } else {
       // ── DESKTOP — configuración inmediata también aquí (DTI §5.1/E2):
       // fonts.ready puede cambiar las medidas reales; se re-configura (la
@@ -170,26 +185,45 @@ window.__DIAG__ = DIAG;
   // (Δh grande, >120px) sí dispara recalcular (es un cambio real de viewport).
   let pendienteResize = null;
   let _lastW = window.innerWidth, _lastH = window.innerHeight;
+
+  // [F-08, Auditoría Funcional QA] La reconfiguración de resize se reutiliza
+  // también para orientationchange, en vez de asumir que resize siempre lo
+  // cubre. En la mayoría de navegadores un giro de pantalla también dispara
+  // resize, pero no hay evidencia medida que lo confirme para este proyecto
+  // (cero sesiones en horizontal en la evidencia de /calibrar); un listener
+  // explícito no depende de esa suposición.
+  function _reconfigurarPorCambioDeViewport() {
+    if (window.esMobile?.()) {
+      // E2: cambio REAL de viewport — la capacidad medida puede variar.
+      // Reconfiguración ordenada: se invalidan las firmas, se reconfigura
+      // la sede activa (marcas nuevas ANTES del layout) y luego el global
+      // redistribuye; las sedes no visitadas se configuran en su visita.
+      secciones.forEach((s) => { delete s.dataset.rotConfig; });
+      const activa = sedeActivaActual();
+      if (activa) Rotacion.iniciar(activa);
+      recalcular();
+    } else {
+      recalcular();
+    }
+  }
+
   window.addEventListener('resize', () => {
     const w = window.innerWidth, h = window.innerHeight;
     if (window.esMobile?.() && w === _lastW && Math.abs(h - _lastH) < 120) return;
+    // [F-03, Auditoría Funcional QA] Los deltas se calculaban DESPUÉS de
+    // actualizar _lastW/_lastH, así que dw y dh daban siempre 0 — el
+    // diagnóstico de resize quedaba vacío. Se calculan antes de reasignar.
+    const dw = w - _lastW, dh = h - _lastH;
     _lastW = w; _lastH = h;
-    DIAG.log('resize', { dw: w - _lastW, dh: h - _lastH });
+    DIAG.log('resize', { dw, dh });
     clearTimeout(pendienteResize);
-    pendienteResize = setTimeout(() => {
-      if (window.esMobile?.()) {
-        // E2: cambio REAL de viewport — la capacidad medida puede variar.
-        // Reconfiguración ordenada: se invalidan las firmas, se reconfigura
-        // la sede activa (marcas nuevas ANTES del layout) y luego el global
-        // redistribuye; las sedes no visitadas se configuran en su visita.
-        secciones.forEach((s) => { delete s.dataset.rotConfig; });
-        const activa = sedeActivaActual();
-        if (activa) Rotacion.iniciar(activa);
-        recalcular();
-      } else {
-        recalcular();
-      }
-    }, 180);
+    pendienteResize = setTimeout(_reconfigurarPorCambioDeViewport, 180);
+  });
+
+  window.addEventListener('orientationchange', () => {
+    DIAG.log('orientationchange', { angulo: screen.orientation?.angle ?? null });
+    clearTimeout(pendienteResize);
+    pendienteResize = setTimeout(_reconfigurarPorCambioDeViewport, 180);
   });
 
   // E4 (DTI §8): variante CHIP para videos cuando la sede tiene ≥3.
@@ -259,7 +293,23 @@ window.__DIAG__ = DIAG;
   document.querySelector('.ruta-flecha--siguiente')?.addEventListener('click', () => carrusel.siguiente());
 
   actualizarRuta(0);
-  if (secciones[0]) Secuenciador.entrar(secciones[0]);
+  // [F-02, Auditoría Funcional QA] En mobile con la API de fuentes disponible,
+  // el reveal ya ocurrió arriba, dentro de fonts.ready, después del primer
+  // layout real (_sede0Revelada lo garantiza). Este reveal síncrono queda
+  // como comportamiento normal en desktop (que ya calculó layout de forma
+  // síncrona más arriba) y como fallback en mobile solo para navegadores sin
+  // Fonts Loading API — caso excepcional en el que, sin este respaldo, la
+  // sede inicial no llegaría a revelarse nunca.
+  if (secciones[0] && !_sede0Revelada) {
+    if (window.esMobile?.() && !document.fonts?.ready) {
+      // Fallback: sin la API de fuentes, se hace aquí lo mismo que el
+      // bloque de fonts.ready hace en los navegadores que sí la tienen.
+      Rotacion.iniciar(secciones[0]);
+      recalcular(secciones[0]);
+    }
+    Secuenciador.entrar(secciones[0]);
+    _sede0Revelada = true;
+  }
 })();
 
 function mostrarErrorCarga(error) {
@@ -943,12 +993,6 @@ function inicialesDe(nombreCompleto = '') {
   return (primera + ultima).toUpperCase();
 }
 
-function hashSimple(texto = '') {
-  let hash = 0;
-  for (const caracter of String(texto)) hash = (hash * 31 + caracter.charCodeAt(0)) % 1000;
-  return Math.abs(hash);
-}
-
 /**
  * Al pasar el mouse o el foco de teclado por una tarjeta: la trae al
  * frente, la agranda levemente y atenúa (sin ocultar) a las demás. Al
@@ -1162,32 +1206,39 @@ const Rotacion = (() => {
       const hProm = n ? sumH / n : 190;
       return Math.max(4, Math.min(8, Math.floor((wEsc * altUtil * 0.65) / (wProm * hProm))));
     }
-    // ── DESKTOP · [R4-01 ciclo 4] Divisor recalibrado 120000 → 90000 ──────
-    // EXCEPCIÓN AUTORIZADA sobre el Motor Editorial: el encargo autoriza
-    // expresamente modificar «parámetros del Motor Editorial, constantes,
-    // umbrales, modelos de decisión del layout». El divisor es la constante
-    // del modelo de decisión de capacidad desktop. El cambio se acota a
-    // esta línea; ninguna otra parte de app.js se modifica.
+    // ── DESKTOP · [P-2, Auditoría Integral del Motor Editorial] ────────────
+    // Capacidad por ÁREA REAL, reemplaza el divisor constante (R4-01:
+    // W×H/90000). La fórmula anterior ignoraba el tamaño real de cada
+    // elemento — limitación L-3 señalada en la auditoría (§7.2): «la
+    // capacidad desktop ignora el tamaño real de los elementos, a diferencia
+    // de la fórmula mobile». Se porta el mismo patrón que ya usa la rama
+    // mobile de esta función (medir wProm/hProm de .elemento-interior) y se
+    // apunta al MISMO objetivo de ocupación que /calibrar usa para EVALUAR
+    // esas composiciones (AC_K.MOBILE.OCUPACION_OBJETIVO_DESKTOP = 0,50,
+    // ya calibrado en el ciclo anterior con evidencia real de 1455×865):
+    // una sola cadena matemática para decidir y para medir, no dos criterios
+    // distintos — es la coherencia que la auditoría exige explícitamente.
     //
-    // EVIDENCIA (primera medición del canal desktop, 1455×865, 3 sedes):
-    //   ocupación 40,4 % / 29,3 % / 30,4 %   media 33,4 %
-    //   objetivo 50-56 %   →   déficit de 19,6 puntos porcentuales
-    //   espacio muerto hasta 33,3 %   ·   cero solape en las tres
-    //   score 78 / 74 / 68   contra 92-98 de la banda mobile amplia
-    //
-    // El divisor 120000 daba 1.258.575/120000 = 10 elementos, que coincide
-    // exactamente con lo observado. Con 90000 da 14, y la proyección sobre
-    // las áreas medidas lleva Posadas a 56,6 % (dentro de banda).
-    //
-    // LÍMITE DECLARADO: Oberá y Eldorado no pueden pasar de 35-36 % porque su
-    // corpus tiene 12 elementos. Cerrar esa brecha exigiría un factor de
-    // escala mayor, que el criterio de aceptación del Monte Carlo limita.
-    //
-    // RIESGO: más elementos reducen el factor de escala alcanzable y podrían
-    // introducir solape donde hoy no hay. El techo de 22 sigue actuando en
-    // pantallas grandes. Verificación en dispositivo obligatoria: si aparece
-    // solape, revertir a 120000. Ver DTR §6/R4-01 y §12.
-    return Math.max(8, Math.min(22, Math.round(window.innerWidth * window.innerHeight / 90000)));
+    // Fallback: por-elemento, si offsetWidth/Height da 0 (viewport aún sin
+    // layout, o entorno de prueba sin render real), se usa 200×120 como en
+    // la rama mobile — nunca hay división por área cero.
+    const escD = escenario || document.querySelector('.escenario');
+    const rEscD = escD?.getBoundingClientRect();
+    const areaLienzo = (rEscD?.width || window.innerWidth) * (rEscD?.height || window.innerHeight);
+    const listaD = (candidatos && candidatos.length) ? candidatos
+      : Array.from((escD || document).querySelectorAll('.elemento'));
+    let sumAreaD = 0, nD = 0;
+    listaD.forEach((el) => {
+      const it = el.querySelector('.elemento-interior');
+      if (!it) return;
+      const e = Number(el.dataset.escala) || 1;
+      sumAreaD += (it.offsetWidth || 200) * (it.offsetHeight || 120) * e * e;
+      nD++;
+    });
+    const areaPromD = nD ? sumAreaD / nD : (200 * 120);
+    const objetivoD = window.AC_K?.MOBILE?.OCUPACION_OBJETIVO_DESKTOP ?? 0.50;
+    const capPorArea = Math.round((areaLienzo * objetivoD) / areaPromD);
+    return Math.max(8, Math.min(22, capPorArea));
   }
 
   function tipoPrioridad(el) {
@@ -1204,13 +1255,26 @@ const Rotacion = (() => {
     return PRIORIDAD_TIPO[t] ?? 99;
   }
 
+  // [F-04, Auditoría Funcional QA] La regla base (.elemento en styles.css)
+  // anima opacity Y transform juntas usando --duracion. Estas dos funciones
+  // fijaban `transition` inline con solo `opacity`, lo que en la práctica
+  // reemplaza la propiedad completa y deja sin transición cualquier cambio
+  // de --x/--y que coincida con la ventana de un fade (por ejemplo, si el
+  // resto de la escena se reacomoda en el mismo ciclo de rotación): ese
+  // reposicionamiento saltaría de golpe en vez de animar. Se declaran ambas
+  // propiedades, con la misma curva que la regla base, para que el fade siga
+  // funcionando igual y además cubra ese caso. La duración de opacidad no
+  // cambia; el transform usa la variable --duracion propia del elemento
+  // (la misma que ya usa la regla base), no un valor nuevo.
   function ocultarConFade(el) {
-    el.style.transition = `opacity ${FADE_SALIDA_MS}ms ease`;
+    el.style.transition =
+      `opacity ${FADE_SALIDA_MS}ms ease, transform var(--duracion) cubic-bezier(0.16, 0.84, 0.44, 1)`;
     el.classList.add('elemento--rotacion-espera');
   }
 
   function mostrarConFade(el) {
-    el.style.transition = `opacity ${FADE_ENTRADA_MS}ms ease`;
+    el.style.transition =
+      `opacity ${FADE_ENTRADA_MS}ms ease, transform var(--duracion) cubic-bezier(0.16, 0.84, 0.44, 1)`;
     el.classList.remove('elemento--rotacion-espera');
     // DTI Modelo Temporal §5.4 (E4): si el entrante es una autoridad que el
     // sorteo K=2 no eligió para la apertura, también trae esta clase — sin
