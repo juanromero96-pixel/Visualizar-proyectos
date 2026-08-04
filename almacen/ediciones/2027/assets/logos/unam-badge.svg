@@ -1,0 +1,11 @@
+<!-- PLACEHOLDER — reemplazar por el isotipo oficial UNaM (archivo vectorial
+     provisto por la Secretaría/diseño institucional). Esto NO es una
+     reproducción del isotipo real: es un marcador temporal para poder
+     ver el layout mientras no se cuenta con el archivo oficial. -->
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#00a3e0" stroke-width="3"/>
+  <path d="M18 24 V38 a14 14 0 0 0 28 0 V24" fill="none" stroke="#00a3e0" stroke-width="5" stroke-linecap="round"/>
+  <line x1="32" y1="16" x2="32" y2="30" stroke="#7d4e24" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 16 q-6 2 -8 8" fill="none" stroke="#3aaa35" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 20 q6 2 8 8" fill="none" stroke="#3aaa35" stroke-width="3" stroke-linecap="round"/>
+</svg>

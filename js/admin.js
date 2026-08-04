@@ -110,6 +110,44 @@ const ESQUEMA_MULTIMEDIA = [
 let estado = { sedes: [], testimonios: [], multimedia: [], config: null };
 let sedeEscenaActual = null;
 
+// [Integración backend, DTI §6.3 / DTC cap.10] Edición sobre la que el panel
+// escribe. Sin selector de edición todavía en la UI (ver Informe de
+// Implementación §7, requisito pendiente #3): se resuelve UNA VEZ al iniciar,
+// tomando la edición publicada. Si no hay backend o no hay edición publicada,
+// queda en null y guardarEnBackend() se omite — el panel sigue funcionando
+// con localStorage exactamente como antes de esta integración.
+let _edicionActual = null;
+
+async function _resolverEdicionActual() {
+  try {
+    const resp = await fetch('/api/v1/ediciones/activa');
+    if (!resp.ok) return null;
+    const meta = await resp.json();
+    return meta.anio;
+  } catch { return null; }
+}
+
+/** Guarda en localStorage (sin cambios) y, si hay backend, también en servidor. */
+async function _guardarConBackend(nombre, datos, etiqueta) {
+  Almacen.guardar(nombre, datos);
+  if (_edicionActual == null) {
+    mostrarEstado(`${etiqueta} guardado en este navegador (sin backend conectado)`);
+    return;
+  }
+  const resultado = await Almacen.guardarEnBackend(_edicionActual, nombre, datos);
+  if (resultado.ok) {
+    mostrarEstado(`${etiqueta} guardado y confirmado en el servidor`);
+  } else {
+    const MENSAJES = {
+      SESION_EXPIRADA: 'Sesión expirada — el cambio quedó solo en este navegador. Volvé a iniciar sesión.',
+      EDICION_CONGELADA: 'La edición está en revisión o publicada y no admite cambios directos.',
+      BLOQUEO_ACTIVO: 'Otra persona está editando esto en este momento.',
+      BACKEND_INALCANZABLE: `${etiqueta} guardado solo en este navegador (backend no disponible).`,
+    };
+    mostrarEstado(MENSAJES[resultado.motivo] || `${etiqueta} guardado en este navegador; el servidor rechazó el cambio.`, true);
+  }
+}
+
 (async function iniciarAdmin() {
   [estado.sedes, estado.testimonios, estado.multimedia, estado.config] = await Promise.all([
     Almacen.cargar('sedes'),
@@ -117,6 +155,7 @@ let sedeEscenaActual = null;
     Almacen.cargar('multimedia'),
     Almacen.cargar('config'),
   ]);
+  _edicionActual = await _resolverEdicionActual();
 
   iniciarPestañas();
   renderizarSedes();
@@ -148,12 +187,13 @@ function iniciarBarraSuperior() {
   });
 }
 
-function mostrarEstado(texto) {
+function mostrarEstado(texto, esError = false) {
   const indicador = document.getElementById('indicador-guardado');
   indicador.textContent = texto;
   indicador.classList.add('indicador-guardado--visible');
+  indicador.classList.toggle('indicador-guardado--error', !!esError);
   clearTimeout(indicador._temporizador);
-  indicador._temporizador = setTimeout(() => indicador.classList.remove('indicador-guardado--visible'), 1800);
+  indicador._temporizador = setTimeout(() => indicador.classList.remove('indicador-guardado--visible'), esError ? 3200 : 1800);
 }
 
 // ---------------------------------------------------------------------------
@@ -208,9 +248,8 @@ function renderizarSedes() {
   });
 }
 
-function guardarSedes() {
-  Almacen.guardar('sedes', estado.sedes);
-  mostrarEstado('Sedes guardadas en este navegador');
+async function guardarSedes() {
+  await _guardarConBackend('sedes', estado.sedes, 'Sedes');
   refrescarEscenaSiCorresponde();
 }
 
@@ -275,7 +314,7 @@ function eliminarTestimonio(item) {
   renderizarTestimonios();
 }
 
-function guardarTestimonios() {
+async function guardarTestimonios() {
   estado.testimonios.forEach((item) => {
     if (typeof item.citasTexto === 'string') {
       item.citas = item.citasTexto
@@ -285,8 +324,7 @@ function guardarTestimonios() {
       if (!item.citas.length) item.citas = [''];
     }
   });
-  Almacen.guardar('testimonios', estado.testimonios.map(({ citasTexto, ...resto }) => resto));
-  mostrarEstado('Testimonios guardados en este navegador');
+  await _guardarConBackend('testimonios', estado.testimonios.map(({ citasTexto, ...resto }) => resto), 'Testimonios');
   refrescarEscenaSiCorresponde();
 }
 
@@ -348,9 +386,8 @@ function eliminarMultimedia(item) {
   renderizarMultimedia();
 }
 
-function guardarMultimedia() {
-  Almacen.guardar('multimedia', estado.multimedia);
-  mostrarEstado('Multimedia guardada en este navegador');
+async function guardarMultimedia() {
+  await _guardarConBackend('multimedia', estado.multimedia, 'Multimedia');
   refrescarEscenaSiCorresponde();
 }
 
@@ -424,7 +461,7 @@ function renderizarConfiguracion() {
     { clave: 'logoPath', etiqueta: 'Ruta del logo (SVG)', tipo: 'text' },
   ];
 
-  const formulario = Editor.crearFormulario(trabajo, esquema, () => {
+  const formulario = Editor.crearFormulario(trabajo, esquema, async () => {
     estado.config.evento.nombre = trabajo.nombre;
     estado.config.evento.edicion = trabajo.edicion;
     estado.config.evento.fechas = trabajo.fechas;
@@ -433,8 +470,7 @@ function renderizarConfiguracion() {
     estado.config.evento.bajada = trabajo.bajada;
     estado.config.marca.badge = trabajo.badge;
     estado.config.marca.logoPath = trabajo.logoPath;
-    Almacen.guardar('config', estado.config);
-    mostrarEstado('Configuración guardada en este navegador');
+    await _guardarConBackend('config', estado.config, 'Configuración');
   });
 
   contenedor.appendChild(formulario);

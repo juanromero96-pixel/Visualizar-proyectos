@@ -41,7 +41,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v12.0-2026-08-03-motor-editorial';
+  window.__BUILD__ = 'v14.1-2026-08-04-correccion';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -385,7 +385,16 @@ function pintarSedes(sedesVisibles, testimonios, registros, multimedia) {
       ...registros
         .filter((r) => r.sede === sede.id && r.visible)
         .map((r) => ({ ...r, _tipo: r.tipo === 'conceptual' ? 'registro-conceptual' : 'registro-ua' })),
-      ...multimedia.filter((m) => m.sede === sede.id && m.visible).map((m) => ({ ...m, _tipo: m.tipo })),
+      // [Alcance institucional, integración Graduados UNaM] Un elemento
+      // multimedia normalmente pertenece a una sola sede (m.sede === sede.id).
+      // Se admite una única excepción, marcada explícitamente por el campo
+      // alcanceInstitucional: ese registro se evalúa en las tres pasadas de
+      // sede y aparece en las tres, sin triplicar el JSON. Es exactamente la
+      // extensión mínima de esquema que la tarea autorizaba: para los 25
+      // elementos que no tienen ese campo, `m.alcanceInstitucional === true`
+      // da `false` (undefined === true), y la condición se reduce a la de
+      // siempre — cero cambio de comportamiento para el contenido existente.
+      ...multimedia.filter((m) => (m.sede === sede.id || m.alcanceInstitucional === true) && m.visible).map((m) => ({ ...m, _tipo: m.tipo })),
     ].sort((a, b) => a.ordenNarrativo - b.ordenNarrativo);
 
     items.forEach((item) => escenario.appendChild(crearElemento(item)));
@@ -788,7 +797,7 @@ function crearTarjetaYoutubeVideo(item, interior) {
 
 /**
  * Cuántas autoridades de alcance UNaM se muestran a la vez, de las 5
- * disponibles (Franco, Catogui, Spasiuk, Guidec, Matot) — nunca todas
+ * disponibles (Franco, Catogui, Spasiuk, Guidec, Mathot) — nunca todas
  * juntas, para que no dominen el mural por sobre las experiencias de
  * las Unidades Académicas, que son el eje narrativo principal.
  */

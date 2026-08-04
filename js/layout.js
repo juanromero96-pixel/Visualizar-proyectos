@@ -629,7 +629,7 @@ const Distribuidor = (() => {
    * su identidad ES la ausencia de fondo (§4.5 del DTF). Eso lo deja sin
    * la defensa espacial que sí tiene cualquier tarjeta con fondo opaco:
    * si otro elemento invade su SEPARACION_MINIMA normal, su texto puede
-   * quedar parcialmente cubierto (observado: Matot sobre «Síntesis» en
+   * quedar parcialmente cubierto (observado: Mathot sobre «Síntesis» en
    * Posadas — dentro de la tolerancia declarada, pero en el límite). Solo
    * en mobile (donde SEPARACION_MINIMA=8 ya es angosta) se le da un
    * colchón extra cuando alguno de los dos nodos del par es conceptual —

@@ -1,0 +1,13 @@
+{
+  "ts": "2026-08-04T02:05:25.511Z",
+  "motivo": "previo-a-restauracion",
+  "usuarioId": "usr_test001",
+  "anio": "2026",
+  "archivos": {
+    "sedes": true,
+    "testimonios": true,
+    "registros": true,
+    "multimedia": true,
+    "config": true
+  }
+}

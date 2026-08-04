@@ -19,7 +19,7 @@
   <meta property="og:description" content="Compendio digital de la Primera Semana Regional de la Extensión Universitaria de la Universidad Nacional de Misiones. Posadas · Oberá · Eldorado, mayo 2026." />
   <meta property="og:image" content="assets/logos/unam-logo-oficial.png" />
   <meta property="og:type" content="website" />
-  <meta name="build" content="v12.0-2026-08-03-motor-editorial" />
+  <meta name="build" content="v14.1-2026-08-04-correccion" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -255,8 +255,11 @@
       <!-- ── Panel 4: Acerca de ─────────────────────────────────────── -->
 
       <!-- ── Panel: La semana en números ─────────────────────────────────
-           Cifras verificadas contra el corpus (data/*.json) al 2026-07-27.
-           25 testimonios + 13 registros + 8 piezas audiovisuales = 46 piezas. -->
+           Cifras verificadas contra el corpus (data/*.json) al 2026-08-04.
+           25 testimonios + 13 registros + 26 piezas audiovisuales = 64 piezas.
+           El total de audiovisuales incluye 1 registro de alcance institucional
+           (Martín Mathot, Área de Graduados) que aparece en las tres sedes desde
+           un único registro en multimedia.json (campo alcanceInstitucional). -->
       <section class="cajero-panel" id="panel-numeros" role="tabpanel" aria-labelledby="tab-numeros" hidden>
 
         <h2 class="cajero-seccion-titulo">La semana en números</h2>
@@ -269,7 +272,7 @@
 
         <div class="numeros-grid" role="list">
           <div class="numeros-kpi numeros-kpi--destacado" role="listitem">
-            <span class="numeros-cifra" data-contador="46">46</span>
+            <span class="numeros-cifra" data-contador="64">64</span>
             <span class="numeros-etiqueta">piezas documentales</span>
             <span class="numeros-detalle">testimonios, registros y audiovisuales</span>
           </div>
@@ -294,18 +297,18 @@
         <div class="numeros-barras">
           <div class="numeros-barra-fila">
             <span class="numeros-barra-nombre">Testimonios</span>
-            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:100%"></div></div>
+            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:96%"></div></div>
             <span class="numeros-barra-valor">25</span>
           </div>
           <div class="numeros-barra-fila">
             <span class="numeros-barra-nombre">Registros</span>
-            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:52%"></div></div>
+            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:50%"></div></div>
             <span class="numeros-barra-valor">13</span>
           </div>
           <div class="numeros-barra-fila">
             <span class="numeros-barra-nombre">Audiovisuales</span>
-            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:32%"></div></div>
-            <span class="numeros-barra-valor">8</span>
+            <div class="numeros-barra-pista"><div class="numeros-barra-relleno" style="--pct:100%"></div></div>
+            <span class="numeros-barra-valor">26</span>
           </div>
         </div>
 
@@ -313,18 +316,18 @@
         <div class="numeros-sedes">
           <div class="numeros-sede">
             <span class="numeros-sede-nombre">Posadas</span>
-            <span class="numeros-sede-cifra">20</span>
-            <span class="numeros-sede-desglose">9 testimonios · 5 registros · 6 audiovisuales</span>
+            <span class="numeros-sede-cifra">31</span>
+            <span class="numeros-sede-desglose">9 testimonios · 5 registros · 17 audiovisuales</span>
           </div>
           <div class="numeros-sede">
             <span class="numeros-sede-nombre">Oberá</span>
-            <span class="numeros-sede-cifra">14</span>
-            <span class="numeros-sede-desglose">8 testimonios · 4 registros · 2 audiovisuales</span>
+            <span class="numeros-sede-cifra">19</span>
+            <span class="numeros-sede-desglose">8 testimonios · 4 registros · 7 audiovisuales</span>
           </div>
           <div class="numeros-sede">
             <span class="numeros-sede-nombre">Eldorado</span>
-            <span class="numeros-sede-cifra">12</span>
-            <span class="numeros-sede-desglose">8 testimonios · 4 registros</span>
+            <span class="numeros-sede-cifra">13</span>
+            <span class="numeros-sede-desglose">8 testimonios · 4 registros · 1 audiovisual</span>
           </div>
         </div>
 
@@ -348,7 +351,27 @@
           </div>
         </div>
 
-        <p class="numeros-nota">Cifras verificadas contra el corpus documental al 27 de julio de 2026. Cada pieza conserva su atribución de fuente primaria.</p>
+        <p class="cajero-sub">Relevamiento de pósters de la Semana Regional</p>
+        <div class="cajero-seccion-texto">
+          <p>De forma independiente al archivo de este compendio, la UNaM inició un relevamiento sistemático de los pósters publicados en la Semana Regional, con el propósito de construir una base institucional que permita consultar, analizar y comunicar información estratégica sobre las acciones de extensión desarrolladas.</p>
+        </div>
+        <div class="numeros-grid numeros-grid--secundaria" role="list">
+          <div class="numeros-kpi numeros-kpi--pequeno" role="listitem">
+            <span class="numeros-cifra" data-contador="142">142</span>
+            <span class="numeros-etiqueta">pósters relevados</span>
+          </div>
+          <div class="numeros-kpi numeros-kpi--pequeno" role="listitem">
+            <span class="numeros-cifra" data-contador="8">8</span>
+            <span class="numeros-etiqueta">unidades académicas</span>
+          </div>
+          <div class="numeros-kpi numeros-kpi--pequeno" role="listitem">
+            <span class="numeros-cifra" data-contador="7">7</span>
+            <span class="numeros-etiqueta">ejes temáticos</span>
+          </div>
+        </div>
+        <p class="numeros-nota">Cifras del relevamiento de pósters, preliminares — Documento ejecutivo, julio de 2026. Constituyen una base reutilizable para futuras ediciones de la Semana Regional.</p>
+
+        <p class="numeros-nota">Cifras del archivo de este compendio verificadas al 4 de agosto de 2026. Cada pieza conserva su atribución de fuente primaria.</p>
 
       </section>
 

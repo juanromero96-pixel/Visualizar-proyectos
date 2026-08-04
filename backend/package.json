@@ -1,0 +1,22 @@
+{
+  "name": "compendio-unam-backend",
+  "version": "1.0.0",
+  "description": "Backend del Compendio Digital UNaM — administrador de archivos JSON (DTI/DTC)",
+  "private": true,
+  "main": "src/servidor.js",
+  "scripts": {
+    "start": "node src/servidor.js",
+    "crear-usuario": "node scripts/crear-usuario-inicial.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "argon2": "^0.45.1",
+    "cookie-parser": "^1.4.7",
+    "cookie-signature": "^1.2.2",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "sharp": "^0.35.3"
+  }
+}

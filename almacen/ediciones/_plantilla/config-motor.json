@@ -1,0 +1,102 @@
+{
+  "_advertencia": "Plantilla para ediciones nuevas. Los valores se heredan de la última edición calibrada (DTC §10.2: se clona lo estructural, no el contenido — los parámetros del motor son estructurales).",
+  "versionEsquema": 1,
+  "actualizado": null,
+  "actualizadoPor": "sistema",
+  "capacidad": {
+    "CAP_CRITICO": {
+      "valor": 4,
+      "nivel": "rojo",
+      "evidencia": "3 dispositivos mobile-crítico, altUtil<560"
+    },
+    "CAP_ESTANDAR": {
+      "valor": 6,
+      "nivel": "rojo",
+      "evidencia": "N=1 dispositivo (432x814, altUtil=670)"
+    },
+    "CAP_AMPLIO": {
+      "valor": 8,
+      "nivel": "rojo",
+      "evidencia": "N=1 dispositivo (436x919, altUtil=775), confirmado score 92-98"
+    },
+    "PERFIL_CRITICO_LIMITE": {
+      "valor": 560,
+      "nivel": "rojo",
+      "evidencia": "umbral nunca cruzado por un par de dispositivos cercano"
+    },
+    "PERFIL_AMPLIO_LIMITE": {
+      "valor": 760,
+      "nivel": "rojo",
+      "evidencia": "umbral nunca cruzado por un par de dispositivos cercano"
+    }
+  },
+  "ocupacion": {
+    "OCUPACION_OBJETIVO": {
+      "valor": 0.53,
+      "nivel": "rojo",
+      "evidencia": "banda de calidad confirmada en 4 rondas de calibración mobile"
+    },
+    "OCUPACION_OBJETIVO_DESKTOP": {
+      "valor": 0.5,
+      "nivel": "rojo",
+      "evidencia": "N=1 sesión desktop (1455x865); Oberá/Eldorado limitados por corpus"
+    }
+  },
+  "alturasReferencia": {
+    "ALTURA_REGISTRO_UA": {
+      "valor": 187,
+      "nivel": "rojo",
+      "evidencia": "N=8176 mediciones, sigma=6.2, CV=3.3% — confirmado"
+    },
+    "ALTURA_TESTIMONIO": {
+      "valor": 104,
+      "nivel": "rojo",
+      "evidencia": "N=13645 mediciones, sigma=11.3, CV=10.6%"
+    },
+    "ALTURA_VIDEO": {
+      "valor": 180,
+      "nivel": "rojo",
+      "evidencia": "N=568 mediciones, sigma=51.8, CV=35.2% — alta variabilidad declarada"
+    },
+    "ALTURA_CONCEPTUAL": {
+      "valor": 119,
+      "nivel": "rojo",
+      "evidencia": "N=1225 mediciones, sigma=4.4, CV=3.7%"
+    }
+  },
+  "layout": {
+    "SEPARACION_MINIMA_MOBILE": {
+      "valor": 8,
+      "nivel": "rojo",
+      "evidencia": "constante de diseño del canal mobile"
+    },
+    "SEPARACION_MINIMA_DESKTOP": {
+      "valor": 16,
+      "nivel": "rojo",
+      "evidencia": "constante de diseño del canal desktop (Monte Carlo)"
+    },
+    "FACTOR_MAXIMO": {
+      "valor": 1.6,
+      "nivel": "rojo",
+      "evidencia": "techo del Monte Carlo; el límite efectivo lo impone el criterio de aceptación, no esta constante"
+    },
+    "MIN_VISIBLE": {
+      "valor": 3,
+      "nivel": "rojo",
+      "evidencia": "invariante editorial, nunca alcanzado en la evidencia disponible"
+    }
+  },
+  "scoreCompositivo": {
+    "_nota": "Pesos del modelo v3 de js/calibrar-composicion.js. Administrables aquí a futuro; hoy solo se reflejan en modo lectura.",
+    "pesos": {
+      "ocupacion": 0.18,
+      "solape": 0.2,
+      "espacioMuerto": 0.14,
+      "balanceH": 0.12,
+      "balanceV": 0.1,
+      "fragmentacion": 0.08,
+      "respiracion": 0.1,
+      "continuidad": 0.08
+    }
+  }
+}

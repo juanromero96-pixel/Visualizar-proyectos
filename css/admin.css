@@ -226,6 +226,12 @@ body {
 .indicador-guardado--visible {
   transform: translate(50%, 0);
 }
+/* [Integración backend] Variante para cuando guardarEnBackend() falla:
+   el cambio quedó solo en localStorage y conviene distinguirlo visualmente
+   del guardado confirmado en servidor (--unam-negro por defecto). */
+.indicador-guardado--error {
+  background: var(--unam-rojo);
+}
 
 /* =============================================================================
    Pestañas

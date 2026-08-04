@@ -42,6 +42,45 @@ const Almacen = (() => {
     } catch (e) { return false; }
   }
 
+  /**
+   * INTEGRACIÓN CON EL BACKEND (DTI §12.2) — único punto de integración del
+   * frontend con el nuevo backend. Orden de resolución:
+   *   1. localStorage — solo en panel o ?preview=1 (sin cambios, C-06 arriba)
+   *   2. Backend — GET /api/v1/ediciones/activa/corpus/:nombre
+   *   3. data/*.json — respaldo estático si el backend no responde
+   *
+   * El paso 3 es deliberado: "si el backend cae, el mural sigue funcionando
+   * con la última copia estática. Es una degradación elegante que conviene
+   * conservar" (DTI §12.2). Por eso el timeout es corto (2s): un backend
+   * caído no debe demorar perceptiblemente la carga del mural.
+   */
+  const RUTA_API_BASE = '/api/v1/ediciones/activa/corpus/';
+  const TIMEOUT_API_MS = 2000;
+
+  async function _intentarBackend(nombre) {
+    const control = new AbortController();
+    const temporizador = setTimeout(() => control.abort(), TIMEOUT_API_MS);
+    try {
+      const respuesta = await fetch(RUTA_API_BASE + nombre, { signal: control.signal });
+      if (!respuesta.ok) return null; // 404 (sin edición publicada), 5xx, etc. → caer al estático
+      const datos = await respuesta.json();
+      // Mismo criterio de validación que el resto del módulo (C-02): un
+      // backend que respondiera con una forma inesperada no debe usarse.
+      if (!validarEsquema(nombre, datos)) {
+        console.warn(`La respuesta del backend para "${nombre}" no superó la validación de esquema; se usa el archivo estático.`);
+        return null;
+      }
+      return datos;
+    } catch (error) {
+      // Backend inalcanzable, timeout, o red caída: silencioso a propósito.
+      // No es un error del sitio — es el camino esperado mientras no haya
+      // backend desplegado, o durante una caída temporal.
+      return null;
+    } finally {
+      clearTimeout(temporizador);
+    }
+  }
+
   async function cargar(nombre) {
     const clave = PREFIJO + nombre;
     const guardado = debePriorizarLocal() ? localStorage.getItem(clave) : null;
@@ -59,6 +98,15 @@ const Almacen = (() => {
         console.warn(`No se pudo leer el dato local de "${nombre}", se usa el archivo original.`, error);
       }
     }
+
+    // Paso 2 (DTI §12.2): backend, si responde y valida.
+    if (!debePriorizarLocal()) { // en el panel/preview, el flujo de edición no pasa por acá
+      const desdeBackend = await _intentarBackend(nombre);
+      if (desdeBackend !== null) return desdeBackend;
+    }
+
+    // Paso 3: respaldo estático — comportamiento previo a esta integración,
+    // sin cambios, y el único camino si el backend no está desplegado todavía.
     const respuesta = await fetch(`data/${nombre}.json`);
     if (!respuesta.ok) {
       throw new Error(`No se pudo cargar data/${nombre}.json (${respuesta.status})`);
@@ -68,6 +116,33 @@ const Almacen = (() => {
 
   function guardar(nombre, datos) {
     localStorage.setItem(PREFIJO + nombre, JSON.stringify(datos));
+  }
+
+  /**
+   * Persiste en el BACKEND real (DTI §6.3: PUT /ediciones/:anio/corpus/:tipo).
+   * Es aditiva respecto de guardar(): localStorage sigue siendo el borrador
+   * instantáneo del panel (comportamiento sin cambios); esta función es el
+   * "confirmar al servidor" que corresponde al flujo editorial de DTC cap.3.
+   * Devuelve { ok, motivo } en vez de lanzar, porque el panel debe poder
+   * mostrar el error sin romper el resto de la edición en curso.
+   */
+  async function guardarEnBackend(anio, nombre, datos) {
+    try {
+      const resp = await fetch(`/api/v1/ediciones/${anio}/corpus/${nombre}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos),
+      });
+      if (resp.status === 401) return { ok: false, motivo: 'SESION_EXPIRADA' };
+      if (resp.status === 409) return { ok: false, motivo: 'BLOQUEO_ACTIVO' };
+      if (resp.status === 423 || resp.status === 409) return { ok: false, motivo: 'EDICION_CONGELADA' };
+      if (!resp.ok) {
+        const cuerpo = await resp.json().catch(() => ({}));
+        return { ok: false, motivo: cuerpo.error || 'ERROR_SERVIDOR', detalle: cuerpo.detalle };
+      }
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, motivo: 'BACKEND_INALCANZABLE', error: error.message };
+    }
   }
 
   function restablecer(nombre) {
@@ -172,7 +247,7 @@ const Almacen = (() => {
     });
   }
 
-  return { cargar, guardar, restablecer, tieneCambiosLocales, descargar, importar, validarEsquema };
+  return { cargar, guardar, guardarEnBackend, restablecer, tieneCambiosLocales, descargar, importar, validarEsquema };
 })();
 
 window.Almacen = Almacen;

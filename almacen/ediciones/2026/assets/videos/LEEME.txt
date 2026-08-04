@@ -1,0 +1,1 @@
+Carpeta para los videos breves de cada sede (mp4, comprimidos en H.264). Mismo criterio que las fotos: el nombre de archivo debe coincidir con el campo 'src' del panel.

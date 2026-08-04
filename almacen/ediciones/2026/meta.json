@@ -1,0 +1,10 @@
+{
+  "anio": 2026,
+  "titulo": "Semana Regional de la Extensión 2026",
+  "estado": "publicada",
+  "creada": "2026-08-04T00:00:00.000Z",
+  "publicada": "2026-08-04T00:00:00.000Z",
+  "responsable": "facundo.romero@unam.edu.ar",
+  "versionEsquema": 1,
+  "notas": "Edición inicial migrada desde el corpus estático existente (DTI §10.3, importación 1:1 sin transformación)."
+}
