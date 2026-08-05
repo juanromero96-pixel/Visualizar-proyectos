@@ -41,7 +41,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v14.1-2026-08-04-correccion';
+  window.__BUILD__ = 'v15.0-2026-08-04-anotacion-recomposicion';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -293,6 +293,30 @@ window.__DIAG__ = DIAG;
   document.querySelector('.ruta-flecha--siguiente')?.addEventListener('click', () => carrusel.siguiente());
 
   actualizarRuta(0);
+
+  // ── RECOMPOSICIÓN EDITORIAL · interacción del logo institucional ────────
+  // Pulsar el logo vuelve a componer el mural de la sede activa: renueva
+  // parte del contenido y recalcula la distribución con el Motor Editorial,
+  // SIN recargar la página (no hay location.reload ni equivalente).
+  //
+  // El manejador va sobre el <img> del logo específicamente, NO sobre el
+  // contenedor .marca-chip: el botón del menú hamburguesa es su hermano
+  // dentro de ese mismo contenedor, y engancharlo al chip haría que abrir
+  // el menú disparara también una recomposición.
+  const logoRecomp = document.querySelector('.marca-chip-logo');
+  if (logoRecomp) {
+    const lanzarRecomposicion = () => {
+      const activa = sedeActivaActual();
+      if (activa) Rotacion.recomponer(activa);
+    };
+    logoRecomp.addEventListener('click', lanzarRecomposicion);
+    logoRecomp.addEventListener('keydown', (evento) => {
+      if (evento.key === 'Enter' || evento.key === ' ') {
+        evento.preventDefault();
+        lanzarRecomposicion();
+      }
+    });
+  }
   // [F-02, Auditoría Funcional QA] En mobile con la API de fuentes disponible,
   // el reveal ya ocurrió arriba, dentro de fonts.ready, después del primer
   // layout real (_sede0Revelada lo garantiza). Este reveal síncrono queda
@@ -384,7 +408,17 @@ function pintarSedes(sedesVisibles, testimonios, registros, multimedia) {
       ...testimonios.filter((t) => t.sede === sede.id && t.visible).map((t) => ({ ...t, _tipo: 'testimonio' })),
       ...registros
         .filter((r) => r.sede === sede.id && r.visible)
-        .map((r) => ({ ...r, _tipo: r.tipo === 'conceptual' ? 'registro-conceptual' : 'registro-ua' })),
+        // [Enlace institucional] El mapeo era binario: todo lo que no fuera
+        // 'conceptual' caía en 'registro-ua'. Se agrega el tipo permanente
+        // nuevo ANTES de ese reparto, para que no se renderice como una ficha
+        // de Unidad Académica. Los dos tipos preexistentes conservan
+        // exactamente el mismo resultado que antes.
+        .map((r) => ({
+          ...r,
+          _tipo: r.tipo === 'enlace_institucional' ? 'enlace-institucional'
+               : r.tipo === 'conceptual' ? 'registro-conceptual'
+               : 'registro-ua',
+        })),
       // [Alcance institucional, integración Graduados UNaM] Un elemento
       // multimedia normalmente pertenece a una sola sede (m.sede === sede.id).
       // Se admite una única excepción, marcada explícitamente por el campo
@@ -522,6 +556,29 @@ function crearElemento(item) {
         Lector.abrir(el, item);
       }
     });
+  } else if (item._tipo === 'enlace-institucional') {
+    // [Enlace institucional] Anotación permanente que conecta el Compendio
+    // (memoria narrativa) con la biblioteca documental de la Secretaría de
+    // Extensión (materiales completos). No es contenido del corpus: es una
+    // salida hacia otro sistema, por eso NO abre el Lector — abrir un modal
+    // con contenido que no existe sería un error funcional.
+    crearTarjetaEnlaceInstitucional(item, interior);
+    // Misma marca que las fichas de Unidad Académica: nunca rota, nunca
+    // desaparece, y Rotacion.configurar() la excluye del pool rotativo por
+    // construcción. No requiere ningún cambio en el Motor Editorial.
+    el.dataset.permanente = 'true';
+    el.style.setProperty('--color-ua', item.colorInstitucional || 'var(--unam-cian)');
+    const destino = urlExternaSegura(item.url);
+    el.setAttribute('role', 'link');
+    el.setAttribute('aria-label',
+      `${item.titulo || 'Biblioteca institucional'} — se abre en una pestaña nueva`);
+    if (destino) {
+      const abrir = () => window.open(destino, '_blank', 'noopener,noreferrer');
+      el.addEventListener('click', abrir);
+      el.addEventListener('keydown', (evento) => {
+        if (evento.key === 'Enter' || evento.key === ' ') { evento.preventDefault(); abrir(); }
+      });
+    }
   } else if (item._tipo === 'registro-conceptual') {
     crearTarjetaRegistroConceptual(item, interior);
     el.style.setProperty('--color-ua', item.unidadAcademica ? colorDeUnidadAcademica(item.unidadAcademica) : 'var(--unam-cian)');
@@ -746,6 +803,43 @@ function crearTarjetaRegistroUA(item, interior) {
  * implementación) — tarjeta más chica, sin badge de unidad académica
  * cuando el concepto es transversal a toda la sede.
  */
+/**
+ * [Enlace institucional] Valida que una URL sea un destino externo seguro
+ * antes de escribirla en una acción de navegación. Solo admite https://
+ * explícito: evita que un valor mal cargado desde el panel en el futuro
+ * pueda introducir un esquema `javascript:` o `data:`.
+ * Devuelve la URL si es válida, o null si no lo es.
+ */
+function urlExternaSegura(url) {
+  const s = String(url || '').trim();
+  if (!/^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/|$)/.test(s)) return null;
+  return s;
+}
+
+/**
+ * Tarjeta de acceso permanente a la biblioteca institucional.
+ *
+ * Identidad visual: toma la escala tipográfica de .registro-conceptual-*
+ * (la familia editorial más sobria del mural) y agrega un badge superior
+ * que la identifica como recurso institucional. Deliberadamente sin
+ * fotografía y sin cita destacada, para no competir con los testimonios.
+ */
+function crearTarjetaEnlaceInstitucional(item, interior) {
+  interior.style.setProperty('--ancho-registro', '240px');
+  const icono = item.icono ? `${escaparHTML(item.icono)} ` : '';
+  const subtitulo = item.subtitulo
+    ? `<p class="enlace-inst-subtitulo">${escaparHTML(item.subtitulo)}</p>` : '';
+  const resumen = item.resumen
+    ? `<p class="enlace-inst-resumen">${escaparHTML(item.resumen)}</p>` : '';
+  interior.innerHTML = `
+    <span class="enlace-inst-badge">${icono}Biblioteca institucional</span>
+    <h3 class="enlace-inst-titulo">${escaparHTML(item.titulo || '')}</h3>
+    ${subtitulo}
+    ${resumen}
+    <span class="enlace-inst-boton">${escaparHTML(item.textoBoton || 'Ir a la biblioteca')} →</span>
+  `;
+}
+
 function crearTarjetaRegistroConceptual(item, interior) {
   interior.style.setProperty('--ancho-registro', '220px');
   const etiqueta = item.unidadAcademica
@@ -1890,6 +1984,102 @@ const Rotacion = (() => {
     };
   }
 
-  return { iniciar, detener, detenerTodo, pausar, reanudar, configurarInmediato, estadoCiclo };
+  /**
+   * ══════════════════════════════════════════════════════════════════════
+   * RECOMPOSICIÓN EDITORIAL — acción del logo institucional
+   * ══════════════════════════════════════════════════════════════════════
+   * Avanza el ciclo editorial varias piezas a la vez y vuelve a ejecutar el
+   * Motor Editorial sobre el resultado. NO es una recarga: no toca
+   * location, no reinicia módulos, no vuelve a llamar a Secuenciador.
+   *
+   * No introduce NINGUNA regla de selección propia: delega íntegramente en
+   * elegirEntranteYSalientePorCiclo(), la misma función que usa la rotación
+   * automática y que ya respeta constelaciones por UA, cobertura del ciclo
+   * y elementos exhibidos. Es deliberado: si esa lógica mejora en una
+   * recalibración futura, la recomposición mejora sola. Escribir una
+   * selección propia la habría desincronizado en el primer ajuste.
+   *
+   * Los permanentes (fichas de UA y la tarjeta de biblioteca institucional)
+   * nunca pueden salir: configurar() los excluye de poolActivo por
+   * construcción, así que no son candidatos posibles a saliente.
+   */
+  const RECOMP_RENOVAR_MAX = 3;   // cuántas piezas se renuevan como máximo
+  const RECOMP_PAUSA_MS    = 40;  // respiro entre recálculo y fade de entrada
+  let _recomponiendo = false;
+
+  function recomponer(seccion) {
+    if (!seccion) return false;
+    // R-1 · Guard de reentrada: las pulsaciones durante una recomposición en
+    // curso se ignoran, no se encolan. Sin esto, dos pulsaciones rápidas
+    // solapan sus fades y dejan los pools inconsistentes.
+    if (_recomponiendo) return false;
+    _recomponiendo = true;
+    seccion.classList.add('sede--recomponiendo');
+
+    const genEsteCallback = generacion;
+    const cuantos = Math.min(RECOMP_RENOVAR_MAX, poolActivo.length, poolEspera.length);
+
+    // Se eligen todos los pares ANTES de ocultar nada, para que cada elección
+    // vea el estado completo de los pools (elegir de a uno mientras se ocultan
+    // haría que la segunda elección viera un pool ya alterado).
+    const pares = [];
+    for (let i = 0; i < cuantos; i++) {
+      const par = elegirEntranteYSalientePorCiclo(seccion);
+      if (!par) break; // ninguna UA puede ceder sitio ahora — protege constelaciones
+      if (pares.some((p) => p.saliente === par.saliente || p.entrante === par.entrante)) break;
+      pares.push(par);
+      // Conmutar los pools ya, para que la elección siguiente no repita
+      const iS = poolActivo.indexOf(par.saliente);
+      const iE = poolEspera.indexOf(par.entrante);
+      if (iS >= 0) poolActivo.splice(iS, 1);
+      if (iE >= 0) poolEspera.splice(iE, 1);
+      poolActivo.push(par.entrante);
+      poolEspera.push(par.saliente);
+    }
+
+    pares.forEach(({ saliente }) => ocultarConFade(saliente));
+
+    // R-4 · Si no hubo ningún intercambio posible (toda la sede ya visible),
+    // igual se recalcula: el Motor Editorial produce una distribución
+    // espacial nueva y el usuario percibe la reorganización. Degradación
+    // honesta, no un botón que no hace nada.
+    window.setTimeout(() => {
+      // R-2 · Si detener() corrió durante el fade, la generación cambió:
+      // abortar sin tocar los pools (ya fueron vaciados por detener()).
+      if (generacion !== genEsteCallback) {
+        pares.forEach(({ saliente }) => mostrarConFade(saliente));
+        seccion.classList.remove('sede--recomponiendo');
+        _recomponiendo = false;
+        return;
+      }
+
+      // Marca de exhibido — misma semántica que rotarUno(): el ciclo AVANZA,
+      // no se reinicia, así que la continuidad del recorrido se conserva.
+      const idDe = (el) => el.dataset.testimonioId ||
+        `${el.dataset.tipo || '?'}-${el.dataset.ua || '?'}-${el.dataset.orden || '?'}`;
+      const exhibidos = new Set(leerJSONSeguro(seccion.dataset.cicloExhibidos) || []);
+      pares.forEach(({ entrante }) => exhibidos.add(idDe(entrante)));
+      seccion.dataset.cicloExhibidos = JSON.stringify([...exhibidos]);
+
+      // MOTOR EDITORIAL COMPLETO sobre la sede: capacidad, ocupación,
+      // balance, colocación. Es la misma llamada que hace recalcular(sede).
+      // Las tarjetas que siguen visibles se desplazan con la transición de
+      // transform ya declarada en .elemento — sin animación nueva.
+      window.Distribuidor?.distribuir(seccion);
+
+      window.setTimeout(() => {
+        if (generacion === genEsteCallback) {
+          pares.forEach(({ entrante }) => mostrarConFade(entrante));
+        }
+        seccion.classList.remove('sede--recomponiendo');
+        _recomponiendo = false;
+      }, RECOMP_PAUSA_MS);
+    }, FADE_SALIDA_MS);
+
+    DIAG.log('recomponer', { sede: seccion.dataset.sede, renovadas: pares.length });
+    return true;
+  }
+
+  return { iniciar, detener, detenerTodo, pausar, reanudar, configurarInmediato, estadoCiclo, recomponer };
 })();
 window.Rotacion = Rotacion;

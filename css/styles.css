@@ -1381,3 +1381,111 @@ body.lector-bloqueando-scroll {
   .numeros-sedes { grid-template-columns: 1fr; }
   .cajero-logo { height: 24px; max-width: 62px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENLACE INSTITUCIONAL · tarjeta permanente de acceso a la biblioteca
+   ──────────────────────────────────────────────────────────────────────────
+   Anotación permanente que conecta el Compendio con la biblioteca documental
+   de la Secretaría de Extensión. Toma la escala tipográfica de la familia
+   .registro-conceptual-* (la más sobria del mural) para no competir con los
+   testimonios, y agrega un borde de acento izquierdo — el mismo recurso que
+   ya distingue a las fichas permanentes de Unidad Académica.
+
+   Bloque de ADICIÓN PURA: no modifica ninguna regla preexistente.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.elemento--enlace-institucional .elemento-interior {
+  border-left: 3px solid var(--color-ua, var(--unam-cian));
+  padding-left: 14px;
+}
+
+.enlace-inst-badge {
+  display: inline-block;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--color-ua, var(--unam-cian));
+  opacity: 0.9;
+  margin-bottom: 6px;
+}
+
+.enlace-inst-titulo {
+  margin: 0 0 4px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.enlace-inst-subtitulo {
+  margin: 0 0 8px;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  opacity: 0.72;
+}
+
+.enlace-inst-resumen {
+  margin: 0 0 10px;
+  font-weight: 300;
+  font-size: 0.76rem;
+  line-height: 1.48;
+  opacity: 0.8;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.enlace-inst-boton {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+  color: var(--color-ua, var(--unam-cian));
+}
+
+.elemento--enlace-institucional:hover .enlace-inst-boton,
+.elemento--enlace-institucional:focus-visible .enlace-inst-boton {
+  text-decoration: underline;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RECOMPOSICIÓN EDITORIAL · interacción del logo institucional
+   ──────────────────────────────────────────────────────────────────────────
+   Señalización mínima de que el logo es accionable: cursor, foco visible y
+   una atenuación sutil al pasar el mouse. Deliberadamente discreta — el logo
+   es un elemento de identidad institucional, no un botón de acción, y una
+   animación llamativa rompería esa sobriedad.
+
+   Bloque de ADICIÓN PURA: no modifica ninguna regla preexistente
+   (.marca-chip-logo conserva intactas sus reglas de tamaño y proporción).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.marca-chip-logo[role="button"] {
+  cursor: pointer;
+  transition: opacity 220ms ease;
+}
+
+.marca-chip-logo[role="button"]:hover {
+  opacity: 0.72;
+}
+
+.marca-chip-logo[role="button"]:focus-visible {
+  outline: 2px solid var(--unam-cian);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Estado transitorio durante la recomposición: el cursor indica que el
+   sistema está trabajando y se evita una segunda pulsación accidental
+   (el guard de reentrada de recomponer() ya la ignoraría de todos modos). */
+.sede--recomponiendo .marca-chip-logo[role="button"],
+.marca-chip-logo[role="button"]:active {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marca-chip-logo[role="button"] { transition: none; }
+}
