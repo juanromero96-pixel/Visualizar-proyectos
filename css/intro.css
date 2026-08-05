@@ -88,14 +88,23 @@
 
 .intro-tarjeta-cabecera {
   display: flex;
-  align-items: center;
+  /* El logotipo oficial es apaisado (2120x597 = 3,55:1). En fila horizontal
+     comprimiría la leyenda que va a su lado, así que la cabecera pasa a
+     disposición vertical: logo arriba, leyenda debajo. Se conserva la
+     alineación izquierda que ya tiene el resto de la tarjeta de bienvenida. */
+  flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
   margin-bottom: 22px;
 }
 
 .intro-logo {
-  height: 36px;
-  width: 36px;
+  /* Alto fijo + width:auto preserva la proporción original del logotipo.
+     Es el mismo mecanismo que ya usa el chip del encabezado del mural
+     (.marca-chip-logo), no un criterio nuevo. A 44px de alto el logo mide
+     unos 156px de ancho, holgado dentro de la tarjeta de 560px. */
+  height: clamp(30px, 4.4vw, 44px);
+  width: auto;
   flex-shrink: 0;
 }
 

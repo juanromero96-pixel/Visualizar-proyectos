@@ -41,7 +41,7 @@ window.__DIAG__ = DIAG;
   // abrir la consola y leer esta línea (o window.__BUILD__).
   // Si la consola NO muestra este sello, el navegador está sirviendo un
   // build anterior: la auditoría debe DETENERSE hasta redesplegar.
-  window.__BUILD__ = 'v15.0-2026-08-04-anotacion-recomposicion';
+  window.__BUILD__ = 'v15.1-2026-08-05-optimizacion-visual';
 
   console.log('%cSemanaRegionalUNaM · build ' + window.__BUILD__,
     'background:#00a3e0;color:#0a0e10;padding:2px 8px;border-radius:3px;font-weight:bold');
@@ -825,16 +825,18 @@ function urlExternaSegura(url) {
  * fotografía y sin cita destacada, para no competir con los testimonios.
  */
 function crearTarjetaEnlaceInstitucional(item, interior) {
-  interior.style.setProperty('--ancho-registro', '240px');
+  interior.style.setProperty('--ancho-registro', '200px');
   const icono = item.icono ? `${escaparHTML(item.icono)} ` : '';
-  const subtitulo = item.subtitulo
-    ? `<p class="enlace-inst-subtitulo">${escaparHTML(item.subtitulo)}</p>` : '';
+  // El badge lee su texto de `subtitulo` en vez de tenerlo escrito acá: eso
+  // elimina un nivel tipográfico (badge y subtítulo decían lo mismo con
+  // distintas palabras) y hace que el texto sea administrable desde el JSON,
+  // como el resto de los campos de la tarjeta.
+  const etiqueta = escaparHTML(item.subtitulo || 'Biblioteca institucional');
   const resumen = item.resumen
     ? `<p class="enlace-inst-resumen">${escaparHTML(item.resumen)}</p>` : '';
   interior.innerHTML = `
-    <span class="enlace-inst-badge">${icono}Biblioteca institucional</span>
+    <span class="enlace-inst-badge">${icono}${etiqueta}</span>
     <h3 class="enlace-inst-titulo">${escaparHTML(item.titulo || '')}</h3>
-    ${subtitulo}
     ${resumen}
     <span class="enlace-inst-boton">${escaparHTML(item.textoBoton || 'Ir a la biblioteca')} →</span>
   `;
